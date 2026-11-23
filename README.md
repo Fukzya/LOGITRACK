@@ -37,6 +37,7 @@ Cada tanto conviene regenerar `database/logitrack.sql` desde HeidiSQL
 
 ## Pendientes conocidos
 
-- [ ] **Historial duplicado al crear un envío**: `procedimiento_crear_envio` y
-      `trigger_after_insert_envio` insertan los dos el estado "En sucursal origen".
-- [ ] Usuarios: el usuario `operador1` tiene rol `admin` en el volcado.
+- [x] **Historial duplicado al crear un envío**: `procedimiento_crear_envio` y
+      `trigger_after_insert_envio` insertaban los dos el estado "En sucursal origen".
+      Corregido en `cambios/002` (queda solo el trigger).
+- [x] Usuarios: el usuario `operador1` tenía rol `admin` en el volcado. Corregido en `cambios/002`.

@@ -17,8 +17,10 @@ Ver README.md para la estructura y la instalación.
 - Base local de la PC: importada desde database/logitrack.sql + cambio 001 aplicado y verificado.
 - La base de la notebook podría tener objetos posteriores al volcado (3/6 10:02). Pendiente re-exportarla.
 
+## Resuelto
+- Cambio 002 (aplicado y verificado en la PC el 2026-11-23): `procedimiento_crear_envio` ya no inserta
+  en `historial_estado` (lo hace solo `trigger_after_insert_envio`), se borraron los duplicados
+  (envíos 8015-8018) y `operador1` pasó a rol operador. Falta correrlo en la notebook.
+
 ## Pendientes
-1. Historial duplicado: `procedimiento_crear_envio` y `trigger_after_insert_envio` insertan ambos
-   "En sucursal origen" al crear un envío (en los datos se ve en los envíos 8015-8018).
-2. En el volcado `operador1` tiene rol admin.
-3. Vistas (5) y procedimientos `registrar_estado_envio` / `resumen_por_sucursal` no los usa el código PHP.
+1. Vistas (5) y procedimientos `registrar_estado_envio` / `resumen_por_sucursal` no los usa el código PHP.
