@@ -7,3 +7,6 @@ desktop.ini
 
 # Configuración local (si algún día se separan credenciales)
 config/db.local.php
+
+# Material del campus (119 MB, de la cátedra). Resumen en docs/teoria_campus.md
+base de datos 2 campus/

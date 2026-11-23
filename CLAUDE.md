@@ -26,5 +26,12 @@ Ver README.md para la estructura y la instalación.
   chofer.chofer_tipo_licencia. Estados unificados a códigos (RECIBIDO, EN_TRANSITO, ...).
   Los <select> del front se llenan desde `api/catalogos.php`.
 
+## Material de la cátedra
+- `base de datos 2 campus/` (no se versiona) tiene todo el campus. Ya está resumido por tema en
+  `docs/teoria_campus.md`: leer ese archivo en lugar de los PDF.
+- Orden de trabajo del checklist: CRUD → sesiones → procedimientos → triggers → vistas →
+  seguridad → transacciones. Para cada tema: análisis hecho/falta según la teoría, plan, y un
+  resumen corto y didáctico para la defensa.
+
 ## Pendientes
 1. Vistas (5) y procedimientos `registrar_estado_envio` / `resumen_por_sucursal` no los usa el código PHP.
