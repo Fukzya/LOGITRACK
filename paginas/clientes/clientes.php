@@ -18,13 +18,21 @@ header("Pragma: no-cache");
 
     <h2>Clientes</h2>
 
-    <input type="number" id="input-dni" placeholder="DNI">
-    <input type="text" id="input-nombre" placeholder="Nombre">
-    <input type="text" id="input-apellido" placeholder="Apellido">
-    <input type="text" id="input-mail" placeholder="Mail">
-    <input type="text" id="input-telefono" placeholder="Teléfono">
-    <input type="number" id="input-localidad" placeholder="Código de localidad">
-    <button onclick="crearCliente()">Agregar</button>
+    <!-- Un solo formulario para alta y edición. En edición el DNI (clave primaria) no se cambia. -->
+    <form id="form-cliente">
+        <h3 id="titulo-form">Nuevo cliente</h3>
+        <input type="number" id="input-dni" placeholder="DNI" required min="1000000" max="99999999">
+        <input type="text" id="input-nombre" placeholder="Nombre" required maxlength="80">
+        <input type="text" id="input-apellido" placeholder="Apellido" required maxlength="80">
+        <input type="email" id="input-mail" placeholder="Mail (opcional)" maxlength="150">
+        <input type="tel" id="input-telefono" placeholder="Teléfono (opcional)" maxlength="30"
+               pattern="\+?[0-9 \(\)\-]{6,30}" title="Números, espacios, guiones, paréntesis y un + inicial">
+        <select id="input-localidad" required>
+            <option value="">Elegí una localidad</option>
+        </select>
+        <button type="submit" id="btn-guardar">Agregar</button>
+        <button type="button" id="btn-cancelar" hidden>Cancelar</button>
+    </form>
 
     <hr>
     <input type="number" id="filtro-dni" placeholder="Buscar por DNI">
@@ -50,7 +58,7 @@ header("Pragma: no-cache");
                 <th id="th-apellido" style="cursor:pointer">Apellido</th>
                 <th>Mail</th>
                 <th>Teléfono</th>
-                <th>Localidad</th>
+                <th id="th-localidad" style="cursor:pointer">Localidad</th>
                 <th>Estado</th>
                 <th>Acciones</th>
             </tr>
@@ -63,6 +71,8 @@ header("Pragma: no-cache");
     <a href="../../login.html" onclick="cerrarSesion(event)">Cerrar sesión</a>
 
     <script>const esAdmin = <?php echo ($_SESSION['rol'] === 'admin') ? 'true' : 'false'; ?>;</script>
+    <script src="../comun.js"></script>
+    <script src="../catalogos.js"></script>
     <script src="clientes.js"></script>
 </body>
 </html>

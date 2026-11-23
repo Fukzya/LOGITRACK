@@ -1,86 +1,55 @@
-fetch('../../api/check_session.php')
-  .then(res => res.json())
-  .then(data => {
-    if (!data.autenticado) {
-      window.location.href = '../../login.html';
-    }
-  });
+// Pantalla de clientes (capa Vista): muestra datos y manda las acciones a la API.
+const API = '../../api/clientes.php';
 
-function cerrarSesion(e) {
-  e.preventDefault();
-  fetch('../../api/logout.php')
-    .then(res => res.json())
-    .then(() => { window.location.href = '../../login.html'; });
-}
-
-const API = 'http://localhost/logitrack/api/clientes.php';
 let paginaActual = 1;
 let ordenActual  = 'cliente_dni';
 let dirActual    = 'ASC';
+let clientesPagina = new Map();   // DNI -> datos del cliente, para precargar el formulario
+let dniEditando    = null;        // null = alta; un DNI = edición
 
-function listarClientes(pagina = 1) {
-    const params = new URLSearchParams({ pagina: pagina, order_by: ordenActual, order_dir: dirActual });
-    const filtroDni      = document.getElementById('filtro-dni').value;
-    const filtroNombre   = document.getElementById('filtro-nombre').value;
-    const filtroApellido = document.getElementById('filtro-apellido').value;
+const $ = id => document.getElementById(id);
 
-    if (filtroDni)      params.append('dni',      filtroDni);
-    if (filtroNombre)   params.append('nombre',   filtroNombre);
-    if (filtroApellido) params.append('apellido', filtroApellido);
+// ---------------------------------------------------------------- listado
 
-    const mostrarInactivos = document.getElementById('filtro-mostrar-inactivos');
-    if (mostrarInactivos && mostrarInactivos.checked) {
-        params.append('mostrar_inactivos', '1');
+async function listarClientes(pagina = 1) {
+    const params = new URLSearchParams({ pagina, order_by: ordenActual, order_dir: dirActual });
+    if ($('filtro-dni').value)      params.append('dni', $('filtro-dni').value);
+    if ($('filtro-nombre').value)   params.append('nombre', $('filtro-nombre').value);
+    if ($('filtro-apellido').value) params.append('apellido', $('filtro-apellido').value);
+    const chkInactivos = $('filtro-mostrar-inactivos');
+    if (chkInactivos && chkInactivos.checked) params.append('mostrar_inactivos', '1');
+
+    try {
+        const data = await api(`${API}?${params}`);
+        paginaActual = data.pagina;
+        clientesPagina = new Map(data.datos.map(c => [String(c.cliente_dni), c]));
+
+        $('tabla-clientes').innerHTML = data.datos.map(c => {
+            const activo = c.activo == 1;
+            const acciones = activo
+                ? `<button data-accion="editar" data-dni="${esc(c.cliente_dni)}">Editar</button>
+                   <button data-accion="baja" data-dni="${esc(c.cliente_dni)}">Dar de baja</button>`
+                : (esAdmin ? `<button data-accion="reactivar" data-dni="${esc(c.cliente_dni)}">Reactivar</button>` : '');
+            return `
+                <tr>
+                    <td>${esc(c.cliente_dni)}</td>
+                    <td>${esc(c.nombre)}</td>
+                    <td>${esc(c.apellido)}</td>
+                    <td>${esc(c.mail)}</td>
+                    <td>${esc(c.telefono)}</td>
+                    <td>${esc(c.localidad_nombre)}</td>
+                    <td>${activo ? '<span style="color:green">Activo</span>' : '<span style="color:red">Inactivo</span>'}</td>
+                    <td>${acciones}</td>
+                </tr>`;
+        }).join('') || '<tr><td colspan="8">No hay clientes con esos filtros.</td></tr>';
+
+        $('paginacion').innerHTML = `
+            <button onclick="listarClientes(${data.pagina - 1})" ${data.pagina <= 1 ? 'disabled' : ''}>← Anterior</button>
+            Página ${data.pagina} de ${data.total_paginas} (${data.total} clientes)
+            <button onclick="listarClientes(${data.pagina + 1})" ${data.pagina >= data.total_paginas ? 'disabled' : ''}>Siguiente →</button>`;
+    } catch (err) {
+        mostrarError(err);
     }
-
-    fetch(`${API}?${params}`)
-        .then(res => res.json())
-        .then(data => {
-            paginaActual = pagina;
-            const tabla = document.getElementById('tabla-clientes');
-            tabla.innerHTML = '';
-            data.datos.forEach(c => {
-                tabla.innerHTML += `
-                    <tr>
-                        <td>${c.cliente_dni}</td>
-                        <td>${c.nombre}</td>
-                        <td>${c.apellido}</td>
-                        <td>${c.mail}</td>
-                        <td>${c.telefono}</td>
-                        <td>${c.localidad_cod}</td>
-                        <td>${c.activo == 1 ?
-                            '<span style="color:green">Activo</span>' :
-                            '<span style="color:red">Inactivo</span>'
-                        }</td>
-                        <td>
-                            ${c.activo == 1 ? `<button onclick="editarCliente(${c.cliente_dni}, '${c.nombre}', '${c.apellido}', '${c.mail}', '${c.telefono}', ${c.localidad_cod})">Editar</button>` : ''}
-                            ${c.activo == 1 ? `<button onclick="eliminarCliente(${c.cliente_dni})">Eliminar</button>` : ''}
-                            ${c.activo == 0 && esAdmin ? `<button onclick="reactivarCliente(${c.cliente_dni})">Reactivar</button>` : ''}
-                        </td>
-                    </tr>
-                `;
-            });
-
-            document.getElementById('paginacion').innerHTML = `
-                <button onclick="listarClientes(${pagina - 1})" ${pagina === 1 ? 'disabled' : ''}>← Anterior</button>
-                Página ${pagina} de ${data.total_paginas}
-                <button onclick="listarClientes(${pagina + 1})" ${pagina === data.total_paginas ? 'disabled' : ''}>Siguiente →</button>
-            `;
-        });
-}
-
-function reactivarCliente(dni) {
-    if (!confirm('¿Querés reactivar este cliente?')) return;
-    fetch(API, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cliente_dni: dni, reactivar: true })
-    })
-    .then(res => res.json())
-    .then(data => {
-        alert(data.mensaje);
-        listarClientes(paginaActual);
-    });
 }
 
 function ordenarPor(columna) {
@@ -88,88 +57,106 @@ function ordenarPor(columna) {
         dirActual = dirActual === 'ASC' ? 'DESC' : 'ASC';
     } else {
         ordenActual = columna;
-        dirActual   = 'DESC';
+        dirActual   = 'ASC';
     }
     listarClientes(1);
 }
 
-function crearCliente() {
-    fetch(API, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            cliente_dni:   document.getElementById('input-dni').value,
-            nombre:        document.getElementById('input-nombre').value,
-            apellido:      document.getElementById('input-apellido').value,
-            mail:          document.getElementById('input-mail').value,
-            telefono:      document.getElementById('input-telefono').value,
-            localidad_cod: document.getElementById('input-localidad').value
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-        alert(data.mensaje);
-        listarClientes(paginaActual);
-    });
+// ---------------------------------------------------------------- formulario (alta y edición)
+
+function modoAlta() {
+    dniEditando = null;
+    $('form-cliente').reset();
+    $('input-dni').disabled = false;
+    $('titulo-form').textContent = 'Nuevo cliente';
+    $('btn-guardar').textContent = 'Agregar';
+    $('btn-cancelar').hidden = true;
 }
 
-function editarCliente(dni, nombre, apellido, mail, telefono, localidad) {
-    const nuevoNombre    = prompt('Nombre:', nombre);
-    if (nuevoNombre === null) return;
-    const nuevoApellido  = prompt('Apellido:', apellido);
-    if (nuevoApellido === null) return;
-    const nuevoMail      = prompt('Mail:', mail);
-    if (nuevoMail === null) return;
-    const nuevoTelefono  = prompt('Teléfono:', telefono);
-    if (nuevoTelefono === null) return;
-    const nuevaLocalidad = prompt('Código de localidad:', localidad);
-    if (nuevaLocalidad === null) return;
-
-    fetch(API, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            cliente_dni:   dni,
-            nombre:        nuevoNombre,
-            apellido:      nuevoApellido,
-            mail:          nuevoMail,
-            telefono:      nuevoTelefono,
-            localidad_cod: nuevaLocalidad
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-        alert(data.mensaje);
-        listarClientes(paginaActual);
-    });
+function modoEdicion(c) {
+    dniEditando = c.cliente_dni;
+    $('input-dni').value       = c.cliente_dni;
+    $('input-dni').disabled    = true;          // la clave primaria no se edita
+    $('input-nombre').value    = c.nombre;
+    $('input-apellido').value  = c.apellido;
+    $('input-mail').value      = c.mail ?? '';
+    $('input-telefono').value  = c.telefono ?? '';
+    $('input-localidad').value = c.localidad_cod;
+    $('titulo-form').textContent = `Editando cliente ${c.cliente_dni}`;
+    $('btn-guardar').textContent = 'Guardar cambios';
+    $('btn-cancelar').hidden = false;
+    $('form-cliente').scrollIntoView({ behavior: 'smooth' });
 }
 
-function eliminarCliente(dni) {
-    if (!confirm('¿Seguro que querés eliminar este cliente?\nEsta acción lo marcará como inactivo.')) return;
-    fetch(API, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cliente_dni: dni })
-    })
-    .then(res => res.json())
-    .then(data => {
+async function guardarCliente(e) {
+    e.preventDefault();   // el navegador ya validó required, email, min/max y pattern
+    const cliente = {
+        cliente_dni:   dniEditando ?? $('input-dni').value,
+        nombre:        $('input-nombre').value,
+        apellido:      $('input-apellido').value,
+        mail:          $('input-mail').value,
+        telefono:      $('input-telefono').value,
+        localidad_cod: $('input-localidad').value,
+    };
+    try {
+        const data = await api(API, dniEditando === null ? 'POST' : 'PUT', cliente);
         alert(data.mensaje);
+        modoAlta();
         listarClientes(paginaActual);
-    });
+    } catch (err) {
+        mostrarError(err);
+    }
 }
 
-document.getElementById('btn-filtrar').addEventListener('click', () => listarClientes(1));
-document.getElementById('btn-limpiar').addEventListener('click', () => {
-    document.getElementById('filtro-dni').value      = '';
-    document.getElementById('filtro-nombre').value   = '';
-    document.getElementById('filtro-apellido').value = '';
-    const chkInactivos = document.getElementById('filtro-mostrar-inactivos');
-    if (chkInactivos) chkInactivos.checked = false;
-    listarClientes(1);
+// ---------------------------------------------------------------- acciones de cada fila
+
+async function darDeBaja(dni) {
+    if (!confirm(`¿Dar de baja al cliente ${dni}?\nNo se borra: queda inactivo y se puede reactivar.`)) return;
+    try {
+        alert((await api(API, 'DELETE', { cliente_dni: dni })).mensaje);
+        listarClientes(paginaActual);
+    } catch (err) {
+        mostrarError(err);
+    }
+}
+
+async function reactivar(dni) {
+    if (!confirm(`¿Reactivar al cliente ${dni}?`)) return;
+    try {
+        alert((await api(API, 'PUT', { cliente_dni: dni, reactivar: true })).mensaje);
+        listarClientes(paginaActual);
+    } catch (err) {
+        mostrarError(err);
+    }
+}
+
+// Un solo listener para todos los botones de la tabla: los datos van en data-*, no dentro del onclick.
+$('tabla-clientes').addEventListener('click', e => {
+    const boton = e.target.closest('button[data-accion]');
+    if (!boton) return;
+    const dni = boton.dataset.dni;
+    if (boton.dataset.accion === 'editar')    modoEdicion(clientesPagina.get(dni));
+    if (boton.dataset.accion === 'baja')      darDeBaja(dni);
+    if (boton.dataset.accion === 'reactivar') reactivar(dni);
 });
 
-document.getElementById('th-cliente-dni').addEventListener('click', () => ordenarPor('cliente_dni'));
-document.getElementById('th-nombre').addEventListener('click', () => ordenarPor('nombre'));
-document.getElementById('th-apellido').addEventListener('click', () => ordenarPor('apellido'));
+// ---------------------------------------------------------------- eventos
 
+$('form-cliente').addEventListener('submit', guardarCliente);
+$('btn-cancelar').addEventListener('click', modoAlta);
+$('btn-filtrar').addEventListener('click', () => listarClientes(1));
+$('btn-limpiar').addEventListener('click', () => {
+    $('filtro-dni').value = '';
+    $('filtro-nombre').value = '';
+    $('filtro-apellido').value = '';
+    const chk = $('filtro-mostrar-inactivos');
+    if (chk) chk.checked = false;
+    listarClientes(1);
+});
+$('th-cliente-dni').addEventListener('click', () => ordenarPor('cliente_dni'));
+$('th-nombre').addEventListener('click', () => ordenarPor('nombre'));
+$('th-apellido').addEventListener('click', () => ordenarPor('apellido'));
+$('th-localidad').addEventListener('click', () => ordenarPor('localidad_nombre'));
+
+cargarCatalogo('input-localidad', 'localidades');
 listarClientes();

@@ -25,6 +25,15 @@ Ver README.md para la estructura y la instalación.
   `tipo_licencia` con FK desde historial_estado.estado, incidente.tipo_incidente y
   chofer.chofer_tipo_licencia. Estados unificados a códigos (RECIBIDO, EN_TRANSITO, ...).
   Los <select> del front se llenan desde `api/catalogos.php`.
+- Cambio 004 (aplicado en la PC): 1773 mails de clientes tenían tildes (inválidos); se normalizaron.
+
+## CRUD en MVC (en curso, decidido el 2026-11-23: opción B)
+- Estructura nueva: `modelos/<Entidad>.php` (solo SQL) + `api/<entidad>.php` (controlador: valida,
+  llama al modelo, responde) + `paginas/<entidad>/` (vista). Base común: `config/api.php`
+  (sesión, JSON, validaciones `campo_*`, traducción de errores de MySQL) y `paginas/comun.js`
+  (`api()`, `esc()`, `mostrarError()`). Alta y edición en un mismo formulario precargado.
+- Hecho y probado: clientes. Falta migrar las otras 14 entidades con el mismo patrón.
+- Para probar con sesión se crean usuarios temporales `zz_prueba_*` y se borran al terminar.
 
 ## Material de la cátedra
 - `base de datos 2 campus/` (no se versiona) tiene todo el campus. Ya está resumido por tema en
