@@ -1,123 +1,52 @@
 <?php
-require_once '../config/session.php';
-verificar_sesion();
-require_once '../config/db.php';
+/* Controlador de choferes: valida, llama al modelo Chofer y responde JSON. */
+require_once '../config/api.php';
+require_once '../modelos/Chofer.php';
 
-header('Content-Type: application/json');
+$choferes = new Chofer($pdo);
 
-$metodo = $_SERVER['REQUEST_METHOD'];
+function datos_chofer(array $d): array
+{
+    return [
+        'nombre'               => campo_texto($d, 'nombre', 'El nombre', 80),
+        'apellido'             => campo_texto($d, 'apellido', 'El apellido', 80),
+        'chofer_tipo_licencia' => campo_codigo($d, 'chofer_tipo_licencia', 'La licencia', '/^[A-Z0-9]{1,10}$/', 'un código de licencia (ej. C)'),
+    ];
+}
 
-switch ($metodo) {
+$errores = [1452 => 'El tipo de licencia elegido no existe.'];
+
+switch ($_SERVER['REQUEST_METHOD']) {
 
     case 'GET':
-        $pagina = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
-        $limite = 50;
-        $offset = ($pagina - 1) * $limite;
-
-        $nombre        = trim($_GET['nombre']        ?? '');
-        $apellido      = trim($_GET['apellido']      ?? '');
-        $tipo_licencia = trim($_GET['tipo_licencia'] ?? '');
-
-        $mostrar_inactivos = isset($_GET['mostrar_inactivos'])
-            && $_GET['mostrar_inactivos'] === '1'
-            && $_SESSION['rol'] === 'admin';
-
-        $order_whitelist = ['chofer_legajo', 'nombre', 'apellido', 'chofer_tipo_licencia'];
-        $order_by  = in_array($_GET['order_by'] ?? '', $order_whitelist) ? $_GET['order_by'] : 'chofer_legajo';
-        $order_dir = strtoupper($_GET['order_dir'] ?? '') === 'DESC' ? 'DESC' : 'ASC';
-
-        $condiciones = [];
-        $params      = [];
-
-        if (!$mostrar_inactivos) {
-            $condiciones[] = 'activo = 1';
-        }
-        if ($nombre !== '') {
-            $condiciones[] = 'nombre LIKE :nombre';
-            $params[':nombre'] = '%' . $nombre . '%';
-        }
-        if ($apellido !== '') {
-            $condiciones[] = 'apellido LIKE :apellido';
-            $params[':apellido'] = '%' . $apellido . '%';
-        }
-        if ($tipo_licencia !== '') {
-            $condiciones[] = 'chofer_tipo_licencia = :tipo_licencia';
-            $params[':tipo_licencia'] = $tipo_licencia;
-        }
-
-        $where = $condiciones ? 'WHERE ' . implode(' AND ', $condiciones) : '';
-
-        $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM chofer $where");
-        $stmtCount->execute($params);
-        $total = (int)$stmtCount->fetchColumn();
-
-        $stmtData = $pdo->prepare("SELECT chofer_legajo, nombre, apellido, chofer_tipo_licencia, activo FROM chofer $where ORDER BY $order_by $order_dir LIMIT $limite OFFSET $offset");
-        $stmtData->execute($params);
-        $choferes = $stmtData->fetchAll(PDO::FETCH_ASSOC);
-
-        echo json_encode([
-            'datos'         => $choferes,
-            'total'         => $total,
-            'pagina'        => $pagina,
-            'total_paginas' => (int)ceil($total / $limite)
-        ]);
-        break;
+        $filtros = [
+            'nombre'   => trim($_GET['nombre'] ?? ''),
+            'apellido' => trim($_GET['apellido'] ?? ''),
+            'licencia' => trim($_GET['tipo_licencia'] ?? ''),
+        ];
+        responder($choferes->listar($filtros, params_listado('chofer_legajo'), ver_inactivos()));
 
     case 'POST':
-        $datos = json_decode(file_get_contents("php://input"), true);
-        $consulta = $pdo->prepare("INSERT INTO chofer (nombre, apellido, chofer_tipo_licencia)
-                                   VALUES (:nombre, :apellido, :licencia)");
-        $consulta->execute([
-            ':nombre'   => $datos['nombre'],
-            ':apellido' => $datos['apellido'],
-            ':licencia' => $datos['chofer_tipo_licencia']
-        ]);
-        echo json_encode([
-            'mensaje' => 'Chofer creado',
-            'id'      => $pdo->lastInsertId()
-        ]);
-        break;
+        $c  = datos_chofer(leer_json());
+        $id = intentar(fn() => $choferes->crear($c), $errores);
+        responder(['mensaje' => "Chofer creado con legajo $id.", 'id' => $id], 201);
 
     case 'PUT':
-        $datos = json_decode(file_get_contents("php://input"), true);
-
-        if (!empty($datos['reactivar'])) {
-            $legajo = filter_var($datos['chofer_legajo'] ?? 0, FILTER_SANITIZE_NUMBER_INT);
-            if (!$legajo) {
-                http_response_code(400);
-                echo json_encode(['error' => 'Legajo requerido']);
-                break;
-            }
-            $stmt = $pdo->prepare("UPDATE chofer SET activo = 1 WHERE chofer_legajo = :legajo");
-            $stmt->bindParam(':legajo', $legajo, PDO::PARAM_INT);
-            $stmt->execute();
-            echo json_encode(['mensaje' => 'Chofer reactivado correctamente']);
-            break;
+        $d      = leer_json();
+        $legajo = campo_entero($d, 'chofer_legajo', 'El legajo');
+        if (!empty($d['reactivar'])) {
+            if (!$choferes->cambiarActivo($legajo, true)) error_api('No existe un chofer con ese legajo.', 404);
+            responder(['mensaje' => 'Chofer reactivado.']);
         }
-
-        $consulta = $pdo->prepare("UPDATE chofer SET nombre = :nombre, apellido = :apellido,
-                                   chofer_tipo_licencia = :licencia
-                                   WHERE chofer_legajo = :legajo");
-        $consulta->execute([
-            ':nombre'   => $datos['nombre'],
-            ':apellido' => $datos['apellido'],
-            ':licencia' => $datos['chofer_tipo_licencia'],
-            ':legajo'   => $datos['chofer_legajo']
-        ]);
-        echo json_encode(['mensaje' => 'Chofer actualizado']);
-        break;
+        $c = datos_chofer($d);
+        if (!intentar(fn() => $choferes->actualizar($legajo, $c), $errores)) error_api('No existe un chofer activo con ese legajo.', 404);
+        responder(['mensaje' => 'Chofer actualizado.']);
 
     case 'DELETE':
-        $datos  = json_decode(file_get_contents("php://input"), true);
-        $legajo = filter_var($datos['chofer_legajo'] ?? 0, FILTER_SANITIZE_NUMBER_INT);
-        if (!$legajo) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Legajo del chofer requerido']);
-            break;
-        }
-        $stmt = $pdo->prepare("UPDATE chofer SET activo = 0 WHERE chofer_legajo = :legajo");
-        $stmt->bindParam(':legajo', $legajo, PDO::PARAM_INT);
-        $stmt->execute();
-        echo json_encode(['mensaje' => 'Chofer dado de baja correctamente']);
-        break;
+        $legajo = campo_entero(leer_json(), 'chofer_legajo', 'El legajo');
+        if (!$choferes->cambiarActivo($legajo, false)) error_api('No existe un chofer con ese legajo.', 404);
+        responder(['mensaje' => 'Chofer dado de baja.']);
+
+    default:
+        error_api('Método no permitido.', 405);
 }

@@ -5,13 +5,21 @@ Es PHP con PDO y MariaDB, y corre sobre XAMPP.
 
 ## Estructura
 
+El código sigue el patrón **MVC**:
+
 ```
-api/          Endpoints PHP que devuelven JSON (uno por entidad)
-config/       db.php (conexión) y session.php (login / sesiones)
-paginas/      Una carpeta por módulo: x.php (página) + x.js (lógica del front)
+modelos/      MODELO: una clase por entidad (Cliente.php, Envio.php...). Es el único lugar con SQL.
+              Modelo.php es la clase base (listado paginado, filtros y orden).
+api/          CONTROLADOR: un endpoint por entidad. Valida los datos, llama al modelo y responde JSON.
+paginas/      VISTA: una carpeta por pantalla con x.php (estructura) y x.js (qué columnas, campos y
+              filtros tiene). Comunes: plantilla.php (sesión, encabezado), crud.js (comportamiento de
+              las pantallas), comun.js (api(), esc(), errores) y catalogos.js (desplegables).
+config/       db.php (conexión), session.php (login / sesiones) y api.php (base de las APIs:
+              validaciones, respuestas JSON y traducción de errores de la base)
 database/
   logitrack.sql   Volcado completo de la base: tablas, datos, procedimientos, triggers y vistas
   cambios/        Scripts que modifican la base, numerados y en orden
+docs/         teoria_campus.md: resumen del material de la cátedra por tema
 index.php     Menú principal (requiere sesión)
 login.html    Pantalla de login
 ```

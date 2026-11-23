@@ -1,114 +1,55 @@
 <?php
-require_once '../config/session.php';
-verificar_sesion();
-require_once '../config/db.php';
+/* Controlador de sucursales: valida, llama al modelo Sucursal y responde JSON. */
+require_once '../config/api.php';
+require_once '../modelos/Sucursal.php';
 
-header('Content-Type: application/json');
+$sucursales = new Sucursal($pdo);
 
-$metodo = $_SERVER['REQUEST_METHOD'];
+function cod_sucursal(array $d): string
+{
+    return campo_codigo($d, 'sucursal_cod', 'El código', '/^[0-9]{3}$/', '3 dígitos (ej. 007)', false);
+}
 
-switch ($metodo) {
+function datos_sucursal(array $d): array
+{
+    return [
+        'sucursal_nombre'        => campo_texto($d, 'sucursal_nombre', 'El nombre', 120),
+        'sucursal_localidad_cod' => campo_entero($d, 'sucursal_localidad_cod', 'La localidad'),
+        'direccion'              => campo_texto($d, 'direccion', 'La dirección', 200, false),
+    ];
+}
+
+$errores = [1452 => 'La localidad elegida no existe.'];
+
+switch ($_SERVER['REQUEST_METHOD']) {
 
     case 'GET':
-        $pagina = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
-        $limite = 50;
-        $offset = ($pagina - 1) * $limite;
-
-        $nombre = trim($_GET['nombre'] ?? '');
-
-        $mostrar_inactivos = isset($_GET['mostrar_inactivos'])
-            && $_GET['mostrar_inactivos'] === '1'
-            && $_SESSION['rol'] === 'admin';
-
-        $order_whitelist = ['sucursal_cod', 'sucursal_nombre', 'sucursal_localidad_cod'];
-        $order_by  = in_array($_GET['order_by'] ?? '', $order_whitelist) ? $_GET['order_by'] : 'sucursal_cod';
-        $order_dir = strtoupper($_GET['order_dir'] ?? '') === 'DESC' ? 'DESC' : 'ASC';
-
-        $condiciones = [];
-        $params      = [];
-
-        if (!$mostrar_inactivos) {
-            $condiciones[] = 'activo = 1';
-        }
-        if ($nombre !== '') {
-            $condiciones[] = 'sucursal_nombre LIKE :nombre';
-            $params[':nombre'] = '%' . $nombre . '%';
-        }
-
-        $where = $condiciones ? 'WHERE ' . implode(' AND ', $condiciones) : '';
-
-        $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM sucursal $where");
-        $stmtCount->execute($params);
-        $total = (int)$stmtCount->fetchColumn();
-
-        $stmtData = $pdo->prepare("SELECT sucursal_cod, sucursal_nombre, sucursal_localidad_cod, direccion, activo FROM sucursal $where ORDER BY $order_by $order_dir LIMIT $limite OFFSET $offset");
-        $stmtData->execute($params);
-        $sucursales = $stmtData->fetchAll(PDO::FETCH_ASSOC);
-
-        echo json_encode([
-            'datos'         => $sucursales,
-            'total'         => $total,
-            'pagina'        => $pagina,
-            'total_paginas' => (int)ceil($total / $limite)
-        ]);
-        break;
+        $filtros = ['nombre' => trim($_GET['nombre'] ?? '')];
+        responder($sucursales->listar($filtros, params_listado('sucursal_cod'), ver_inactivos()));
 
     case 'POST':
-        $datos = json_decode(file_get_contents("php://input"), true);
-        $consulta = $pdo->prepare("INSERT INTO sucursal (sucursal_cod, sucursal_nombre, sucursal_localidad_cod, direccion)
-                                   VALUES (:cod, :nombre, :localidad, :direccion)");
-        $consulta->execute([
-            ':cod'       => $datos['sucursal_cod'],
-            ':nombre'    => $datos['sucursal_nombre'],
-            ':localidad' => $datos['sucursal_localidad_cod'],
-            ':direccion' => $datos['direccion']
-        ]);
-        echo json_encode([
-            'mensaje' => 'Sucursal creada',
-            'cod'     => $datos['sucursal_cod']
-        ]);
-        break;
+        $d   = leer_json();
+        $cod = cod_sucursal($d);
+        $s   = ['sucursal_cod' => $cod] + datos_sucursal($d);
+        intentar(fn() => $sucursales->crear($s), $errores + [1062 => "Ya existe una sucursal con código $cod."]);
+        responder(['mensaje' => 'Sucursal creada.'], 201);
 
     case 'PUT':
-        $datos = json_decode(file_get_contents("php://input"), true);
-
-        if (!empty($datos['reactivar'])) {
-            $cod = trim($datos['sucursal_cod'] ?? '');
-            if ($cod === '') {
-                http_response_code(400);
-                echo json_encode(['error' => 'Código de sucursal requerido']);
-                break;
-            }
-            $stmt = $pdo->prepare("UPDATE sucursal SET activo = 1 WHERE sucursal_cod = :cod");
-            $stmt->bindParam(':cod', $cod, PDO::PARAM_STR);
-            $stmt->execute();
-            echo json_encode(['mensaje' => 'Sucursal reactivada correctamente']);
-            break;
+        $d   = leer_json();
+        $cod = cod_sucursal($d);
+        if (!empty($d['reactivar'])) {
+            if (!$sucursales->cambiarActivo($cod, true)) error_api('No existe una sucursal con ese código.', 404);
+            responder(['mensaje' => 'Sucursal reactivada.']);
         }
-
-        $consulta = $pdo->prepare("UPDATE sucursal SET sucursal_nombre = :nombre,
-                                   sucursal_localidad_cod = :localidad, direccion = :direccion
-                                   WHERE sucursal_cod = :cod");
-        $consulta->execute([
-            ':nombre'    => $datos['sucursal_nombre'],
-            ':localidad' => $datos['sucursal_localidad_cod'],
-            ':direccion' => $datos['direccion'],
-            ':cod'       => $datos['sucursal_cod']
-        ]);
-        echo json_encode(['mensaje' => 'Sucursal actualizada']);
-        break;
+        $s = datos_sucursal($d);
+        if (!intentar(fn() => $sucursales->actualizar($cod, $s), $errores)) error_api('No existe una sucursal activa con ese código.', 404);
+        responder(['mensaje' => 'Sucursal actualizada.']);
 
     case 'DELETE':
-        $datos = json_decode(file_get_contents("php://input"), true);
-        $cod   = trim($datos['sucursal_cod'] ?? '');
-        if ($cod === '') {
-            http_response_code(400);
-            echo json_encode(['error' => 'Código de sucursal requerido']);
-            break;
-        }
-        $stmt = $pdo->prepare("UPDATE sucursal SET activo = 0 WHERE sucursal_cod = :cod");
-        $stmt->bindParam(':cod', $cod, PDO::PARAM_STR);
-        $stmt->execute();
-        echo json_encode(['mensaje' => 'Sucursal dada de baja correctamente']);
-        break;
+        $cod = cod_sucursal(leer_json());
+        if (!$sucursales->cambiarActivo($cod, false)) error_api('No existe una sucursal con ese código.', 404);
+        responder(['mensaje' => 'Sucursal dada de baja.']);
+
+    default:
+        error_api('Método no permitido.', 405);
 }

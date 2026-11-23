@@ -1,7 +1,6 @@
 <?php
 /*
- * Controlador de clientes.
- * Recibe la petición, valida los datos, llama al modelo Cliente y responde JSON.
+ * Controlador de clientes: valida, llama al modelo Cliente y responde JSON.
  * No contiene SQL: eso vive en modelos/Cliente.php.
  */
 require_once '../config/api.php';
@@ -9,7 +8,6 @@ require_once '../modelos/Cliente.php';
 
 $clientes = new Cliente($pdo);
 
-/** Valida y limpia los datos de un cliente que llegan del formulario. */
 function datos_cliente(array $d): array
 {
     return [
@@ -26,49 +24,35 @@ switch ($_SERVER['REQUEST_METHOD']) {
     case 'GET':
         $filtros = [
             'dni'      => campo_entero($_GET, 'dni', 'El DNI', 1, 99999999, false),
-            'nombre'   => trim($_GET['nombre']   ?? ''),
+            'nombre'   => trim($_GET['nombre'] ?? ''),
             'apellido' => trim($_GET['apellido'] ?? ''),
         ];
-        $inactivos = ($_GET['mostrar_inactivos'] ?? '') === '1' && es_admin();
-
-        responder($clientes->listar(
-            $filtros,
-            (int)($_GET['pagina'] ?? 1),
-            $_GET['order_by'] ?? 'cliente_dni',
-            strtoupper($_GET['order_dir'] ?? 'ASC'),
-            $inactivos
-        ));
+        responder($clientes->listar($filtros, params_listado('cliente_dni'), ver_inactivos()));
 
     case 'POST':
         $d   = leer_json();
         $dni = campo_entero($d, 'cliente_dni', 'El DNI', 1000000, 99999999);
-        $cliente = ['cliente_dni' => $dni] + datos_cliente($d);
-
         try {
-            $clientes->crear($cliente);
+            $clientes->crear(['cliente_dni' => $dni] + datos_cliente($d));
         } catch (PDOException $e) {
             if (codigo_mysql($e) === 1062) error_api("Ya existe un cliente con DNI $dni.", 409);
             throw $e;
         }
-        responder(['mensaje' => 'Cliente creado.', 'dni' => $dni], 201);
+        responder(['mensaje' => 'Cliente creado.'], 201);
 
     case 'PUT':
         $d   = leer_json();
         $dni = campo_entero($d, 'cliente_dni', 'El DNI', 1, 99999999);
-
         if (!empty($d['reactivar'])) {
-            if (!$clientes->reactivar($dni)) error_api('No existe un cliente con ese DNI.', 404);
+            if (!$clientes->cambiarActivo($dni, true)) error_api('No existe un cliente con ese DNI.', 404);
             responder(['mensaje' => 'Cliente reactivado.']);
         }
-
-        if (!$clientes->actualizar($dni, datos_cliente($d))) {
-            error_api('No existe un cliente activo con ese DNI.', 404);
-        }
+        if (!$clientes->actualizar($dni, datos_cliente($d))) error_api('No existe un cliente activo con ese DNI.', 404);
         responder(['mensaje' => 'Cliente actualizado.']);
 
     case 'DELETE':
         $dni = campo_entero(leer_json(), 'cliente_dni', 'El DNI', 1, 99999999);
-        if (!$clientes->darDeBaja($dni)) error_api('No existe un cliente con ese DNI.', 404);
+        if (!$clientes->cambiarActivo($dni, false)) error_api('No existe un cliente con ese DNI.', 404);
         responder(['mensaje' => 'Cliente dado de baja.']);
 
     default:

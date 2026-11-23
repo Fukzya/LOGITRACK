@@ -1,138 +1,64 @@
 <?php
-/*
- * Modelo Cliente (capa Modelo de MVC).
- * Es el único lugar donde está el SQL de la tabla cliente. No sabe nada de HTTP ni de sesiones:
- * recibe datos ya validados por el controlador (api/clientes.php) y devuelve arrays.
- */
-class Cliente
+require_once __DIR__ . '/Modelo.php';
+
+/** Modelo Cliente: el único lugar con SQL de la tabla cliente. */
+class Cliente extends Modelo
 {
-    /** Columnas por las que se permite ordenar (lista blanca: evita inyección en ORDER BY). */
-    public const ORDENABLES = ['cliente_dni', 'nombre', 'apellido', 'localidad_nombre'];
-    private const POR_PAGINA = 50;
+    private const ORDENABLES = [
+        'cliente_dni'      => 'c.cliente_dni',
+        'nombre'           => 'c.nombre',
+        'apellido'         => 'c.apellido',
+        'localidad_nombre' => 'l.localidad_nombre',
+    ];
 
-    private PDO $pdo;
-
-    public function __construct(PDO $pdo)
+    /** $f: dni, nombre, apellido (opcionales). */
+    public function listar(array $f, array $p, bool $inactivos): array
     {
-        $this->pdo = $pdo;
-    }
+        $cond = [];
+        $par  = [];
+        if (!$inactivos)           { $cond[] = 'c.activo = 1'; }
+        if (!empty($f['dni']))      { $cond[] = 'c.cliente_dni = :dni';     $par[':dni'] = $f['dni']; }
+        if (!empty($f['nombre']))   { $cond[] = 'c.nombre LIKE :nombre';     $par[':nombre'] = '%' . $f['nombre'] . '%'; }
+        if (!empty($f['apellido'])) { $cond[] = 'c.apellido LIKE :apellido'; $par[':apellido'] = '%' . $f['apellido'] . '%'; }
 
-    /**
-     * Listado paginado con filtros.
-     * $filtros: dni, nombre, apellido (opcionales); $inactivos: incluir dados de baja.
-     */
-    public function listar(array $filtros, int $pagina, string $orden, string $dir, bool $inactivos): array
-    {
-        $condiciones = [];
-        $params      = [];
-
-        if (!$inactivos) {
-            $condiciones[] = 'c.activo = 1';
-        }
-        if (!empty($filtros['dni'])) {
-            $condiciones[] = 'c.cliente_dni = :dni';
-            $params[':dni'] = $filtros['dni'];
-        }
-        if (!empty($filtros['nombre'])) {
-            $condiciones[] = 'c.nombre LIKE :nombre';
-            $params[':nombre'] = '%' . $filtros['nombre'] . '%';
-        }
-        if (!empty($filtros['apellido'])) {
-            $condiciones[] = 'c.apellido LIKE :apellido';
-            $params[':apellido'] = '%' . $filtros['apellido'] . '%';
-        }
-        $where = $condiciones ? 'WHERE ' . implode(' AND ', $condiciones) : '';
-
-        $orden  = in_array($orden, self::ORDENABLES, true) ? $orden : 'cliente_dni';
-        $dir    = $dir === 'DESC' ? 'DESC' : 'ASC';
-        $pagina = max(1, $pagina);
-        $offset = ($pagina - 1) * self::POR_PAGINA;
-
-        $st = $this->pdo->prepare("SELECT COUNT(*) FROM cliente c $where");
-        $st->execute($params);
-        $total = (int)$st->fetchColumn();
-
-        $st = $this->pdo->prepare(
-            "SELECT c.cliente_dni, c.nombre, c.apellido, c.mail, c.telefono,
-                    c.localidad_cod, l.localidad_nombre, c.activo
-             FROM cliente c
-             JOIN localidad l ON l.localidad_cod = c.localidad_cod
-             $where
-             ORDER BY $orden $dir
-             LIMIT " . self::POR_PAGINA . " OFFSET $offset"
+        return $this->paginar(
+            'c.cliente_dni, c.nombre, c.apellido, c.mail, c.telefono, c.localidad_cod, l.localidad_nombre, c.activo',
+            'cliente c JOIN localidad l ON l.localidad_cod = c.localidad_cod',
+            $cond, $par, self::ORDENABLES, $p['orden'], $p['dir'], $p['pagina']
         );
-        $st->execute($params);
-
-        return [
-            'datos'         => $st->fetchAll(PDO::FETCH_ASSOC),
-            'total'         => $total,
-            'pagina'        => $pagina,
-            'total_paginas' => max(1, (int)ceil($total / self::POR_PAGINA)),
-        ];
     }
 
-    public function buscarPorDni(int $dni): ?array
+    public function buscar(int $dni): ?array
     {
-        $st = $this->pdo->prepare('SELECT * FROM cliente WHERE cliente_dni = :dni');
-        $st->execute([':dni' => $dni]);
-        return $st->fetch(PDO::FETCH_ASSOC) ?: null;
+        return $this->fila('SELECT * FROM cliente WHERE cliente_dni = :dni', [':dni' => $dni]);
     }
 
     public function crear(array $c): void
     {
-        $st = $this->pdo->prepare(
+        $this->ejecutar(
             'INSERT INTO cliente (cliente_dni, nombre, apellido, mail, telefono, localidad_cod)
-             VALUES (:dni, :nombre, :apellido, :mail, :telefono, :localidad)'
+             VALUES (:dni, :nombre, :apellido, :mail, :telefono, :localidad)',
+            [':dni' => $c['cliente_dni'], ':nombre' => $c['nombre'], ':apellido' => $c['apellido'],
+             ':mail' => $c['mail'], ':telefono' => $c['telefono'], ':localidad' => $c['localidad_cod']]
         );
-        $st->execute([
-            ':dni'       => $c['cliente_dni'],
-            ':nombre'    => $c['nombre'],
-            ':apellido'  => $c['apellido'],
-            ':mail'      => $c['mail'],
-            ':telefono'  => $c['telefono'],
-            ':localidad' => $c['localidad_cod'],
-        ]);
     }
 
-    /** Devuelve false si no existe un cliente activo con ese DNI. */
+    /** Solo se editan clientes activos. Devuelve false si no hay uno activo con ese DNI. */
     public function actualizar(int $dni, array $c): bool
     {
-        $actual = $this->buscarPorDni($dni);
-        if ($actual === null || (int)$actual['activo'] !== 1) {
-            return false;
-        }
-        $st = $this->pdo->prepare(
-            'UPDATE cliente
-             SET nombre = :nombre, apellido = :apellido, mail = :mail,
-                 telefono = :telefono, localidad_cod = :localidad
-             WHERE cliente_dni = :dni'
-        );
-        $st->execute([
-            ':nombre'    => $c['nombre'],
-            ':apellido'  => $c['apellido'],
-            ':mail'      => $c['mail'],
-            ':telefono'  => $c['telefono'],
-            ':localidad' => $c['localidad_cod'],
-            ':dni'       => $dni,
-        ]);
-        return true;
+        return $this->ejecutar(
+            'UPDATE cliente SET nombre = :nombre, apellido = :apellido, mail = :mail,
+                                telefono = :telefono, localidad_cod = :localidad
+             WHERE cliente_dni = :dni AND activo = 1',
+            [':nombre' => $c['nombre'], ':apellido' => $c['apellido'], ':mail' => $c['mail'],
+             ':telefono' => $c['telefono'], ':localidad' => $c['localidad_cod'], ':dni' => $dni]
+        ) > 0;
     }
 
-    /** Baja lógica: el cliente no se borra para no perder sus envíos y direcciones. */
-    public function darDeBaja(int $dni): bool
+    /** Baja lógica: no se borra para no perder sus envíos y direcciones. */
+    public function cambiarActivo(int $dni, bool $activo): bool
     {
-        return $this->cambiarActivo($dni, 0);
-    }
-
-    public function reactivar(int $dni): bool
-    {
-        return $this->cambiarActivo($dni, 1);
-    }
-
-    private function cambiarActivo(int $dni, int $activo): bool
-    {
-        $st = $this->pdo->prepare('UPDATE cliente SET activo = :activo WHERE cliente_dni = :dni');
-        $st->execute([':activo' => $activo, ':dni' => $dni]);
-        return $this->buscarPorDni($dni) !== null;
+        return $this->ejecutar('UPDATE cliente SET activo = :a WHERE cliente_dni = :dni',
+                               [':a' => (int)$activo, ':dni' => $dni]) > 0;
     }
 }

@@ -1,51 +1,33 @@
-<?php
-session_start();
-if (!isset($_SESSION['usuario_id'])) {
-    header("Location: ../../login.html");
-    exit;
-}
-header("Cache-Control: no-store, no-cache, must-revalidate");
-header("Pragma: no-cache");
-?><!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>LogiTrack - Viaje Envío</title>
-</head>
-<body>
-    <h1>LogiTrack</h1>
-    <a href="../../index.php">← Volver al menú</a>
+<?php require '../plantilla.php'; inicio_pagina('Envíos por viaje'); ?>
 
-    <h2>Viaje - Envío</h2>
-
-    <input type="number" id="input-viaje" placeholder="ID viaje">
-    <input type="number" id="input-envio" placeholder="Nro envío">
-    <button onclick="crearViajeEnvio()">Asignar</button>
+    <form id="form-asignacion">
+        <h3 id="titulo-form">Asignar un envío a un viaje</h3>
+        <input type="number" id="input-viaje" placeholder="ID del viaje" required min="1">
+        <input type="number" id="input-envio" placeholder="Nro de envío" required min="1">
+        <button type="submit">Asignar</button>
+    </form>
 
     <hr>
-    <input type="number" id="filtro-viaje-id" placeholder="Buscar por ID viaje">
-    <input type="number" id="filtro-nro-envio" placeholder="Buscar por Nro envío">
+    <input type="number" id="filtro-viaje" placeholder="Buscar por ID de viaje">
+    <input type="number" id="filtro-envio" placeholder="Buscar por nro de envío">
     <button id="btn-filtrar">Filtrar</button>
     <button id="btn-limpiar">Limpiar</button>
     <hr>
 
     <div id="paginacion"></div>
-
     <table border="1">
         <thead>
             <tr>
-                <th id="th-viaje-id" style="cursor:pointer">Viaje ID</th>
-                <th id="th-nro-envio" style="cursor:pointer">Nro Envío</th>
+                <th id="th-viaje">Viaje</th>
+                <th>Salida</th>
+                <th>Llegada</th>
+                <th id="th-envio">Envío</th>
+                <th>Fecha del envío</th>
+                <th>Origen → Destino</th>
                 <th>Acciones</th>
             </tr>
         </thead>
-        <tbody id="tabla-viaje-envio">
-        </tbody>
+        <tbody id="tabla-asignaciones"></tbody>
     </table>
 
-    <br>
-    <a href="../../login.html" onclick="cerrarSesion(event)">Cerrar sesión</a>
-
-    <script src="viaje_envio.js"></script>
-</body>
-</html>
+<?php fin_pagina('viaje_envio.js'); ?>

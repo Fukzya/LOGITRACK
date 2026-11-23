@@ -1,0 +1,54 @@
+<?php
+require_once __DIR__ . '/Modelo.php';
+
+/** Modelo Direccion (baja lógica). */
+class Direccion extends Modelo
+{
+    private const ORDENABLES = [
+        'direccion_id'     => 'd.direccion_id',
+        'calle_y_numero'   => 'd.calle_y_numero',
+        'localidad_nombre' => 'l.localidad_nombre',
+        'cliente_dni'      => 'd.cliente_dni',
+    ];
+
+    /** $f: calle, cliente_dni, localidad (opcionales). */
+    public function listar(array $f, array $p, bool $inactivos): array
+    {
+        $cond = [];
+        $par  = [];
+        if (!$inactivos)              { $cond[] = 'd.activo = 1'; }
+        if (!empty($f['calle']))       { $cond[] = 'd.calle_y_numero LIKE :calle'; $par[':calle'] = '%' . $f['calle'] . '%'; }
+        if (!empty($f['cliente_dni'])) { $cond[] = 'd.cliente_dni = :dni';         $par[':dni'] = $f['cliente_dni']; }
+        if (!empty($f['localidad']))   { $cond[] = 'd.localidad_cod = :loc';       $par[':loc'] = $f['localidad']; }
+
+        return $this->paginar(
+            "d.direccion_id, d.calle_y_numero, d.localidad_cod, l.localidad_nombre,
+             d.cliente_dni, CONCAT(c.nombre, ' ', c.apellido) AS cliente_nombre, d.activo",
+            'direccion d JOIN localidad l ON l.localidad_cod = d.localidad_cod
+                         JOIN cliente c   ON c.cliente_dni   = d.cliente_dni',
+            $cond, $par, self::ORDENABLES, $p['orden'], $p['dir'], $p['pagina']
+        );
+    }
+
+    public function crear(array $d): int
+    {
+        $this->ejecutar('INSERT INTO direccion (calle_y_numero, localidad_cod, cliente_dni) VALUES (:c, :l, :dni)',
+                        [':c' => $d['calle_y_numero'], ':l' => $d['localidad_cod'], ':dni' => $d['cliente_dni']]);
+        return (int)$this->pdo->lastInsertId();
+    }
+
+    public function actualizar(int $id, array $d): bool
+    {
+        return $this->ejecutar('UPDATE direccion SET calle_y_numero = :c, localidad_cod = :l, cliente_dni = :dni
+                                WHERE direccion_id = :id AND activo = 1',
+                               [':c' => $d['calle_y_numero'], ':l' => $d['localidad_cod'],
+                                ':dni' => $d['cliente_dni'], ':id' => $id]) > 0;
+    }
+
+    /** Baja lógica: los envíos ya entregados en esa dirección la siguen referenciando. */
+    public function cambiarActivo(int $id, bool $activo): bool
+    {
+        return $this->ejecutar('UPDATE direccion SET activo = :a WHERE direccion_id = :id',
+                               [':a' => (int)$activo, ':id' => $id]) > 0;
+    }
+}

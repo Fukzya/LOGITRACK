@@ -1,43 +1,30 @@
-<?php
-session_start();
-if (!isset($_SESSION['usuario_id'])) {
-    header("Location: ../../login.html");
-    exit;
-}
-header("Cache-Control: no-store, no-cache, must-revalidate");
-header("Pragma: no-cache");
-?><!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>LogiTrack - Localidades</title>
-</head>
-<body>
-    <h1>LogiTrack</h1>
-    <a href="../../index.php">← Volver al menú</a>
+<?php require '../plantilla.php'; inicio_pagina('Localidades'); ?>
 
-    <h2>Localidades</h2>
-
-    <input type="text" id="input-nombre" placeholder="Nombre de localidad">
-    <input type="number" id="input-provincia" placeholder="Código de provincia">
-    <button onclick="crearLocalidad()">Agregar</button>
+    <form id="form-localidad">
+        <h3 id="titulo-form">Nueva localidad</h3>
+        <input type="text" id="input-nombre" placeholder="Nombre de la localidad" required maxlength="100">
+        <select id="input-provincia" required><option value="">Elegí una provincia</option></select>
+        <button type="submit">Agregar</button>
+        <button type="button" class="btn-cancelar" hidden>Cancelar</button>
+    </form>
+    <hr>
+    <label>Provincia:
+        <select id="filtro-provincia"><option value="">Todas</option></select>
+    </label>
+    <button id="btn-filtrar">Filtrar</button>
+    <button id="btn-limpiar">Limpiar</button>
+    <hr>
 
     <table border="1">
         <thead>
             <tr>
-                <th id="th-localidad-cod" style="cursor:pointer">Código</th>
-                <th id="th-localidad-nombre" style="cursor:pointer">Nombre</th>
-                <th id="th-provincia-cod" style="cursor:pointer">Provincia</th>
+                <th id="th-cod">Código</th>
+                <th id="th-nombre">Nombre</th>
+                <th id="th-provincia">Provincia</th>
                 <th>Acciones</th>
             </tr>
         </thead>
-        <tbody id="tabla-localidades">
-        </tbody>
+        <tbody id="tabla-localidades"></tbody>
     </table>
 
-    <br>
-    <a href="../../login.html" onclick="cerrarSesion(event)">Cerrar sesión</a>
-
-    <script src="localidades.js"></script>
-</body>
-</html>
+<?php fin_pagina('localidades.js'); ?>

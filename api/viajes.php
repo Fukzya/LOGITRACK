@@ -1,100 +1,57 @@
 <?php
-require_once '../config/session.php';
-verificar_sesion();
-require_once '../config/db.php';
+/* Controlador de viajes: valida, llama al modelo Viaje y responde JSON. */
+require_once '../config/api.php';
+require_once '../modelos/Viaje.php';
 
-header('Content-Type: application/json');
+$viajes = new Viaje($pdo);
 
-$metodo = $_SERVER['REQUEST_METHOD'];
+function datos_viaje(array $d): array
+{
+    $v = [
+        'fecha_salida'     => campo_fecha_hora($d, 'fecha_salida', 'La fecha de salida'),
+        'fecha_llegada'    => campo_fecha_hora($d, 'fecha_llegada', 'La fecha de llegada', false),
+        'vehiculo_patente' => campo_codigo($d, 'vehiculo_patente', 'El vehículo', '/^[A-Z0-9]{6,10}$/', 'una patente'),
+        'chofer_legajo'    => campo_entero($d, 'chofer_legajo', 'El chofer'),
+    ];
+    // Misma regla que trigger_before_update_viaje, también para el alta.
+    if ($v['fecha_llegada'] !== null && $v['fecha_llegada'] <= $v['fecha_salida']) {
+        throw new ValidacionException('La fecha de llegada tiene que ser posterior a la de salida.');
+    }
+    return $v;
+}
 
-switch ($metodo) {
+$errores = [1452 => 'El vehículo o el chofer elegidos no existen.'];
+
+switch ($_SERVER['REQUEST_METHOD']) {
 
     case 'GET':
-        $pagina = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
-        $limite = 50;
-        $offset = ($pagina - 1) * $limite;
-
-        $fecha_desde   = trim($_GET['fecha_desde']   ?? '');
-        $fecha_hasta   = trim($_GET['fecha_hasta']   ?? '');
-        $chofer_legajo = trim($_GET['chofer_legajo'] ?? '');
-        $solo_activos  = trim($_GET['solo_activos']  ?? '');
-
-        $order_whitelist = ['viaje_id', 'fecha_salida', 'fecha_llegada'];
-        $order_by  = in_array($_GET['order_by'] ?? '', $order_whitelist) ? $_GET['order_by'] : 'viaje_id';
-        $order_dir = strtoupper($_GET['order_dir'] ?? '') === 'ASC' ? 'ASC' : 'DESC';
-
-        $condiciones = [];
-        $params      = [];
-
-        if ($fecha_desde !== '') {
-            $condiciones[] = 'fecha_salida >= :fecha_desde';
-            $params[':fecha_desde'] = $fecha_desde;
-        }
-        if ($fecha_hasta !== '') {
-            $condiciones[] = 'fecha_salida <= :fecha_hasta';
-            $params[':fecha_hasta'] = $fecha_hasta . ' 23:59:59';
-        }
-        if ($chofer_legajo !== '') {
-            $condiciones[] = 'chofer_legajo = :chofer_legajo';
-            $params[':chofer_legajo'] = (int)$chofer_legajo;
-        }
-        if ($solo_activos === '1') {
-            $condiciones[] = 'fecha_llegada IS NULL';
-        }
-
-        $where = $condiciones ? 'WHERE ' . implode(' AND ', $condiciones) : '';
-
-        $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM viaje $where");
-        $stmtCount->execute($params);
-        $total = (int)$stmtCount->fetchColumn();
-
-        $stmtData = $pdo->prepare("SELECT * FROM viaje $where ORDER BY $order_by $order_dir LIMIT $limite OFFSET $offset");
-        $stmtData->execute($params);
-        $viajes = $stmtData->fetchAll(PDO::FETCH_ASSOC);
-
-        echo json_encode([
-            'datos'         => $viajes,
-            'total'         => $total,
-            'pagina'        => $pagina,
-            'total_paginas' => (int)ceil($total / $limite)
-        ]);
-        break;
+        $filtros = [
+            'fecha_desde'  => campo_fecha($_GET, 'fecha_desde', 'La fecha desde', false),
+            'fecha_hasta'  => campo_fecha($_GET, 'fecha_hasta', 'La fecha hasta', false),
+            'chofer'       => campo_entero($_GET, 'chofer_legajo', 'El chofer', 1, PHP_INT_MAX, false),
+            'solo_activos' => ($_GET['solo_activos'] ?? '') === '1',
+        ];
+        responder($viajes->listar($filtros, params_listado('viaje_id', 'DESC')));
 
     case 'POST':
-        $datos = json_decode(file_get_contents("php://input"), true);
-        $consulta = $pdo->prepare("INSERT INTO viaje (fecha_salida, fecha_llegada, vehiculo_patente, chofer_legajo) 
-                                   VALUES (:salida, :llegada, :patente, :chofer)");
-        $consulta->execute([
-            ':salida'  => $datos['fecha_salida'],
-            ':llegada' => $datos['fecha_llegada'] ?? null,
-            ':patente' => $datos['vehiculo_patente'],
-            ':chofer'  => $datos['chofer_legajo']
-        ]);
-        echo json_encode([
-            'mensaje' => 'Viaje creado',
-            'id'      => $pdo->lastInsertId()
-        ]);
-        break;
+        $v  = datos_viaje(leer_json());
+        $id = intentar(fn() => $viajes->crear($v), $errores);
+        responder(['mensaje' => "Viaje $id creado.", 'id' => $id], 201);
 
     case 'PUT':
-        $datos = json_decode(file_get_contents("php://input"), true);
-        $consulta = $pdo->prepare("UPDATE viaje SET fecha_salida = :salida, fecha_llegada = :llegada, 
-                                   vehiculo_patente = :patente, chofer_legajo = :chofer 
-                                   WHERE viaje_id = :id");
-        $consulta->execute([
-            ':salida'  => $datos['fecha_salida'],
-            ':llegada' => $datos['fecha_llegada'] ?? null,
-            ':patente' => $datos['vehiculo_patente'],
-            ':chofer'  => $datos['chofer_legajo'],
-            ':id'      => $datos['viaje_id']
-        ]);
-        echo json_encode(['mensaje' => 'Viaje actualizado']);
-        break;
+        $d  = leer_json();
+        $id = campo_entero($d, 'viaje_id', 'El viaje');
+        $v  = datos_viaje($d);
+        if (!intentar(fn() => $viajes->actualizar($id, $v), $errores)) error_api('No existe ese viaje.', 404);
+        responder(['mensaje' => 'Viaje actualizado.']);
 
+    // Si tiene envíos asignados, trigger_before_delete_viaje lo rechaza y su mensaje llega tal cual.
     case 'DELETE':
-        $datos = json_decode(file_get_contents("php://input"), true);
-        $consulta = $pdo->prepare("DELETE FROM viaje WHERE viaje_id = :id");
-        $consulta->execute([':id' => $datos['viaje_id']]);
-        echo json_encode(['mensaje' => 'Viaje eliminado']);
-        break;
+        $id = campo_entero(leer_json(), 'viaje_id', 'El viaje');
+        $ok = intentar(fn() => $viajes->eliminar($id), [1451 => 'No se puede eliminar: el viaje tiene incidentes registrados.']);
+        if (!$ok) error_api('No existe ese viaje.', 404);
+        responder(['mensaje' => 'Viaje eliminado.']);
+
+    default:
+        error_api('Método no permitido.', 405);
 }

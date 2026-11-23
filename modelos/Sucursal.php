@@ -1,0 +1,50 @@
+<?php
+require_once __DIR__ . '/Modelo.php';
+
+/** Modelo Sucursal (baja lógica). */
+class Sucursal extends Modelo
+{
+    private const ORDENABLES = [
+        'sucursal_cod'     => 's.sucursal_cod',
+        'sucursal_nombre'  => 's.sucursal_nombre',
+        'localidad_nombre' => 'l.localidad_nombre',
+    ];
+
+    /** $f: nombre (opcional). */
+    public function listar(array $f, array $p, bool $inactivos): array
+    {
+        $cond = [];
+        $par  = [];
+        if (!$inactivos)         { $cond[] = 's.activo = 1'; }
+        if (!empty($f['nombre'])) { $cond[] = 's.sucursal_nombre LIKE :n'; $par[':n'] = '%' . $f['nombre'] . '%'; }
+
+        return $this->paginar(
+            's.sucursal_cod, s.sucursal_nombre, s.sucursal_localidad_cod, l.localidad_nombre, s.direccion, s.activo',
+            'sucursal s JOIN localidad l ON l.localidad_cod = s.sucursal_localidad_cod',
+            $cond, $par, self::ORDENABLES, $p['orden'], $p['dir'], $p['pagina']
+        );
+    }
+
+    public function crear(array $s): void
+    {
+        $this->ejecutar('INSERT INTO sucursal (sucursal_cod, sucursal_nombre, sucursal_localidad_cod, direccion)
+                         VALUES (:c, :n, :l, :d)',
+                        [':c' => $s['sucursal_cod'], ':n' => $s['sucursal_nombre'],
+                         ':l' => $s['sucursal_localidad_cod'], ':d' => $s['direccion']]);
+    }
+
+    public function actualizar(string $cod, array $s): bool
+    {
+        return $this->ejecutar('UPDATE sucursal SET sucursal_nombre = :n, sucursal_localidad_cod = :l, direccion = :d
+                                WHERE sucursal_cod = :c AND activo = 1',
+                               [':n' => $s['sucursal_nombre'], ':l' => $s['sucursal_localidad_cod'],
+                                ':d' => $s['direccion'], ':c' => $cod]) > 0;
+    }
+
+    /** Baja lógica: se conserva para no perder el historial de los envíos que pasaron por ella. */
+    public function cambiarActivo(string $cod, bool $activo): bool
+    {
+        return $this->ejecutar('UPDATE sucursal SET activo = :a WHERE sucursal_cod = :c',
+                               [':a' => (int)$activo, ':c' => $cod]) > 0;
+    }
+}

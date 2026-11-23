@@ -1,101 +1,50 @@
 <?php
-require_once '../config/session.php';
-verificar_sesion();
-require_once '../config/db.php';
+/* Controlador de incidentes: valida, llama al modelo Incidente y responde JSON. */
+require_once '../config/api.php';
+require_once '../modelos/Incidente.php';
 
-header('Content-Type: application/json');
+$incidentes = new Incidente($pdo);
 
-$metodo = $_SERVER['REQUEST_METHOD'];
+function datos_incidente(array $d): array
+{
+    return [
+        'viaje_id'       => campo_entero($d, 'viaje_id', 'El viaje'),
+        'fecha_hora'     => campo_fecha_hora($d, 'fecha_hora', 'La fecha y hora'),
+        'tipo_incidente' => campo_codigo($d, 'tipo_incidente', 'El tipo de incidente', '/^[A-Z_]{3,50}$/', 'un código de tipo'),
+        'descripcion'    => campo_texto($d, 'descripcion', 'La descripción', 1000, false),
+    ];
+}
 
-switch ($metodo) {
+$errores = [1452 => 'El viaje o el tipo de incidente indicados no existen.'];
+
+switch ($_SERVER['REQUEST_METHOD']) {
 
     case 'GET':
-        $pagina = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
-        $limite = 50;
-        $offset = ($pagina - 1) * $limite;
-
-        $viaje_id    = trim($_GET['viaje_id']    ?? '');
-        $tipo        = trim($_GET['tipo']        ?? '');
-        $fecha_desde = trim($_GET['fecha_desde'] ?? '');
-        $fecha_hasta = trim($_GET['fecha_hasta'] ?? '');
-
-        $order_whitelist = ['incidente_id', 'viaje_id', 'fecha_hora', 'tipo_incidente'];
-        $order_by  = in_array($_GET['order_by'] ?? '', $order_whitelist) ? $_GET['order_by'] : 'fecha_hora';
-        $order_dir = strtoupper($_GET['order_dir'] ?? '') === 'ASC' ? 'ASC' : 'DESC';
-
-        $condiciones = [];
-        $params      = [];
-
-        if ($viaje_id !== '') {
-            $condiciones[] = 'viaje_id = :viaje_id';
-            $params[':viaje_id'] = (int)$viaje_id;
-        }
-        if ($tipo !== '') {
-            $condiciones[] = 'tipo_incidente = :tipo';
-            $params[':tipo'] = $tipo;
-        }
-        if ($fecha_desde !== '') {
-            $condiciones[] = 'fecha_hora >= :fecha_desde';
-            $params[':fecha_desde'] = $fecha_desde . ' 00:00:00';
-        }
-        if ($fecha_hasta !== '') {
-            $condiciones[] = 'fecha_hora <= :fecha_hasta';
-            $params[':fecha_hasta'] = $fecha_hasta . ' 23:59:59';
-        }
-
-        $where = $condiciones ? 'WHERE ' . implode(' AND ', $condiciones) : '';
-
-        $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM incidente $where");
-        $stmtCount->execute($params);
-        $total = (int)$stmtCount->fetchColumn();
-
-        $stmtData = $pdo->prepare("SELECT * FROM incidente $where ORDER BY $order_by $order_dir LIMIT $limite OFFSET $offset");
-        $stmtData->execute($params);
-        $incidentes = $stmtData->fetchAll(PDO::FETCH_ASSOC);
-
-        echo json_encode([
-            'datos'         => $incidentes,
-            'total'         => $total,
-            'pagina'        => $pagina,
-            'total_paginas' => (int)ceil($total / $limite)
-        ]);
-        break;
+        $filtros = [
+            'viaje_id'    => campo_entero($_GET, 'viaje_id', 'El viaje', 1, PHP_INT_MAX, false),
+            'tipo'        => trim($_GET['tipo'] ?? ''),
+            'fecha_desde' => campo_fecha($_GET, 'fecha_desde', 'La fecha desde', false),
+            'fecha_hasta' => campo_fecha($_GET, 'fecha_hasta', 'La fecha hasta', false),
+        ];
+        responder($incidentes->listar($filtros, params_listado('fecha_hora', 'DESC')));
 
     case 'POST':
-        $datos = json_decode(file_get_contents("php://input"), true);
-        $consulta = $pdo->prepare("INSERT INTO incidente (viaje_id, fecha_hora, tipo_incidente, descripcion) 
-                                   VALUES (:viaje, :fecha, :tipo, :descripcion)");
-        $consulta->execute([
-            ':viaje'       => $datos['viaje_id'],
-            ':fecha'       => $datos['fecha_hora'],
-            ':tipo'        => $datos['tipo_incidente'],
-            ':descripcion' => $datos['descripcion'] ?? null
-        ]);
-        echo json_encode([
-            'mensaje' => 'Incidente registrado',
-            'id'      => $pdo->lastInsertId()
-        ]);
-        break;
+        $i  = datos_incidente(leer_json());
+        $id = intentar(fn() => $incidentes->crear($i), $errores);
+        responder(['mensaje' => 'Incidente registrado.', 'id' => $id], 201);
 
     case 'PUT':
-        $datos = json_decode(file_get_contents("php://input"), true);
-        $consulta = $pdo->prepare("UPDATE incidente SET viaje_id = :viaje, fecha_hora = :fecha, 
-                                   tipo_incidente = :tipo, descripcion = :descripcion 
-                                   WHERE incidente_id = :id");
-        $consulta->execute([
-            ':viaje'       => $datos['viaje_id'],
-            ':fecha'       => $datos['fecha_hora'],
-            ':tipo'        => $datos['tipo_incidente'],
-            ':descripcion' => $datos['descripcion'] ?? null,
-            ':id'          => $datos['incidente_id']
-        ]);
-        echo json_encode(['mensaje' => 'Incidente actualizado']);
-        break;
+        $d  = leer_json();
+        $id = campo_entero($d, 'incidente_id', 'El incidente');
+        $i  = datos_incidente($d);
+        if (!intentar(fn() => $incidentes->actualizar($id, $i), $errores)) error_api('No existe ese incidente.', 404);
+        responder(['mensaje' => 'Incidente actualizado.']);
 
     case 'DELETE':
-        $datos = json_decode(file_get_contents("php://input"), true);
-        $consulta = $pdo->prepare("DELETE FROM incidente WHERE incidente_id = :id");
-        $consulta->execute([':id' => $datos['incidente_id']]);
-        echo json_encode(['mensaje' => 'Incidente eliminado']);
-        break;
-}   
+        $id = campo_entero(leer_json(), 'incidente_id', 'El incidente');
+        if (!$incidentes->eliminar($id)) error_api('No existe ese incidente.', 404);
+        responder(['mensaje' => 'Incidente eliminado.']);
+
+    default:
+        error_api('Método no permitido.', 405);
+}

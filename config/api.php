@@ -92,6 +92,89 @@ function campo_telefono(array $d, string $campo, string $etiqueta, bool $obligat
     return $valor;
 }
 
+function campo_decimal(array $d, string $campo, string $etiqueta, float $min, float $max, bool $obligatorio = true): ?float
+{
+    $valor = str_replace(',', '.', trim((string)($d[$campo] ?? '')));
+    if ($valor === '') {
+        if ($obligatorio) throw new ValidacionException("$etiqueta es obligatorio.");
+        return null;
+    }
+    if (!is_numeric($valor) || (float)$valor < $min || (float)$valor > $max) {
+        throw new ValidacionException("$etiqueta debe ser un número entre $min y $max.");
+    }
+    return (float)$valor;
+}
+
+/** Texto que debe cumplir una expresión regular (códigos, patentes...). Se guarda en mayúsculas si $mayus. */
+function campo_codigo(array $d, string $campo, string $etiqueta, string $regex, string $formato, bool $mayus = true): string
+{
+    $valor = trim((string)($d[$campo] ?? ''));
+    if ($mayus) $valor = mb_strtoupper($valor);
+    if ($valor === '') throw new ValidacionException("$etiqueta es obligatorio.");
+    if (!preg_match($regex, $valor)) throw new ValidacionException("$etiqueta debe tener el formato $formato.");
+    return $valor;
+}
+
+/** Valor que tiene que estar en una lista cerrada (ej. rol admin/operador). */
+function campo_opcion(array $d, string $campo, string $etiqueta, array $opciones): string
+{
+    $valor = (string)($d[$campo] ?? '');
+    if (!in_array($valor, $opciones, true)) {
+        throw new ValidacionException("$etiqueta debe ser uno de: " . implode(', ', $opciones) . '.');
+    }
+    return $valor;
+}
+
+/** Sí/No: acepta true/false, 1/0, "1"/"0". */
+function campo_bool(array $d, string $campo): int
+{
+    return filter_var($d[$campo] ?? false, FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+}
+
+/** Fecha 'AAAA-MM-DD'. */
+function campo_fecha(array $d, string $campo, string $etiqueta, bool $obligatorio = true): ?string
+{
+    $valor = trim((string)($d[$campo] ?? ''));
+    if ($valor === '') {
+        if ($obligatorio) throw new ValidacionException("$etiqueta es obligatoria.");
+        return null;
+    }
+    $f = DateTime::createFromFormat('!Y-m-d', $valor);
+    if (!$f || $f->format('Y-m-d') !== $valor) throw new ValidacionException("$etiqueta no es una fecha válida.");
+    return $valor;
+}
+
+/** Fecha y hora: acepta 'AAAA-MM-DD HH:MM[:SS]' o el formato del input datetime-local ('AAAA-MM-DDTHH:MM'). */
+function campo_fecha_hora(array $d, string $campo, string $etiqueta, bool $obligatorio = true): ?string
+{
+    $valor = str_replace('T', ' ', trim((string)($d[$campo] ?? '')));
+    if ($valor === '') {
+        if ($obligatorio) throw new ValidacionException("$etiqueta es obligatoria.");
+        return null;
+    }
+    foreach (['Y-m-d H:i:s', 'Y-m-d H:i'] as $formato) {
+        $f = DateTime::createFromFormat('!' . $formato, $valor);
+        if ($f && $f->format($formato) === $valor) return $f->format('Y-m-d H:i:s');
+    }
+    throw new ValidacionException("$etiqueta no es una fecha y hora válida.");
+}
+
+/** Parámetros comunes de los listados: página, orden y dirección. */
+function params_listado(string $ordenPorDefecto, string $dirPorDefecto = 'ASC'): array
+{
+    return [
+        'pagina' => max(1, (int)($_GET['pagina'] ?? 1)),
+        'orden'  => (string)($_GET['order_by'] ?? $ordenPorDefecto),
+        'dir'    => strtoupper((string)($_GET['order_dir'] ?? $dirPorDefecto)) === 'DESC' ? 'DESC' : 'ASC',
+    ];
+}
+
+/** Solo el admin puede pedir que el listado incluya los registros dados de baja. */
+function ver_inactivos(): bool
+{
+    return ($_GET['mostrar_inactivos'] ?? '') === '1' && es_admin();
+}
+
 // ---------------------------------------------------------------------------
 // Errores de la base de datos
 // ---------------------------------------------------------------------------
@@ -100,6 +183,24 @@ function campo_telefono(array $d, string $campo, string $etiqueta, bool $obligat
 function codigo_mysql(PDOException $e): int
 {
     return (int)($e->errorInfo[1] ?? 0);
+}
+
+/**
+ * Ejecuta una operación del modelo y, si la base la rechaza con alguno de los códigos de $mensajes,
+ * responde ese mensaje (más claro que el genérico). Ejemplo:
+ *     intentar(fn() => $provincias->eliminar($cod), [1451 => 'La provincia tiene localidades.']);
+ */
+function intentar(callable $operacion, array $mensajes)
+{
+    try {
+        return $operacion();
+    } catch (PDOException $e) {
+        $codigo = codigo_mysql($e);
+        if (isset($mensajes[$codigo])) {
+            error_api($mensajes[$codigo], in_array($codigo, [1062, 1451], true) ? 409 : 400);
+        }
+        throw $e;
+    }
 }
 
 /** Traduce los errores de la base más comunes a mensajes para el usuario. */

@@ -1,74 +1,37 @@
 <?php
-require_once '../config/session.php';
-verificar_sesion();
-require_once '../config/db.php';
+/* Controlador de la asignación envío-viaje: valida, llama al modelo ViajeEnvio y responde JSON. */
+require_once '../config/api.php';
+require_once '../modelos/ViajeEnvio.php';
 
-header('Content-Type: application/json');
+$asignaciones = new ViajeEnvio($pdo);
 
-$metodo = $_SERVER['REQUEST_METHOD'];
+function claves(array $d): array
+{
+    return [campo_entero($d, 'viaje_id', 'El viaje'), campo_entero($d, 'nro_envio', 'El número de envío')];
+}
 
-switch ($metodo) {
+switch ($_SERVER['REQUEST_METHOD']) {
 
     case 'GET':
-        $pagina = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
-        $limite = 50;
-        $offset = ($pagina - 1) * $limite;
-
-        $viaje_id  = trim($_GET['viaje_id']  ?? '');
-        $nro_envio = trim($_GET['nro_envio'] ?? '');
-
-        $order_whitelist = ['viaje_id', 'nro_envio'];
-        $order_by  = in_array($_GET['order_by'] ?? '', $order_whitelist) ? $_GET['order_by'] : 'viaje_id';
-        $order_dir = strtoupper($_GET['order_dir'] ?? '') === 'DESC' ? 'DESC' : 'ASC';
-
-        $condiciones = [];
-        $params      = [];
-
-        if ($viaje_id !== '') {
-            $condiciones[] = 'viaje_id = :viaje_id';
-            $params[':viaje_id'] = (int)$viaje_id;
-        }
-        if ($nro_envio !== '') {
-            $condiciones[] = 'nro_envio = :nro_envio';
-            $params[':nro_envio'] = (int)$nro_envio;
-        }
-
-        $where = $condiciones ? 'WHERE ' . implode(' AND ', $condiciones) : '';
-
-        $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM viaje_envio $where");
-        $stmtCount->execute($params);
-        $total = (int)$stmtCount->fetchColumn();
-
-        $stmtData = $pdo->prepare("SELECT * FROM viaje_envio $where ORDER BY $order_by $order_dir LIMIT $limite OFFSET $offset");
-        $stmtData->execute($params);
-        $viaje_envios = $stmtData->fetchAll(PDO::FETCH_ASSOC);
-
-        echo json_encode([
-            'datos'         => $viaje_envios,
-            'total'         => $total,
-            'pagina'        => $pagina,
-            'total_paginas' => (int)ceil($total / $limite)
-        ]);
-        break;
+        $filtros = [
+            'viaje_id'  => campo_entero($_GET, 'viaje_id', 'El viaje', 1, PHP_INT_MAX, false),
+            'nro_envio' => campo_entero($_GET, 'nro_envio', 'El envío', 1, PHP_INT_MAX, false),
+        ];
+        responder($asignaciones->listar($filtros, params_listado('viaje_id')));
 
     case 'POST':
-        $datos = json_decode(file_get_contents("php://input"), true);
-        $consulta = $pdo->prepare("INSERT INTO viaje_envio (viaje_id, nro_envio) 
-                                   VALUES (:viaje, :envio)");
-        $consulta->execute([
-            ':viaje' => $datos['viaje_id'],
-            ':envio' => $datos['nro_envio']
+        [$viaje, $envio] = claves(leer_json());
+        intentar(fn() => $asignaciones->asignar($viaje, $envio), [
+            1062 => "El envío $envio ya está asignado al viaje $viaje.",
+            1452 => 'El viaje o el envío indicados no existen.',
         ]);
-        echo json_encode(['mensaje' => 'Envío asignado al viaje']);
-        break;
+        responder(['mensaje' => "Envío $envio asignado al viaje $viaje."], 201);
 
     case 'DELETE':
-        $datos = json_decode(file_get_contents("php://input"), true);
-        $consulta = $pdo->prepare("DELETE FROM viaje_envio WHERE viaje_id = :viaje AND nro_envio = :envio");
-        $consulta->execute([
-            ':viaje' => $datos['viaje_id'],
-            ':envio' => $datos['nro_envio']
-        ]);
-        echo json_encode(['mensaje' => 'Envío desasignado del viaje']);
-        break;
+        [$viaje, $envio] = claves(leer_json());
+        if (!$asignaciones->quitar($viaje, $envio)) error_api('Ese envío no está asignado a ese viaje.', 404);
+        responder(['mensaje' => "Envío $envio quitado del viaje $viaje."]);
+
+    default:
+        error_api('Método no permitido.', 405);
 }

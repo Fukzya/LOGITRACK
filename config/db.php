@@ -16,8 +16,10 @@ $user = 'root';
 $password = '';
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $user, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $password, [
+        PDO::ATTR_ERRMODE           => PDO::ERRMODE_EXCEPTION,  // todo error de la base es una excepción
+        PDO::MYSQL_ATTR_FOUND_ROWS  => true,                    // rowCount() de un UPDATE = filas encontradas
+    ]);
 } catch (PDOException $e) {
     // El detalle técnico va al log; al usuario no se le muestran datos del servidor.
     error_log('[LogiTrack] Error de conexión: ' . $e->getMessage());

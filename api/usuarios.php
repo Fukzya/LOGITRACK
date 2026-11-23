@@ -1,122 +1,67 @@
 <?php
-require_once '../config/session.php';
-verificar_sesion();
-require_once '../config/db.php';
-
-header('Content-Type: application/json');
+/* Controlador de usuarios del sistema (solo admin): valida, llama al modelo Usuario y responde JSON. */
+require_once '../config/api.php';
+require_once '../modelos/Usuario.php';
 
 if (!es_admin()) {
-    http_response_code(403);
-    echo json_encode(['error' => 'Acceso denegado']);
-    exit();
+    error_api('Acceso denegado: solo un administrador puede gestionar usuarios.', 403);
 }
 
-$metodo = $_SERVER['REQUEST_METHOD'];
+$usuarios = new Usuario($pdo);
+const ROLES = ['admin', 'operador'];
 
-switch ($metodo) {
+function password_nueva(array $d): string
+{
+    $p = (string)($d['password'] ?? '');
+    if (mb_strlen($p) < 8)   throw new ValidacionException('La contraseña debe tener al menos 8 caracteres.');
+    if (mb_strlen($p) > 72)  throw new ValidacionException('La contraseña no puede superar los 72 caracteres.');
+    return $p;
+}
+
+switch ($_SERVER['REQUEST_METHOD']) {
 
     case 'GET':
-        $usuarios = $pdo->query("SELECT usuario_id, username, rol, activo FROM usuario")
-                        ->fetchAll(PDO::FETCH_ASSOC);
-        echo json_encode($usuarios);
-        break;
+        responder($usuarios->listar(params_listado('usuario_id')));
 
     case 'POST':
-        $datos    = json_decode(file_get_contents('php://input'), true);
-        $username = trim($datos['username'] ?? '');
-        $password = $datos['password'] ?? '';
-        $rol      = $datos['rol'] ?? 'operador';
+        $d        = leer_json();
+        $username = campo_codigo($d, 'username', 'El usuario', '/^[a-zA-Z0-9_.]{3,50}$/',
+                                 'de 3 a 50 letras, números, punto o guion bajo', false);
+        $password = password_nueva($d);
+        $rol      = campo_opcion($d, 'rol', 'El rol', ROLES);
+        $id = intentar(fn() => $usuarios->crear($username, $password, $rol), [1062 => "El usuario $username ya existe."]);
+        responder(['mensaje' => 'Usuario creado.', 'id' => $id], 201);
 
-        if ($username === '' || $password === '') {
-            http_response_code(400);
-            echo json_encode(['error' => 'El usuario y la contraseña son obligatorios']);
-            break;
-        }
-
-        try {
-            $hash     = password_hash($password, PASSWORD_DEFAULT);
-            $consulta = $pdo->prepare("INSERT INTO usuario (username, password_hash, rol) VALUES (:username, :hash, :rol)");
-            $consulta->execute([':username' => $username, ':hash' => $hash, ':rol' => $rol]);
-            echo json_encode(['mensaje' => 'Usuario creado', 'id' => $pdo->lastInsertId()]);
-        } catch (PDOException $e) {
-            if ($e->getCode() === '23000') {
-                http_response_code(409);
-                echo json_encode(['error' => 'El usuario ya existe']);
-            } else {
-                http_response_code(500);
-                echo json_encode(['error' => $e->getMessage()]);
-            }
-        }
-        break;
-
+    // Un PUT cambia una sola cosa: el rol, la contraseña o el estado (activo).
     case 'PUT':
-        $datos  = json_decode(file_get_contents('php://input'), true);
-        $id     = (int)($datos['usuario_id'] ?? 0);
-        $propio = (int)$_SESSION['usuario_id'];
+        $d      = leer_json();
+        $id     = campo_entero($d, 'usuario_id', 'El usuario');
+        $propio = $id === (int)$_SESSION['usuario_id'];
 
-        // Bloquear cambios de rol o desactivación del propio usuario
-        if ($id === $propio) {
-            if (array_key_exists('rol', $datos)) {
-                http_response_code(403);
-                echo json_encode(['error' => 'No podés cambiar tu propio rol']);
-                break;
-            }
-            if (array_key_exists('activo', $datos) && (int)$datos['activo'] === 0) {
-                http_response_code(403);
-                echo json_encode(['error' => 'No podés desactivarte a vos mismo']);
-                break;
-            }
-        }
-
-        // Solo activo
-        if (array_key_exists('activo', $datos) && count($datos) === 2) {
-            $consulta = $pdo->prepare("UPDATE usuario SET activo = :activo WHERE usuario_id = :id");
-            $consulta->execute([':activo' => (int)$datos['activo'], ':id' => $id]);
-            echo json_encode(['mensaje' => 'Estado actualizado']);
-            break;
-        }
-
-        // Solo password
-        if (array_key_exists('password', $datos) && count($datos) === 2) {
-            $hash     = password_hash($datos['password'], PASSWORD_DEFAULT);
-            $consulta = $pdo->prepare("UPDATE usuario SET password_hash = :hash WHERE usuario_id = :id");
-            $consulta->execute([':hash' => $hash, ':id' => $id]);
-            echo json_encode(['mensaje' => 'Contraseña actualizada']);
-            break;
-        }
-
-        // Solo rol
-        if (array_key_exists('rol', $datos) && count($datos) === 2) {
-            $consulta = $pdo->prepare("UPDATE usuario SET rol = :rol WHERE usuario_id = :id");
-            $consulta->execute([':rol' => $datos['rol'], ':id' => $id]);
-            echo json_encode(['mensaje' => 'Rol actualizado']);
-            break;
-        }
-
-        // username + rol, con password opcional
-        if (!empty($datos['password'])) {
-            $hash     = password_hash($datos['password'], PASSWORD_DEFAULT);
-            $consulta = $pdo->prepare("UPDATE usuario SET username = :username, rol = :rol, password_hash = :hash WHERE usuario_id = :id");
-            $consulta->execute([':username' => $datos['username'], ':rol' => $datos['rol'], ':hash' => $hash, ':id' => $id]);
+        if (array_key_exists('rol', $d)) {
+            if ($propio) error_api('No podés cambiar tu propio rol.', 403);
+            $ok  = $usuarios->cambiarRol($id, campo_opcion($d, 'rol', 'El rol', ROLES));
+            $msg = 'Rol actualizado.';
+        } elseif (array_key_exists('password', $d)) {
+            $ok  = $usuarios->cambiarPassword($id, password_nueva($d));
+            $msg = 'Contraseña actualizada.';
+        } elseif (array_key_exists('activo', $d)) {
+            $activo = campo_bool($d, 'activo') === 1;
+            if ($propio && !$activo) error_api('No podés desactivarte a vos mismo.', 403);
+            $ok  = $usuarios->cambiarActivo($id, $activo);
+            $msg = $activo ? 'Usuario activado.' : 'Usuario desactivado.';
         } else {
-            $consulta = $pdo->prepare("UPDATE usuario SET username = :username, rol = :rol WHERE usuario_id = :id");
-            $consulta->execute([':username' => $datos['username'], ':rol' => $datos['rol'], ':id' => $id]);
+            error_api('Indicá qué cambiar: rol, password o activo.', 400);
         }
-        echo json_encode(['mensaje' => 'Usuario actualizado']);
-        break;
+        if (!$ok) error_api('No existe ese usuario.', 404);
+        responder(['mensaje' => $msg]);
 
     case 'DELETE':
-        $datos  = json_decode(file_get_contents('php://input'), true);
-        $id     = (int)($datos['usuario_id'] ?? 0);
+        $id = campo_entero(leer_json(), 'usuario_id', 'El usuario');
+        if ($id === (int)$_SESSION['usuario_id']) error_api('No podés desactivarte a vos mismo.', 403);
+        if (!$usuarios->cambiarActivo($id, false)) error_api('No existe ese usuario.', 404);
+        responder(['mensaje' => 'Usuario desactivado.']);
 
-        if ($id === (int)$_SESSION['usuario_id']) {
-            http_response_code(403);
-            echo json_encode(['error' => 'No podés desactivarte a vos mismo']);
-            break;
-        }
-
-        $consulta = $pdo->prepare("UPDATE usuario SET activo = 0 WHERE usuario_id = :id");
-        $consulta->execute([':id' => $id]);
-        echo json_encode(['mensaje' => 'Usuario desactivado']);
-        break;
+    default:
+        error_api('Método no permitido.', 405);
 }

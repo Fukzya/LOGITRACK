@@ -1,126 +1,61 @@
 <?php
-require_once '../config/session.php';
-verificar_sesion();
-require_once '../config/db.php';
+/* Controlador de vehículos: valida, llama al modelo Vehiculo y responde JSON. */
+require_once '../config/api.php';
+require_once '../modelos/Vehiculo.php';
 
-header('Content-Type: application/json');
+$vehiculos = new Vehiculo($pdo);
 
-$metodo = $_SERVER['REQUEST_METHOD'];
+function patente(array $d): string
+{
+    // Formato Mercosur (AB123CD) o el anterior (ABC123).
+    return campo_codigo($d, 'vehiculo_patente', 'La patente', '/^([A-Z]{2}[0-9]{3}[A-Z]{2}|[A-Z]{3}[0-9]{3})$/', 'AB123CD o ABC123');
+}
 
-switch ($metodo) {
+function datos_vehiculo(array $d): array
+{
+    return [
+        'marca'        => campo_texto($d, 'marca', 'La marca', 60),
+        'modelo'       => campo_texto($d, 'modelo', 'El modelo', 60),
+        'anio'         => campo_entero($d, 'anio', 'El año', 1950, (int)date('Y') + 1, false),
+        'tipo_veh_cod' => campo_codigo($d, 'tipo_veh_cod', 'El tipo de vehículo', '/^[A-Z]{4}$/', '4 letras'),
+    ];
+}
+
+$errores = [1452 => 'El tipo de vehículo elegido no existe.'];
+
+switch ($_SERVER['REQUEST_METHOD']) {
 
     case 'GET':
-        $pagina = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
-        $limite = 50;
-        $offset = ($pagina - 1) * $limite;
-
-        $patente     = trim($_GET['patente']      ?? '');
-        $marca       = trim($_GET['marca']        ?? '');
-        $tipo_veh_cod = trim($_GET['tipo_veh_cod'] ?? '');
-
-        $mostrar_inactivos = isset($_GET['mostrar_inactivos'])
-            && $_GET['mostrar_inactivos'] === '1'
-            && $_SESSION['rol'] === 'admin';
-
-        $order_whitelist = ['vehiculo_patente', 'marca', 'modelo', 'anio', 'tipo_veh_cod'];
-        $order_by  = in_array($_GET['order_by'] ?? '', $order_whitelist) ? $_GET['order_by'] : 'vehiculo_patente';
-        $order_dir = strtoupper($_GET['order_dir'] ?? '') === 'DESC' ? 'DESC' : 'ASC';
-
-        $condiciones = [];
-        $params      = [];
-
-        if (!$mostrar_inactivos) {
-            $condiciones[] = 'activo = 1';
-        }
-        if ($patente !== '') {
-            $condiciones[] = 'vehiculo_patente LIKE :patente';
-            $params[':patente'] = '%' . $patente . '%';
-        }
-        if ($marca !== '') {
-            $condiciones[] = 'marca LIKE :marca';
-            $params[':marca'] = '%' . $marca . '%';
-        }
-        if ($tipo_veh_cod !== '') {
-            $condiciones[] = 'tipo_veh_cod = :tipo_veh_cod';
-            $params[':tipo_veh_cod'] = $tipo_veh_cod;
-        }
-
-        $where = $condiciones ? 'WHERE ' . implode(' AND ', $condiciones) : '';
-
-        $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM vehiculo $where");
-        $stmtCount->execute($params);
-        $total = (int)$stmtCount->fetchColumn();
-
-        $stmtData = $pdo->prepare("SELECT vehiculo_patente, marca, modelo, anio, tipo_veh_cod, activo FROM vehiculo $where ORDER BY $order_by $order_dir LIMIT $limite OFFSET $offset");
-        $stmtData->execute($params);
-        $vehiculos = $stmtData->fetchAll(PDO::FETCH_ASSOC);
-
-        echo json_encode([
-            'datos'         => $vehiculos,
-            'total'         => $total,
-            'pagina'        => $pagina,
-            'total_paginas' => (int)ceil($total / $limite)
-        ]);
-        break;
+        $filtros = [
+            'patente' => mb_strtoupper(trim($_GET['patente'] ?? '')),
+            'marca'   => trim($_GET['marca'] ?? ''),
+            'tipo'    => trim($_GET['tipo_veh_cod'] ?? ''),
+        ];
+        responder($vehiculos->listar($filtros, params_listado('vehiculo_patente'), ver_inactivos()));
 
     case 'POST':
-        $datos = json_decode(file_get_contents("php://input"), true);
-        $consulta = $pdo->prepare("INSERT INTO vehiculo (vehiculo_patente, marca, modelo, anio, tipo_veh_cod)
-                                   VALUES (:patente, :marca, :modelo, :anio, :tipo)");
-        $consulta->execute([
-            ':patente' => $datos['vehiculo_patente'],
-            ':marca'   => $datos['marca'],
-            ':modelo'  => $datos['modelo'],
-            ':anio'    => $datos['anio'],
-            ':tipo'    => $datos['tipo_veh_cod']
-        ]);
-        echo json_encode([
-            'mensaje' => 'Vehículo creado',
-            'patente' => $datos['vehiculo_patente']
-        ]);
-        break;
+        $d   = leer_json();
+        $pat = patente($d);
+        $v   = ['vehiculo_patente' => $pat] + datos_vehiculo($d);
+        intentar(fn() => $vehiculos->crear($v), $errores + [1062 => "Ya existe un vehículo con patente $pat."]);
+        responder(['mensaje' => 'Vehículo creado.'], 201);
 
     case 'PUT':
-        $datos = json_decode(file_get_contents("php://input"), true);
-
-        if (!empty($datos['reactivar'])) {
-            $patente = trim($datos['vehiculo_patente'] ?? '');
-            if ($patente === '') {
-                http_response_code(400);
-                echo json_encode(['error' => 'Patente requerida']);
-                break;
-            }
-            $stmt = $pdo->prepare("UPDATE vehiculo SET activo = 1 WHERE vehiculo_patente = :patente");
-            $stmt->bindParam(':patente', $patente, PDO::PARAM_STR);
-            $stmt->execute();
-            echo json_encode(['mensaje' => 'Vehículo reactivado correctamente']);
-            break;
+        $d   = leer_json();
+        $pat = patente($d);
+        if (!empty($d['reactivar'])) {
+            if (!$vehiculos->cambiarActivo($pat, true)) error_api('No existe un vehículo con esa patente.', 404);
+            responder(['mensaje' => 'Vehículo reactivado.']);
         }
-
-        $consulta = $pdo->prepare("UPDATE vehiculo SET marca = :marca, modelo = :modelo,
-                                   anio = :anio, tipo_veh_cod = :tipo
-                                   WHERE vehiculo_patente = :patente");
-        $consulta->execute([
-            ':marca'   => $datos['marca'],
-            ':modelo'  => $datos['modelo'],
-            ':anio'    => $datos['anio'],
-            ':tipo'    => $datos['tipo_veh_cod'],
-            ':patente' => $datos['vehiculo_patente']
-        ]);
-        echo json_encode(['mensaje' => 'Vehículo actualizado']);
-        break;
+        $v = datos_vehiculo($d);
+        if (!intentar(fn() => $vehiculos->actualizar($pat, $v), $errores)) error_api('No existe un vehículo activo con esa patente.', 404);
+        responder(['mensaje' => 'Vehículo actualizado.']);
 
     case 'DELETE':
-        $datos   = json_decode(file_get_contents("php://input"), true);
-        $patente = trim($datos['vehiculo_patente'] ?? '');
-        if ($patente === '') {
-            http_response_code(400);
-            echo json_encode(['error' => 'Patente requerida']);
-            break;
-        }
-        $stmt = $pdo->prepare("UPDATE vehiculo SET activo = 0 WHERE vehiculo_patente = :patente");
-        $stmt->bindParam(':patente', $patente, PDO::PARAM_STR);
-        $stmt->execute();
-        echo json_encode(['mensaje' => 'Vehículo dado de baja correctamente']);
-        break;
+        $pat = patente(leer_json());
+        if (!$vehiculos->cambiarActivo($pat, false)) error_api('No existe un vehículo con esa patente.', 404);
+        responder(['mensaje' => 'Vehículo dado de baja.']);
+
+    default:
+        error_api('Método no permitido.', 405);
 }

@@ -1,52 +1,49 @@
 <?php
-require_once '../config/session.php';
-verificar_sesion();
-require_once '../config/db.php';
+/* Controlador de tipos de contenido: valida, llama al modelo TipoContenido y responde JSON. */
+require_once '../config/api.php';
+require_once '../modelos/TipoContenido.php';
 
-header('Content-Type: application/json');
+$tipos = new TipoContenido($pdo);
 
-$metodo = $_SERVER['REQUEST_METHOD'];
+function datos_tipo_contenido(array $d): array
+{
+    return [
+        'tipo_cont_nombre'          => campo_texto($d, 'tipo_cont_nombre', 'El nombre', 50),
+        'tipo_cont_requiere_seguro' => campo_bool($d, 'tipo_cont_requiere_seguro'),
+    ];
+}
 
-switch ($metodo) {
+function cod_tipo_contenido(array $d): string
+{
+    return campo_codigo($d, 'tipo_cont_cod', 'El código', '/^[A-Z]{3}$/', '3 letras (ej. FRG)');
+}
+
+switch ($_SERVER['REQUEST_METHOD']) {
 
     case 'GET':
-        $tipos = $pdo->query("SELECT * FROM tipo_contenido")
-                     ->fetchAll(PDO::FETCH_ASSOC);
-        echo json_encode($tipos);
-        break;
+        responder($tipos->listar(params_listado('tipo_cont_nombre')));
 
     case 'POST':
-        $datos = json_decode(file_get_contents("php://input"), true);
-        $consulta = $pdo->prepare("INSERT INTO tipo_contenido (tipo_cont_cod, tipo_cont_nombre, tipo_cont_requiere_seguro) 
-                                   VALUES (:cod, :nombre, :seguro)");
-        $consulta->execute([
-            ':cod'    => $datos['tipo_cont_cod'],
-            ':nombre' => $datos['tipo_cont_nombre'],
-            ':seguro' => $datos['tipo_cont_requiere_seguro']
-        ]);
-        echo json_encode([
-            'mensaje' => 'Tipo de contenido creado',
-            'cod'     => $datos['tipo_cont_cod']
-        ]);
-        break;
+        $d   = leer_json();
+        $cod = cod_tipo_contenido($d);
+        $t   = ['tipo_cont_cod' => $cod] + datos_tipo_contenido($d);
+        intentar(fn() => $tipos->crear($t), [1062 => 'Ya existe un tipo con ese código o ese nombre.']);
+        responder(['mensaje' => 'Tipo de contenido creado.'], 201);
 
     case 'PUT':
-        $datos = json_decode(file_get_contents("php://input"), true);
-        $consulta = $pdo->prepare("UPDATE tipo_contenido SET tipo_cont_nombre = :nombre, 
-                                   tipo_cont_requiere_seguro = :seguro 
-                                   WHERE tipo_cont_cod = :cod");
-        $consulta->execute([
-            ':nombre' => $datos['tipo_cont_nombre'],
-            ':seguro' => $datos['tipo_cont_requiere_seguro'],
-            ':cod'    => $datos['tipo_cont_cod']
-        ]);
-        echo json_encode(['mensaje' => 'Tipo de contenido actualizado']);
-        break;
+        $d   = leer_json();
+        $cod = cod_tipo_contenido($d);
+        $t   = datos_tipo_contenido($d);
+        $ok  = intentar(fn() => $tipos->actualizar($cod, $t), [1062 => 'Ya existe un tipo con ese nombre.']);
+        if (!$ok) error_api('No existe ese tipo de contenido.', 404);
+        responder(['mensaje' => 'Tipo de contenido actualizado.']);
 
     case 'DELETE':
-        $datos = json_decode(file_get_contents("php://input"), true);
-        $consulta = $pdo->prepare("DELETE FROM tipo_contenido WHERE tipo_cont_cod = :cod");
-        $consulta->execute([':cod' => $datos['tipo_cont_cod']]);
-        echo json_encode(['mensaje' => 'Tipo de contenido eliminado']);
-        break;
+        $cod = cod_tipo_contenido(leer_json());
+        $ok = intentar(fn() => $tipos->eliminar($cod), [1451 => 'No se puede eliminar: hay envíos de este tipo.']);
+        if (!$ok) error_api('No existe ese tipo de contenido.', 404);
+        responder(['mensaje' => 'Tipo de contenido eliminado.']);
+
+    default:
+        error_api('Método no permitido.', 405);
 }

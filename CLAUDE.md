@@ -27,13 +27,17 @@ Ver README.md para la estructura y la instalación.
   Los <select> del front se llenan desde `api/catalogos.php`.
 - Cambio 004 (aplicado en la PC): 1773 mails de clientes tenían tildes (inválidos); se normalizaron.
 
-## CRUD en MVC (en curso, decidido el 2026-11-23: opción B)
-- Estructura nueva: `modelos/<Entidad>.php` (solo SQL) + `api/<entidad>.php` (controlador: valida,
-  llama al modelo, responde) + `paginas/<entidad>/` (vista). Base común: `config/api.php`
-  (sesión, JSON, validaciones `campo_*`, traducción de errores de MySQL) y `paginas/comun.js`
-  (`api()`, `esc()`, `mostrarError()`). Alta y edición en un mismo formulario precargado.
-- Hecho y probado: clientes. Falta migrar las otras 14 entidades con el mismo patrón.
+## CRUD en MVC (terminado el 2026-11-23, opción B)
+- Las 15 entidades: `modelos/<Entidad>.php` (solo SQL, heredan de `Modelo.php`) +
+  `api/<entidad>.php` (controlador) + `paginas/<entidad>/` (vista declarativa sobre `crud.js`).
+- Base común: `config/api.php` (validaciones `campo_*`, `intentar()` para mensajes de FK/duplicados,
+  traducción de errores MySQL, nunca muestra detalles internos), `paginas/plantilla.php`,
+  `paginas/comun.js`, `paginas/crud.js`, `paginas/catalogos.js` + `api/catalogos.php`.
+- Probado: 103 pruebas de API + las 15 pantallas en navegador.
 - Para probar con sesión se crean usuarios temporales `zz_prueba_*` y se borran al terminar.
+- Pendiente para temas siguientes: `api/cerrar_viaje.php` y `api/viaje_completo.php` no los usa
+  ninguna pantalla (procedimientos); los permisos de escritura por rol (seguridad);
+  la dirección de entrega de los envíos es aleatoria en los datos (calidad de datos).
 
 ## Material de la cátedra
 - `base de datos 2 campus/` (no se versiona) tiene todo el campus. Ya está resumido por tema en

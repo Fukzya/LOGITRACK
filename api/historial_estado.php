@@ -1,108 +1,53 @@
 <?php
-require_once '../config/session.php';
-verificar_sesion();
-require_once '../config/db.php';
+/* Controlador del historial de estados: valida, llama al modelo HistorialEstado y responde JSON. */
+require_once '../config/api.php';
+require_once '../modelos/HistorialEstado.php';
 
-header('Content-Type: application/json');
+$historial = new HistorialEstado($pdo);
 
-$metodo = $_SERVER['REQUEST_METHOD'];
+function datos_historial(array $d): array
+{
+    return [
+        'nro_envio'    => campo_entero($d, 'nro_envio', 'El número de envío'),
+        'sucursal_cod' => campo_codigo($d, 'sucursal_cod', 'La sucursal', '/^[0-9]{3}$/', '3 dígitos', false),
+        'estado'       => campo_codigo($d, 'estado', 'El estado', '/^[A-Z_]{3,30}$/', 'un código de estado'),
+        // Si no se indica, el estado se registra con la fecha y hora actuales.
+        'fecha_hora'   => campo_fecha_hora($d, 'fecha_hora', 'La fecha y hora', false) ?? date('Y-m-d H:i:s'),
+        'observacion'  => campo_texto($d, 'observacion', 'La observación', 1000, false),
+    ];
+}
 
-switch ($metodo) {
+$errores = [1452 => 'El envío, la sucursal o el estado indicados no existen.'];
+
+switch ($_SERVER['REQUEST_METHOD']) {
 
     case 'GET':
-        $pagina = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
-        $limite = 50;
-        $offset = ($pagina - 1) * $limite;
-
-        $nro_envio    = trim($_GET['nro_envio']    ?? '');
-        $estado       = trim($_GET['estado']       ?? '');
-        $fecha_desde  = trim($_GET['fecha_desde']  ?? '');
-        $fecha_hasta  = trim($_GET['fecha_hasta']  ?? '');
-        $sucursal_cod = trim($_GET['sucursal_cod'] ?? '');
-
-        $order_whitelist = ['id_historial', 'fecha_hora', 'nro_envio'];
-        $order_by  = in_array($_GET['order_by'] ?? '', $order_whitelist) ? $_GET['order_by'] : 'id_historial';
-        $order_dir = strtoupper($_GET['order_dir'] ?? '') === 'ASC' ? 'ASC' : 'DESC';
-
-        $condiciones = [];
-        $params      = [];
-
-        if ($nro_envio !== '') {
-            $condiciones[] = 'nro_envio = :nro_envio';
-            $params[':nro_envio'] = (int)$nro_envio;
-        }
-        if ($estado !== '') {
-            $condiciones[] = 'estado = :estado';
-            $params[':estado'] = $estado;
-        }
-        if ($fecha_desde !== '') {
-            $condiciones[] = 'fecha_hora >= :fecha_desde';
-            $params[':fecha_desde'] = $fecha_desde;
-        }
-        if ($fecha_hasta !== '') {
-            $condiciones[] = 'fecha_hora <= :fecha_hasta';
-            $params[':fecha_hasta'] = $fecha_hasta . ' 23:59:59';
-        }
-        if ($sucursal_cod !== '') {
-            $condiciones[] = 'sucursal_cod = :sucursal_cod';
-            $params[':sucursal_cod'] = $sucursal_cod;
-        }
-
-        $where = $condiciones ? 'WHERE ' . implode(' AND ', $condiciones) : '';
-
-        $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM historial_estado $where");
-        $stmtCount->execute($params);
-        $total = (int)$stmtCount->fetchColumn();
-
-        $stmtData = $pdo->prepare("SELECT * FROM historial_estado $where ORDER BY $order_by $order_dir LIMIT $limite OFFSET $offset");
-        $stmtData->execute($params);
-        $historial = $stmtData->fetchAll(PDO::FETCH_ASSOC);
-
-        echo json_encode([
-            'datos'         => $historial,
-            'total'         => $total,
-            'pagina'        => $pagina,
-            'total_paginas' => (int)ceil($total / $limite)
-        ]);
-        break;
+        $filtros = [
+            'nro_envio'   => campo_entero($_GET, 'nro_envio', 'El envío', 1, PHP_INT_MAX, false),
+            'estado'      => trim($_GET['estado'] ?? ''),
+            'sucursal'    => trim($_GET['sucursal_cod'] ?? ''),
+            'fecha_desde' => campo_fecha($_GET, 'fecha_desde', 'La fecha desde', false),
+            'fecha_hasta' => campo_fecha($_GET, 'fecha_hasta', 'La fecha hasta', false),
+        ];
+        responder($historial->listar($filtros, params_listado('id_historial', 'DESC')));
 
     case 'POST':
-        $datos = json_decode(file_get_contents("php://input"), true);
-        $consulta = $pdo->prepare("INSERT INTO historial_estado (nro_envio, sucursal_cod, estado, fecha_hora, observacion) 
-                                   VALUES (:envio, :sucursal, :estado, :fecha, :observacion)");
-        $consulta->execute([
-            ':envio'       => $datos['nro_envio'],
-            ':sucursal'    => $datos['sucursal_cod'],
-            ':estado'      => $datos['estado'],
-            ':fecha'       => $datos['fecha_hora'],
-            ':observacion' => $datos['observacion'] ?? null
-        ]);
-        echo json_encode([
-            'mensaje' => 'Estado registrado',
-            'id'      => $pdo->lastInsertId()
-        ]);
-        break;
+        $h  = datos_historial(leer_json());
+        $id = intentar(fn() => $historial->crear($h), $errores);
+        responder(['mensaje' => 'Estado registrado.', 'id' => $id], 201);
 
     case 'PUT':
-        $datos = json_decode(file_get_contents("php://input"), true);
-        $consulta = $pdo->prepare("UPDATE historial_estado SET nro_envio = :envio, sucursal_cod = :sucursal, 
-                                   estado = :estado, fecha_hora = :fecha, observacion = :observacion 
-                                   WHERE id_historial = :id");
-        $consulta->execute([
-            ':envio'       => $datos['nro_envio'],
-            ':sucursal'    => $datos['sucursal_cod'],
-            ':estado'      => $datos['estado'],
-            ':fecha'       => $datos['fecha_hora'],
-            ':observacion' => $datos['observacion'] ?? null,
-            ':id'          => $datos['id_historial']
-        ]);
-        echo json_encode(['mensaje' => 'Estado actualizado']);
-        break;
+        $d  = leer_json();
+        $id = campo_entero($d, 'id_historial', 'El registro');
+        $h  = datos_historial($d);
+        if (!intentar(fn() => $historial->actualizar($id, $h), $errores)) error_api('No existe ese registro.', 404);
+        responder(['mensaje' => 'Estado actualizado.']);
 
     case 'DELETE':
-        $datos = json_decode(file_get_contents("php://input"), true);
-        $consulta = $pdo->prepare("DELETE FROM historial_estado WHERE id_historial = :id");
-        $consulta->execute([':id' => $datos['id_historial']]);
-        echo json_encode(['mensaje' => 'Estado eliminado']);
-        break;
+        $id = campo_entero(leer_json(), 'id_historial', 'El registro');
+        if (!$historial->eliminar($id)) error_api('No existe ese registro.', 404);
+        responder(['mensaje' => 'Estado eliminado.']);
+
+    default:
+        error_api('Método no permitido.', 405);
 }

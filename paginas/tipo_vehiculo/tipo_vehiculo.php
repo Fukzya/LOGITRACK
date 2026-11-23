@@ -1,49 +1,28 @@
-<?php
-session_start();
-if (!isset($_SESSION['usuario_id'])) {
-    header("Location: ../../login.html");
-    exit;
-}
-header("Cache-Control: no-store, no-cache, must-revalidate");
-header("Pragma: no-cache");
-?><!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>LogiTrack - Tipos de Vehículo</title>
-</head>
-<body>
-    <h1>LogiTrack</h1>
-    <a href="../../index.php">← Volver al menú</a>
+<?php require '../plantilla.php'; inicio_pagina('Tipos de vehículo'); ?>
 
-    <h2>Tipos de Vehículo</h2>
-
-    <input type="text" id="input-cod" placeholder="Código (4 letras)">
-    <input type="text" id="input-nombre" placeholder="Nombre">
-    <input type="number" id="input-capacidad" placeholder="Capacidad kg">
-    <select id="input-licencia">
-        <option value="0">No requiere licencia especial</option>
-        <option value="1">Requiere licencia especial</option>
-    </select>
-    <button onclick="crearTipo()">Agregar</button>
+    <form id="form-tipo">
+        <h3 id="titulo-form">Nuevo tipo de vehículo</h3>
+        <input type="text" id="input-cod" placeholder="Código (4 letras)" required pattern="[A-Za-z]{4}"
+               maxlength="4" title="4 letras, ej. CAMN">
+        <input type="text" id="input-nombre" placeholder="Nombre" required maxlength="60">
+        <input type="number" id="input-capacidad" placeholder="Capacidad (kg)" required min="1" step="0.01">
+        <label><input type="checkbox" id="input-licencia"> Requiere licencia especial</label>
+        <button type="submit">Agregar</button>
+        <button type="button" class="btn-cancelar" hidden>Cancelar</button>
+    </form>
+    <hr>
 
     <table border="1">
         <thead>
             <tr>
-                <th>Código</th>
-                <th>Nombre</th>
-                <th>Capacidad kg</th>
+                <th id="th-cod">Código</th>
+                <th id="th-nombre">Nombre</th>
+                <th id="th-capacidad">Capacidad (kg)</th>
                 <th>Licencia especial</th>
                 <th>Acciones</th>
             </tr>
         </thead>
-        <tbody id="tabla-tipos">
-        </tbody>
+        <tbody id="tabla-tipos"></tbody>
     </table>
 
-    <br>
-    <a href="../../login.html" onclick="cerrarSesion(event)">Cerrar sesión</a>
-
-    <script src="tipo_vehiculo.js"></script>
-</body>
-</html>
+<?php fin_pagina('tipo_vehiculo.js'); ?>

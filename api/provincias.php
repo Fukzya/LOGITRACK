@@ -1,44 +1,35 @@
 <?php
-require_once '../config/session.php';
-verificar_sesion();
-require_once '../config/db.php';
+/* Controlador de provincias: valida, llama al modelo Provincia y responde JSON. */
+require_once '../config/api.php';
+require_once '../modelos/Provincia.php';
 
-header('Content-Type: application/json');
+$provincias = new Provincia($pdo);
 
-$metodo = $_SERVER['REQUEST_METHOD'];
-
-switch ($metodo) {
+switch ($_SERVER['REQUEST_METHOD']) {
 
     case 'GET':
-        $provincias = $pdo->query("SELECT * FROM provincia")
-        ->fetchAll(PDO::FETCH_ASSOC);
-        echo json_encode($provincias);
-        break;
+        responder($provincias->listar(params_listado('provincia_nombre')));
 
     case 'POST':
-        $datos = json_decode(file_get_contents("php://input"), true);
-        $consulta = $pdo->prepare("INSERT INTO provincia (provincia_nombre) VALUES (:nombre)");
-        $consulta->execute([':nombre' => $datos['provincia_nombre']]);
-        echo json_encode([
-            'mensaje' => 'Provincia creada',
-            'id'      => $pdo->lastInsertId()
-        ]);
-        break;
+        $nombre = campo_texto(leer_json(), 'provincia_nombre', 'El nombre', 100);
+        $id = intentar(fn() => $provincias->crear($nombre), [1062 => "Ya existe la provincia $nombre."]);
+        responder(['mensaje' => 'Provincia creada.', 'id' => $id], 201);
 
     case 'PUT':
-        $datos = json_decode(file_get_contents("php://input"), true);
-        $consulta = $pdo->prepare("UPDATE provincia SET provincia_nombre = :nombre WHERE provincia_cod = :cod");
-        $consulta->execute([
-            ':nombre' => $datos['provincia_nombre'],
-            ':cod'    => $datos['provincia_cod']
-        ]);
-        echo json_encode(['mensaje' => 'Provincia actualizada']);
-        break;
+        $d      = leer_json();
+        $cod    = campo_entero($d, 'provincia_cod', 'El código');
+        $nombre = campo_texto($d, 'provincia_nombre', 'El nombre', 100);
+        $ok = intentar(fn() => $provincias->actualizar($cod, $nombre), [1062 => "Ya existe la provincia $nombre."]);
+        if (!$ok) error_api('No existe esa provincia.', 404);
+        responder(['mensaje' => 'Provincia actualizada.']);
 
     case 'DELETE':
-        $datos = json_decode(file_get_contents("php://input"), true);
-        $consulta = $pdo->prepare("DELETE FROM provincia WHERE provincia_cod = :cod");
-        $consulta->execute([':cod' => $datos['provincia_cod']]);
-        echo json_encode(['mensaje' => 'Provincia eliminada']);
-        break;
+        $cod = campo_entero(leer_json(), 'provincia_cod', 'El código');
+        $ok = intentar(fn() => $provincias->eliminar($cod),
+                       [1451 => 'No se puede eliminar: la provincia tiene localidades cargadas.']);
+        if (!$ok) error_api('No existe esa provincia.', 404);
+        responder(['mensaje' => 'Provincia eliminada.']);
+
+    default:
+        error_api('Método no permitido.', 405);
 }

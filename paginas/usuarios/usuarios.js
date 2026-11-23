@@ -1,140 +1,65 @@
-fetch('../../api/check_session.php')
-  .then(res => res.json())
-  .then(data => {
-    if (!data.autenticado) {
-      window.location.href = '../../login.html';
-    } else if (data.rol !== 'admin') {
-      alert('Acceso solo para administradores');
-      window.location.href = '../../index.php';
+// Pantalla de usuarios del sistema (solo admin). Alta con el formulario; rol, contraseña y estado
+// se cambian por separado desde cada fila.
+const API_USUARIOS = '../../api/usuarios.php';
+let usuarioPassword = null;   // usuario al que se le está cambiando la contraseña
+
+async function cambiar(cuerpo, pregunta, pantalla) {
+    if (pregunta && !confirm(pregunta)) return;
+    try {
+        alert((await api(API_USUARIOS, 'PUT', cuerpo)).mensaje);
+        pantalla.listar();
+    } catch (err) {
+        mostrarError(err);
     }
-  });
-
-function cerrarSesion(e) {
-  e.preventDefault();
-  fetch('../../api/logout.php')
-    .then(res => res.json())
-    .then(() => { window.location.href = '../../login.html'; });
 }
 
-const API = 'http://localhost/logitrack/api/usuarios.php';
+const pantallaUsuarios = pantallaCrud({
+    api: API_USUARIOS,
+    clave: 'usuario_id',
+    nombre: 'el usuario',
+    tabla: 'tabla-usuarios',
+    columnas: [f => esc(f.usuario_id), f => esc(f.username), f => esc(f.rol), celdaEstado],
+    form: 'form-usuario',
+    titulo: 'titulo-form',
+    tituloAlta: 'Nuevo usuario',
+    campos: { 'input-username': 'username', 'input-password': 'password', 'input-rol': 'rol' },
+    orden: { col: 'usuario_id', dir: 'ASC' },
+    encabezados: { 'th-id': 'usuario_id', 'th-username': 'username', 'th-rol': 'rol' },
+    editable: false,
+    baja: null,
+    accionesExtra: f => `
+        <button data-accion="rol" data-clave="${esc(f.usuario_id)}">Pasar a ${f.rol === 'admin' ? 'operador' : 'admin'}</button>
+        <button data-accion="password" data-clave="${esc(f.usuario_id)}">Cambiar contraseña</button>
+        <button data-accion="activo" data-clave="${esc(f.usuario_id)}">${f.activo == 1 ? 'Desactivar' : 'Activar'}</button>`,
+    acciones: {
+        rol: (f, p) => {
+            const nuevo = f.rol === 'admin' ? 'operador' : 'admin';
+            cambiar({ usuario_id: f.usuario_id, rol: nuevo }, `¿Cambiar el rol de ${f.username} a ${nuevo}?`, p);
+        },
+        activo: (f, p) => {
+            const activar = f.activo != 1;
+            cambiar({ usuario_id: f.usuario_id, activo: activar },
+                    `¿${activar ? 'Activar' : 'Desactivar'} a ${f.username}?`, p);
+        },
+        password: f => {
+            usuarioPassword = f;
+            document.getElementById('titulo-password').textContent = `Nueva contraseña para ${f.username}`;
+            document.getElementById('form-password').hidden = false;
+            document.getElementById('input-password-nueva').focus();
+        },
+    },
+});
 
-function listarUsuarios() {
-    fetch(API)
-        .then(res => res.json())
-        .then(usuarios => {
-            const tabla = document.getElementById('tabla-usuarios');
-            tabla.innerHTML = '';
-            usuarios.forEach(u => {
-                const estado    = u.activo == 1 ? 'Activo' : 'Inactivo';
-                const btnToggle = u.activo == 1
-                    ? `<button onclick="toggleActivo(${u.usuario_id}, 1)">Desactivar</button>`
-                    : `<button onclick="toggleActivo(${u.usuario_id}, 0)">Activar</button>`;
-                tabla.innerHTML += `
-                    <tr>
-                        <td>${u.usuario_id}</td>
-                        <td>${u.username}</td>
-                        <td>${u.rol}</td>
-                        <td>${estado}</td>
-                        <td>
-                            <button onclick="editarRol(${u.usuario_id}, '${u.rol}')">Editar rol</button>
-                            <button onclick="cambiarPassword(${u.usuario_id})">Cambiar password</button>
-                            ${btnToggle}
-                        </td>
-                    </tr>
-                `;
-            });
-        });
+function cerrarFormPassword() {
+    usuarioPassword = null;
+    document.getElementById('form-password').reset();
+    document.getElementById('form-password').hidden = true;
 }
 
-function crearUsuario() {
-    const username = document.getElementById('input-username').value;
-    const password = document.getElementById('input-password').value;
-    const rol      = document.getElementById('input-rol').value;
-    const msgDiv   = document.getElementById('mensaje-error');
-
-    if (!username || !password) {
-        msgDiv.textContent = 'El usuario y la contraseña son obligatorios';
-        return;
-    }
-
-    fetch(API, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, rol })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.error) {
-            msgDiv.textContent = data.error;
-        } else {
-            msgDiv.textContent = '';
-            document.getElementById('input-username').value = '';
-            document.getElementById('input-password').value = '';
-            document.getElementById('input-rol').value = 'operador';
-            listarUsuarios();
-        }
-    });
-}
-
-function editarRol(id, rolActual) {
-    const nuevoRol = prompt('Rol (admin / operador):', rolActual);
-    if (nuevoRol === null) return;
-
-    fetch(API, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usuario_id: id, rol: nuevoRol })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.error) {
-            alert(data.error);
-        } else {
-            listarUsuarios();
-        }
-    });
-}
-
-function cambiarPassword(id) {
-    const nuevaPass = prompt('Nueva contraseña:');
-    if (nuevaPass === null) return;
-    if (nuevaPass === '') {
-        alert('La contraseña no puede estar vacía');
-        return;
-    }
-
-    fetch(API, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usuario_id: id, password: nuevaPass })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.error) {
-            alert(data.error);
-        } else {
-            alert(data.mensaje);
-        }
-    });
-}
-
-function toggleActivo(id, estadoActual) {
-    const accion = estadoActual === 1 ? 'desactivar' : 'activar';
-    if (!confirm(`¿Seguro que querés ${accion} este usuario?`)) return;
-
-    fetch(API, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usuario_id: id, activo: estadoActual === 1 ? 0 : 1 })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.error) {
-            alert(data.error);
-        } else {
-            listarUsuarios();
-        }
-    });
-}
-
-listarUsuarios();
+document.getElementById('form-password').addEventListener('submit', async e => {
+    e.preventDefault();
+    const password = document.getElementById('input-password-nueva').value;
+    await cambiar({ usuario_id: usuarioPassword.usuario_id, password }, null, pantallaUsuarios);
+    cerrarFormPassword();
+});
+document.getElementById('btn-cancelar-password').addEventListener('click', cerrarFormPassword);
