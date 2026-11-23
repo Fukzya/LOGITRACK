@@ -20,14 +20,8 @@ header("Pragma: no-cache");
 
     <input type="number" id="input-envio" placeholder="Nro envío">
     <input type="text" id="input-sucursal" placeholder="Código sucursal">
-    <select id="input-estado">
-        <option value="RECIBIDO">RECIBIDO</option>
-        <option value="EN_TRANSITO">EN_TRANSITO</option>
-        <option value="EN_SUCURSAL">EN_SUCURSAL</option>
-        <option value="DEMORADO">DEMORADO</option>
-        <option value="ENTREGADO">ENTREGADO</option>
-        <option value="DEVUELTO">DEVUELTO</option>
-    </select>
+    <!-- Opciones cargadas desde la tabla catálogo estado_envio -->
+    <select id="input-estado"></select>
     <input type="datetime-local" id="input-fecha">
     <input type="text" id="input-observacion" placeholder="Observación (opcional)">
     <button onclick="crearHistorial()">Agregar</button>
@@ -36,12 +30,6 @@ header("Pragma: no-cache");
     <input type="number" id="filtro-nro-envio" placeholder="Nro de envío">
     <select id="filtro-estado">
         <option value="">Todos los estados</option>
-        <option value="En sucursal origen">En sucursal origen</option>
-        <option value="En tránsito">En tránsito</option>
-        <option value="Redirigido">Redirigido</option>
-        <option value="Entregado">Entregado</option>
-        <option value="EN_TRANSITO">EN_TRANSITO</option>
-        <option value="EN_SUCURSAL">EN_SUCURSAL</option>
     </select>
     <label>Fecha desde: <input type="date" id="filtro-fecha-desde"></label>
     <label>Fecha hasta: <input type="date" id="filtro-fecha-hasta"></label>
@@ -75,6 +63,7 @@ header("Pragma: no-cache");
     <br>
     <a href="../../login.html" onclick="cerrarSesion(event)">Cerrar sesión</a>
 
+    <script src="../catalogos.js"></script>
     <script src="historial_estado.js"></script>
 </body>
 </html>

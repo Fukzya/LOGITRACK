@@ -140,4 +140,6 @@ document.getElementById('th-viaje-id').addEventListener('click', () => ordenarPo
 document.getElementById('th-fecha-hora').addEventListener('click', () => ordenarPor('fecha_hora'));
 document.getElementById('th-tipo-incidente').addEventListener('click', () => ordenarPor('tipo_incidente'));
 
+cargarCatalogo('input-tipo', 'incidentes');
+cargarCatalogo('filtro-tipo', 'incidentes');
 listarIncidentes();

@@ -20,13 +20,8 @@ header("Pragma: no-cache");
 
     <input type="number" id="input-viaje" placeholder="ID viaje">
     <input type="datetime-local" id="input-fecha">
-    <select id="input-tipo">
-        <option value="DEMORA">DEMORA</option>
-        <option value="AVERIA">AVERIA</option>
-        <option value="ACCIDENTE">ACCIDENTE</option>
-        <option value="ROBO">ROBO</option>
-        <option value="OTRO">OTRO</option>
-    </select>
+    <!-- Opciones cargadas desde la tabla catálogo tipo_incidente -->
+    <select id="input-tipo"></select>
     <input type="text" id="input-descripcion" placeholder="Descripción (opcional)">
     <button onclick="crearIncidente()">Agregar</button>
 
@@ -34,10 +29,6 @@ header("Pragma: no-cache");
     <input type="number" id="filtro-viaje-id" placeholder="Buscar por ID viaje">
     <select id="filtro-tipo">
         <option value="">Todos</option>
-        <option value="ACCIDENTE">ACCIDENTE</option>
-        <option value="DEMORA">DEMORA</option>
-        <option value="ROBO">ROBO</option>
-        <option value="OTRO">OTRO</option>
     </select>
     <label>Desde: <input type="date" id="filtro-fecha-desde"></label>
     <label>Hasta: <input type="date" id="filtro-fecha-hasta"></label>
@@ -65,6 +56,7 @@ header("Pragma: no-cache");
     <br>
     <a href="../../login.html" onclick="cerrarSesion(event)">Cerrar sesión</a>
 
+    <script src="../catalogos.js"></script>
     <script src="incidentes.js"></script>
 </body>
 </html>

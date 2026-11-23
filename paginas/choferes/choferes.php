@@ -20,7 +20,8 @@ header("Pragma: no-cache");
 
     <input type="text" id="input-nombre" placeholder="Nombre">
     <input type="text" id="input-apellido" placeholder="Apellido">
-    <input type="text" id="input-licencia" placeholder="Tipo de licencia">
+    <!-- Opciones cargadas desde la tabla catálogo tipo_licencia -->
+    <select id="input-licencia"></select>
     <button onclick="crearChofer()">Agregar</button>
 
     <hr>
@@ -28,10 +29,6 @@ header("Pragma: no-cache");
     <input type="text" id="filtro-apellido" placeholder="Buscar por apellido">
     <select id="filtro-tipo-licencia">
         <option value="">Todos</option>
-        <option value="B">B</option>
-        <option value="C">C</option>
-        <option value="D">D</option>
-        <option value="E">E</option>
     </select>
     <button id="btn-filtrar">Filtrar</button>
     <button id="btn-limpiar">Limpiar</button>
@@ -66,6 +63,7 @@ header("Pragma: no-cache");
     <script>
         const esAdmin = <?php echo ($_SESSION['rol'] === 'admin') ? 'true' : 'false'; ?>;
     </script>
+    <script src="../catalogos.js"></script>
     <script src="choferes.js"></script>
 </body>
 </html>

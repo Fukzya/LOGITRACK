@@ -21,6 +21,10 @@ Ver README.md para la estructura y la instalación.
 - Cambio 002 (aplicado y verificado en la PC el 2026-11-23): `procedimiento_crear_envio` ya no inserta
   en `historial_estado` (lo hace solo `trigger_after_insert_envio`), se borraron los duplicados
   (envíos 8015-8018) y `operador1` pasó a rol operador. Falta correrlo en la notebook.
+- Cambio 003 (aplicado en la PC el 2026-11-23): tablas catálogo `estado_envio`, `tipo_incidente`,
+  `tipo_licencia` con FK desde historial_estado.estado, incidente.tipo_incidente y
+  chofer.chofer_tipo_licencia. Estados unificados a códigos (RECIBIDO, EN_TRANSITO, ...).
+  Los <select> del front se llenan desde `api/catalogos.php`.
 
 ## Pendientes
 1. Vistas (5) y procedimientos `registrar_estado_envio` / `resumen_por_sucursal` no los usa el código PHP.

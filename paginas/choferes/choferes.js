@@ -167,4 +167,6 @@ document.getElementById('th-nombre').addEventListener('click', () => ordenarPor(
 document.getElementById('th-apellido').addEventListener('click', () => ordenarPor('apellido'));
 document.getElementById('th-tipo-licencia').addEventListener('click', () => ordenarPor('chofer_tipo_licencia'));
 
+cargarCatalogo('input-licencia', 'licencias');
+cargarCatalogo('filtro-tipo-licencia', 'licencias');
 listarChoferes();

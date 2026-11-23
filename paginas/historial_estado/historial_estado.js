@@ -133,5 +133,7 @@ document.getElementById('th-id-historial').addEventListener('click', () => orden
 document.getElementById('th-nro-envio').addEventListener('click', () => ordenarPor('nro_envio'));
 document.getElementById('th-fecha-hora').addEventListener('click', () => ordenarPor('fecha_hora'));
 
+cargarCatalogo('input-estado', 'estados');
+cargarCatalogo('filtro-estado', 'estados');
 cargarSucursales();
 listarHistorial();
