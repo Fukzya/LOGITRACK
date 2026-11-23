@@ -1,0 +1,9 @@
+# Sistema / editores
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
+
+# Configuración local (si algún día se separan credenciales)
+config/db.local.php
