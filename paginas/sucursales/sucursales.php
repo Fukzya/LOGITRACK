@@ -71,6 +71,7 @@
                         <th id="th-cod" class="py-3.5 px-4 font-headline-sm hover:text-primary transition-colors cursor-pointer whitespace-nowrap" title="Ordenar">Código</th>
                         <th id="th-nombre" class="py-3.5 px-4 font-headline-sm hover:text-primary transition-colors cursor-pointer whitespace-nowrap" title="Ordenar">Nombre</th>
                         <th id="th-localidad" class="py-3.5 px-4 font-headline-sm hover:text-primary transition-colors cursor-pointer whitespace-nowrap" title="Ordenar">Localidad</th>
+                        <th id="th-provincia" class="py-3.5 px-4 font-headline-sm hover:text-primary transition-colors cursor-pointer whitespace-nowrap" title="Ordenar">Provincia</th>
                         <th class="py-3.5 px-4 font-headline-sm min-w-[200px]">Dirección</th>
                         <th class="py-3.5 px-4 font-headline-sm text-center whitespace-nowrap">Estado</th>
                         <th class="py-3.5 px-4 font-headline-sm text-center whitespace-nowrap min-w-[170px]">Acciones</th>

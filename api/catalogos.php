@@ -16,10 +16,10 @@ $consultas = [
                           FROM localidad l JOIN provincia p ON p.provincia_cod = l.provincia_cod ORDER BY nombre",
     'provincias'      => 'SELECT provincia_cod AS cod, provincia_nombre AS nombre FROM provincia ORDER BY provincia_nombre',
     // Solo los activos: no se asignan envíos ni viajes a algo dado de baja.
-    // provincia_cod: el asistente de envío la usa para sugerir sucursales de la misma provincia.
-    'sucursales'      => "SELECT s.sucursal_cod AS cod, CONCAT(s.sucursal_cod, ' - ', s.sucursal_nombre) AS nombre, l.provincia_cod
-                          FROM sucursal s JOIN localidad l ON l.localidad_cod = s.sucursal_localidad_cod
-                          WHERE s.activo = 1 ORDER BY s.sucursal_cod",
+    // Con la provincia (vista_sucursal_ubicacion). grupo: los <select> las agrupan por provincia.
+    'sucursales'      => "SELECT sucursal_cod AS cod, CONCAT(sucursal_cod, ' - ', sucursal_completa) AS nombre,
+                                 provincia_cod, provincia_nombre AS grupo
+                          FROM vista_sucursal_ubicacion WHERE activo = 1 ORDER BY provincia_nombre, sucursal_cod",
     'tipos_contenido' => 'SELECT tipo_cont_cod AS cod, tipo_cont_nombre AS nombre FROM tipo_contenido ORDER BY tipo_cont_nombre',
     'tipos_vehiculo'  => 'SELECT tipo_veh_cod AS cod, tipo_veh_nombre AS nombre FROM tipo_vehiculo ORDER BY tipo_veh_nombre',
     'choferes'        => "SELECT chofer_legajo AS cod, CONCAT(apellido, ', ', nombre, ' (', chofer_tipo_licencia, ')') AS nombre FROM chofer WHERE activo = 1 ORDER BY apellido, nombre",

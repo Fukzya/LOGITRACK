@@ -65,19 +65,21 @@ $btnSec  = 'bg-surface-container hover:bg-surface-container-high text-on-surface
             <h2 class="text-headline-md text-on-surface">El paquete</h2>
             <p class="text-sm text-on-surface-variant mt-1">Las sucursales vienen sugeridas según la provincia del remitente y la de la dirección de entrega. Podés cambiarlas.</p>
         </div>
-        <form id="form-paquete" class="grid grid-cols-1 md:grid-cols-3 gap-space-md" novalidate>
-            <label class="flex flex-col gap-1 <?= $etiqueta ?>">Peso (kg)
+        <form id="form-paquete" class="grid grid-cols-1 md:grid-cols-6 gap-space-md items-start" novalidate>
+            <label class="flex flex-col gap-1 md:col-span-2 <?= $etiqueta ?>">Peso (kg)
                 <input id="input-peso" type="number" min="0.01" max="999999.99" step="0.01" required placeholder="Ej: 2.5" class="<?= $input ?>"/></label>
-            <label class="flex flex-col gap-1 <?= $etiqueta ?>">Tipo de contenido
+            <label class="flex flex-col gap-1 md:col-span-2 <?= $etiqueta ?>">Tipo de contenido
                 <select id="input-tipo" required class="<?= $input ?>"><option value="">Elegí el tipo</option></select></label>
-            <label class="flex flex-col gap-1 <?= $etiqueta ?>">Fecha del envío
+            <label class="flex flex-col gap-1 md:col-span-2 <?= $etiqueta ?>">Fecha del envío
                 <input id="input-fecha" type="date" required class="<?= $input ?>"/></label>
-            <label class="flex flex-col gap-1 <?= $etiqueta ?>">Sucursal de origen
+            <label class="flex flex-col gap-1 md:col-span-3 <?= $etiqueta ?>">Sucursal de origen
                 <select id="input-suc-orig" required class="<?= $input ?>"><option value="">Elegí la sucursal</option></select>
-                <small id="pista-orig" class="text-xs text-green-700"></small></label>
-            <label class="flex flex-col gap-1 <?= $etiqueta ?>">Sucursal de destino
+                <small id="pista-orig" class="text-xs text-green-700"></small>
+                <div id="otras-orig" class="flex flex-wrap items-center gap-1.5"></div></label>
+            <label class="flex flex-col gap-1 md:col-span-3 <?= $etiqueta ?>">Sucursal de destino
                 <select id="input-suc-dest" required class="<?= $input ?>"><option value="">Elegí la sucursal</option></select>
-                <small id="pista-dest" class="text-xs text-green-700"></small></label>
+                <small id="pista-dest" class="text-xs text-green-700"></small>
+                <div id="otras-dest" class="flex flex-wrap items-center gap-1.5"></div></label>
         </form>
         <div class="flex justify-between">
             <button type="button" class="<?= $btnSec ?>" data-anterior="1">Atrás</button>

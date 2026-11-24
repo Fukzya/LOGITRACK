@@ -23,7 +23,7 @@ cargarCatalogo('input-tipo', 'tipos_contenido');
 api('../../api/catalogos.php?tipo=provincias').then(ps => ps.forEach(p => provincias.set(String(p.cod), p.nombre)));
 api('../../api/catalogos.php?tipo=sucursales').then(ss => {
     sucursales = ss;
-    for (const id of ['input-suc-orig', 'input-suc-dest']) ss.forEach(s => $(id).add(new Option(s.nombre, s.cod)));
+    for (const id of ['input-suc-orig', 'input-suc-dest']) llenarSelect($(id), ss); // agrupadas por provincia
 }).catch(mostrarError);
 
 const hoy = new Date();
@@ -175,9 +175,45 @@ function sugerirSucursales() {
     };
     sugerir('orig', 'input-suc-orig', 'pista-orig', estado.remitente.provincia_cod, 'el remitente');
     sugerir('dest', 'input-suc-dest', 'pista-dest', estado.direccion.provincia_cod, 'la dirección de entrega');
+    mostrarOtras('orig');
+    mostrarOtras('dest');
 }
-$('input-suc-orig').addEventListener('change', () => { sugerida.orig = false; $('pista-orig').textContent = ''; });
-$('input-suc-dest').addEventListener('change', () => { sugerida.dest = false; $('pista-dest').textContent = ''; });
+
+// Debajo de cada sucursal: las otras de la misma provincia, como botones para elegirlas con un clic.
+const camposSucursal = {
+    orig: { select: 'input-suc-orig', pista: 'pista-orig', otras: 'otras-orig' },
+    dest: { select: 'input-suc-dest', pista: 'pista-dest', otras: 'otras-dest' },
+};
+const sinProvincia = nombre => nombre.replace(/ \([^)]*\)$/, ''); // "046 - Sucursal Puerto 46"
+
+function mostrarOtras(clave) {
+    const c = camposSucursal[clave];
+    const elegida = sucursales.find(s => s.cod === $(c.select).value);
+    const caja = $(c.otras);
+    if (!elegida) { caja.innerHTML = ''; return; }
+    const otras = sucursales.filter(s => s.provincia_cod === elegida.provincia_cod && s.cod !== elegida.cod);
+    caja.innerHTML = otras.length
+        ? `<span class="text-xs text-on-surface-variant">Otras en ${esc(elegida.grupo)}:</span>` +
+          otras.map(s => `<button type="button" data-sucursal="${esc(s.cod)}" data-campo="${clave}"
+                 class="text-xs whitespace-nowrap rounded-full border border-primary/40 bg-white px-2.5 py-1 text-primary hover:bg-[#fef3c7]">${esc(sinProvincia(s.nombre))}</button>`).join('')
+        : `<span class="text-xs text-on-surface-variant">Es la única sucursal en ${esc(elegida.grupo)}.</span>`;
+}
+
+function elegirSucursalAMano(clave) {
+    sugerida[clave] = false;
+    $(camposSucursal[clave].pista).textContent = '';
+    mostrarOtras(clave);
+}
+
+for (const clave of Object.keys(camposSucursal)) {
+    $(camposSucursal[clave].select).addEventListener('change', () => elegirSucursalAMano(clave));
+    $(camposSucursal[clave].otras).addEventListener('click', e => {
+        const b = e.target.closest('[data-sucursal]');
+        if (!b) return;
+        $(camposSucursal[clave].select).value = b.dataset.sucursal;
+        elegirSucursalAMano(clave);
+    });
+}
 
 // ------------------------------------------------------------ paso 3: viaje
 const peso = () => Number($('input-peso').value);

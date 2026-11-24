@@ -8,6 +8,7 @@ class Sucursal extends Modelo
         'sucursal_cod'     => 's.sucursal_cod',
         'sucursal_nombre'  => 's.sucursal_nombre',
         'localidad_nombre' => 'l.localidad_nombre',
+        'provincia_nombre' => 'p.provincia_nombre, l.localidad_nombre',
     ];
 
     /** $f: nombre (opcional). */
@@ -19,8 +20,9 @@ class Sucursal extends Modelo
         if (!empty($f['nombre'])) { $cond[] = 's.sucursal_nombre LIKE :n'; $par[':n'] = '%' . $f['nombre'] . '%'; }
 
         return $this->paginar(
-            's.sucursal_cod, s.sucursal_nombre, s.sucursal_localidad_cod, l.localidad_nombre, s.direccion, s.activo',
-            'sucursal s JOIN localidad l ON l.localidad_cod = s.sucursal_localidad_cod',
+            's.sucursal_cod, s.sucursal_nombre, s.sucursal_localidad_cod, l.localidad_nombre, p.provincia_nombre, s.direccion, s.activo',
+            'sucursal s JOIN localidad l ON l.localidad_cod = s.sucursal_localidad_cod
+                        JOIN provincia p ON p.provincia_cod = l.provincia_cod',
             $cond, $par, self::ORDENABLES, $p['orden'], $p['dir'], $p['pagina']
         );
     }
@@ -28,8 +30,8 @@ class Sucursal extends Modelo
     /** Provincia donde está una sucursal activa (null si no existe o está dada de baja). */
     public function provincia(string $cod): ?int
     {
-        $f = $this->fila('SELECT l.provincia_cod FROM sucursal s JOIN localidad l ON l.localidad_cod = s.sucursal_localidad_cod
-                           WHERE s.sucursal_cod = :cod AND s.activo = 1', [':cod' => $cod]);
+        $f = $this->fila('SELECT provincia_cod FROM vista_sucursal_ubicacion WHERE sucursal_cod = :cod AND activo = 1',
+                         [':cod' => $cod]);
         return $f ? (int)$f['provincia_cod'] : null;
     }
 

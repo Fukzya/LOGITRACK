@@ -29,6 +29,12 @@ Ver README.md para la estructura y la instalación.
 - Cambio 005 (aplicado en la PC): 30 viajes de prueba con fecha futura (20 con envíos que les dan
   "ruta").
 
+- Cambio 006 (aplicado en la PC): vista `vista_sucursal_ubicacion` (sucursal + localidad + provincia,
+  `sucursal_completa` = "Sucursal Puerto 46 (Mendoza)"). Pedido del usuario: toda sucursal mostrada
+  lleva su provincia entre paréntesis. La usan el catálogo y los modelos Envio, ViajeEnvio,
+  HistorialEstado, Viaje y Sucursal. Los <select> de sucursales se agrupan por provincia
+  (`llenarSelect()` en catalogos.js arma <optgroup> cuando la opción trae `grupo`).
+
 ## Asistente "Nuevo envío" (2026-11-23)
 - Pedido del usuario: flujos guiados, pedir la menor cantidad de códigos posible, buscar clientes por
   nombre o DNI y darlos de alta en el momento. Aplicar el mismo estilo en otras pantallas.

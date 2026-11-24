@@ -25,8 +25,8 @@ class Envio extends Modelo
             "e.nro_envio, e.fecha_envio, e.peso_kg, e.tipo_cont_cod, tc.tipo_cont_nombre,
              e.remitente_dni,    CONCAT(rem.nombre, ' ', rem.apellido)   AS remitente_nombre,
              e.destinatario_dni, CONCAT(dest.nombre, ' ', dest.apellido) AS destinatario_nombre,
-             e.sucursal_orig_cod, so.sucursal_nombre AS sucursal_orig_nombre,
-             e.sucursal_dest_cod, sd.sucursal_nombre AS sucursal_dest_nombre,
+             e.sucursal_orig_cod, so.sucursal_completa AS sucursal_orig_nombre,
+             e.sucursal_dest_cod, sd.sucursal_completa AS sucursal_dest_nombre,
              e.direccion_entrega_id, CONCAT(d.calle_y_numero, ', ', l.localidad_nombre) AS direccion_entrega,
              (SELECT est.estado_nombre
                 FROM historial_estado h JOIN estado_envio est ON est.estado_cod = h.estado
@@ -38,8 +38,8 @@ class Envio extends Modelo
              JOIN tipo_contenido tc ON tc.tipo_cont_cod   = e.tipo_cont_cod
              JOIN cliente rem       ON rem.cliente_dni    = e.remitente_dni
              JOIN cliente dest      ON dest.cliente_dni   = e.destinatario_dni
-             JOIN sucursal so       ON so.sucursal_cod    = e.sucursal_orig_cod
-             JOIN sucursal sd       ON sd.sucursal_cod    = e.sucursal_dest_cod
+             JOIN vista_sucursal_ubicacion so ON so.sucursal_cod = e.sucursal_orig_cod
+             JOIN vista_sucursal_ubicacion sd ON sd.sucursal_cod = e.sucursal_dest_cod
              JOIN direccion d       ON d.direccion_id     = e.direccion_entrega_id
              JOIN localidad l       ON l.localidad_cod    = d.localidad_cod',
             $cond, $par, self::ORDENABLES, $p['orden'], $p['dir'], $p['pagina']

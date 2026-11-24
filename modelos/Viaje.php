@@ -46,7 +46,7 @@ class Viaje extends Modelo
                     COALESCE(SUM(e.peso_kg), 0) AS carga,
                     tv.tipo_veh_capacidad_kg - COALESCE(SUM(e.peso_kg), 0) AS libre,
                     COUNT(e.nro_envio) AS cantidad_envios,
-                    GROUP_CONCAT(DISTINCT so.sucursal_nombre ORDER BY so.sucursal_nombre SEPARATOR ', ') AS origenes,
+                    GROUP_CONCAT(DISTINCT so.sucursal_completa ORDER BY so.sucursal_completa SEPARATOR ', ') AS origenes,
                     GROUP_CONCAT(DISTINCT p.provincia_nombre ORDER BY p.provincia_nombre SEPARATOR ', ') AS destinos,
                     COALESCE(MAX(p.provincia_cod = :prov), 0) AS recomendado
                FROM viaje v
@@ -55,7 +55,7 @@ class Viaje extends Modelo
                JOIN chofer c         ON c.chofer_legajo     = v.chofer_legajo
                LEFT JOIN viaje_envio x ON x.viaje_id      = v.viaje_id
                LEFT JOIN envio e       ON e.nro_envio     = x.nro_envio
-               LEFT JOIN sucursal so   ON so.sucursal_cod = e.sucursal_orig_cod
+               LEFT JOIN vista_sucursal_ubicacion so ON so.sucursal_cod = e.sucursal_orig_cod
                LEFT JOIN sucursal sd   ON sd.sucursal_cod = e.sucursal_dest_cod
                LEFT JOIN localidad ld  ON ld.localidad_cod = sd.sucursal_localidad_cod
                LEFT JOIN provincia p   ON p.provincia_cod = ld.provincia_cod

@@ -11,6 +11,7 @@ pantallaCrud({
         f => esc(f.sucursal_cod),
         f => esc(f.sucursal_nombre),
         f => esc(f.localidad_nombre),
+        f => esc(f.provincia_nombre),
         f => esc(f.direccion),
         celdaEstado,
     ],
@@ -26,6 +27,6 @@ pantallaCrud({
     },
     filtros: { 'filtro-nombre': 'nombre', 'filtro-mostrar-inactivos': 'mostrar_inactivos' },
     orden: { col: 'sucursal_cod', dir: 'ASC' },
-    encabezados: { 'th-cod': 'sucursal_cod', 'th-nombre': 'sucursal_nombre', 'th-localidad': 'localidad_nombre' },
+    encabezados: { 'th-cod': 'sucursal_cod', 'th-nombre': 'sucursal_nombre', 'th-localidad': 'localidad_nombre', 'th-provincia': 'provincia_nombre' },
     baja: 'logica',
 });

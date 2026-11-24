@@ -3,8 +3,20 @@
 function cargarCatalogo(selectId, tipo) {
     return fetch(`../../api/catalogos.php?tipo=${tipo}`)
         .then(res => res.json())
-        .then(opciones => {
-            const select = document.getElementById(selectId);
-            opciones.forEach(o => select.add(new Option(o.nombre, o.cod)));
-        });
+        .then(opciones => llenarSelect(document.getElementById(selectId), opciones));
+}
+
+// Agrega las opciones [{cod, nombre, grupo?}] a un <select>. Si traen "grupo" (las sucursales traen
+// su provincia), se agrupan con <optgroup> para encontrarlas más rápido.
+function llenarSelect(select, opciones) {
+    let grupoActual = null, destino = select;
+    for (const o of opciones) {
+        if (o.grupo !== undefined && o.grupo !== grupoActual) {
+            grupoActual = o.grupo;
+            destino = document.createElement('optgroup');
+            destino.label = o.grupo;
+            select.appendChild(destino);
+        }
+        destino.appendChild(new Option(o.nombre, o.cod));
+    }
 }

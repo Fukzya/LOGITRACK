@@ -20,12 +20,12 @@ class ViajeEnvio extends Modelo
         return $this->paginar(
             "CONCAT(ve.viaje_id, '-', ve.nro_envio) AS asignacion,
              ve.viaje_id, v.fecha_salida, v.fecha_llegada, ve.nro_envio, e.fecha_envio,
-             so.sucursal_nombre AS sucursal_orig_nombre, sd.sucursal_nombre AS sucursal_dest_nombre",
+             so.sucursal_completa AS sucursal_orig_nombre, sd.sucursal_completa AS sucursal_dest_nombre",
             'viaje_envio ve
              JOIN viaje v     ON v.viaje_id      = ve.viaje_id
              JOIN envio e     ON e.nro_envio     = ve.nro_envio
-             JOIN sucursal so ON so.sucursal_cod = e.sucursal_orig_cod
-             JOIN sucursal sd ON sd.sucursal_cod = e.sucursal_dest_cod',
+             JOIN vista_sucursal_ubicacion so ON so.sucursal_cod = e.sucursal_orig_cod
+             JOIN vista_sucursal_ubicacion sd ON sd.sucursal_cod = e.sucursal_dest_cod',
             $cond, $par, self::ORDENABLES, $p['orden'], $p['dir'], $p['pagina']
         );
     }
