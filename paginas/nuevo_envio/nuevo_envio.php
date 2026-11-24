@@ -89,22 +89,36 @@ $btnSec  = 'bg-surface-container hover:bg-surface-container-high text-on-surface
 
     <!-- Paso 3: viaje -->
     <section data-paso="3" class="<?= $tarjeta ?>" hidden>
-        <div class="flex flex-wrap items-end justify-between gap-3">
-            <div>
-                <h2 class="text-headline-md text-on-surface">¿En qué viaje va?</h2>
-                <p class="text-sm text-on-surface-variant mt-1">Viajes que todavía no salieron. La ruta de cada viaje sale de los envíos que ya lleva.</p>
-            </div>
-            <div class="flex items-center gap-4 text-xs text-on-surface-variant">
-                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-green-500"></span>Recomendado: ya va a la misma provincia</span>
-                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-surface-container-highest"></span>Sin lugar para este paquete</span>
-            </div>
+        <div>
+            <h2 class="text-headline-md text-on-surface">¿Cómo llega a destino?</h2>
+            <p class="text-sm text-on-surface-variant mt-1">
+                Viajes que todavía no salieron. La llegada estimada de cada viaje es su salida + 24 h.
+                Con trasbordo, el segundo viaje sale de donde llega el primero y después de que llegue.
+            </p>
         </div>
 
+        <!-- Directos -->
+        <div class="flex flex-col gap-2">
+            <h3 class="text-sm font-semibold text-on-surface flex items-center gap-2">
+                <span class="material-symbols-outlined text-green-600 text-[20px]">trending_flat</span>Directos
+                <span id="cuenta-directos" class="text-xs font-normal text-on-surface-variant"></span></h3>
+            <div id="lista-directos" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-space-md"></div>
+        </div>
+
+        <!-- Con trasbordo -->
+        <div class="flex flex-col gap-2">
+            <h3 class="text-sm font-semibold text-on-surface flex items-center gap-2">
+                <span class="material-symbols-outlined text-sky-600 text-[20px]">alt_route</span>Con un trasbordo
+                <span id="cuenta-trasbordos" class="text-xs font-normal text-on-surface-variant"></span></h3>
+            <div id="lista-trasbordos" class="grid grid-cols-1 xl:grid-cols-2 gap-space-md"></div>
+        </div>
+
+        <!-- Otras opciones -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
             <button type="button" data-opcion-viaje="nuevo" class="opcion-viaje flex items-center gap-3 rounded-xl border-2 border-dashed border-primary/40 px-4 py-3 text-left hover:bg-[#fffbf5]">
                 <span class="material-symbols-outlined text-primary">add_road</span>
                 <span><span class="block text-sm font-semibold text-on-surface">Crear un viaje nuevo</span>
-                      <span class="block text-xs text-on-surface-variant">Elegís fecha, vehículo y chofer libres ese día</span></span>
+                      <span class="block text-xs text-on-surface-variant">Directo, con vehículo y chofer libres ese día</span></span>
             </button>
             <button type="button" data-opcion-viaje="ninguno" class="opcion-viaje flex items-center gap-3 rounded-xl border-2 border-dashed border-outline-variant px-4 py-3 text-left hover:bg-surface-container">
                 <span class="material-symbols-outlined text-outline">schedule</span>
@@ -114,18 +128,32 @@ $btnSec  = 'bg-surface-container hover:bg-surface-container-high text-on-surface
         </div>
 
         <!-- Viaje nuevo -->
-        <form id="form-viaje-nuevo" class="rounded-xl border border-primary/30 bg-[#fffbf5] p-4 grid grid-cols-1 md:grid-cols-3 gap-3" hidden novalidate>
-            <label class="flex flex-col gap-1 <?= $etiqueta ?>">Salida
-                <input id="nv-salida" type="datetime-local" required class="<?= $input ?>"/></label>
-            <label class="flex flex-col gap-1 <?= $etiqueta ?>">Vehículo libre ese día
+        <form id="form-viaje-nuevo" class="rounded-xl border border-primary/30 bg-[#fffbf5] p-4 grid grid-cols-1 md:grid-cols-6 gap-3" hidden novalidate>
+            <label class="flex flex-col gap-1 md:col-span-3 <?= $etiqueta ?>">Sale de
+                <select id="nv-origen" required class="<?= $input ?>"><option value="">Sucursal de origen</option></select></label>
+            <label class="flex flex-col gap-1 md:col-span-3 <?= $etiqueta ?>">Llega a
+                <select id="nv-destino" required class="<?= $input ?>"><option value="">Sucursal de destino</option></select></label>
+            <label class="flex flex-col gap-1 md:col-span-2 <?= $etiqueta ?>">Salida
+                <input id="nv-salida" type="datetime-local" required class="<?= $input ?>"/>
+                <small id="nv-llegada" class="text-xs text-on-surface-variant"></small></label>
+            <label class="flex flex-col gap-1 md:col-span-2 <?= $etiqueta ?>">Vehículo libre ese día
                 <select id="nv-vehiculo" required class="<?= $input ?>" disabled><option value="">Primero elegí la salida</option></select>
                 <small class="text-xs text-on-surface-variant">Solo los que tienen capacidad para el paquete</small></label>
-            <label class="flex flex-col gap-1 <?= $etiqueta ?>">Chofer libre ese día
+            <label class="flex flex-col gap-1 md:col-span-2 <?= $etiqueta ?>">Chofer libre ese día
                 <select id="nv-chofer" required class="<?= $input ?>" disabled><option value="">Primero elegí el vehículo</option></select>
                 <small id="nv-pista-chofer" class="text-xs text-on-surface-variant"></small></label>
         </form>
 
-        <div id="lista-viajes" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-space-md"></div>
+        <!-- Todos los viajes: el que asigna decide -->
+        <details id="bloque-otros" class="rounded-xl border border-surface-container">
+            <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-on-surface">
+                Otros viajes programados <span id="cuenta-otros" class="font-normal text-on-surface-variant"></span>
+            </summary>
+            <div class="px-4 pb-4 flex flex-col gap-3">
+                <input id="filtro-otros" type="search" placeholder="Filtrar por sucursal, provincia o número de viaje" class="<?= $input ?>"/>
+                <div id="lista-otros" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-space-md"></div>
+            </div>
+        </details>
 
         <div class="flex justify-between">
             <button type="button" class="<?= $btnSec ?>" data-anterior="2">Atrás</button>
@@ -153,7 +181,7 @@ $btnSec  = 'bg-surface-container hover:bg-surface-container-high text-on-surface
         <h2 id="resultado-titulo" class="text-headline-md text-on-surface"></h2>
         <div class="flex flex-wrap justify-center gap-3">
             <a id="link-historial" class="<?= $btnSec ?>" href="#">Ver historial del envío</a>
-            <a id="link-viaje" class="<?= $btnSec ?>" href="#">Ver envíos del viaje</a>
+            <a id="link-viaje" class="<?= $btnSec ?>" href="#">Ver sus viajes</a>
             <a class="<?= $btnPrim ?>" href="nuevo_envio.php">Cargar otro envío</a>
         </div>
     </section>

@@ -35,6 +35,17 @@ Ver README.md para la estructura y la instalación.
   HistorialEstado, Viaje y Sucursal. Los <select> de sucursales se agrupan por provincia
   (`llenarSelect()` en catalogos.js arma <optgroup> cuando la opción trae `grupo`).
 
+- Cambio 007 (aplicado en la PC): rutas y trasbordos. `viaje.sucursal_origen_cod/sucursal_destino_cod`
+  (FK, CHECK distintas), `viaje.llegada_estimada` = columna VIRTUAL salida + 24 h (decisión del
+  usuario), `viaje_envio.tramo` (UNIQUE nro_envio+tramo). Triggers `trigger_before_insert_viaje_envio`
+  (numera el tramo, máx. 2, el tramo 2 sale de donde llega el 1 y después de su llegada estimada,
+  capacidad) y `trigger_before_delete_viaje_envio` (no quitar un tramo intermedio). Vista
+  `vista_viajes_programados` y procedimiento `procedimiento_buscar_rutas(origen, destino, peso)`.
+  Datos históricos: origen/destino = sucursal más frecuente de sus envíos; hay envíos con hasta 9
+  tramos (datos al azar), las reglas valen para lo nuevo.
+- Cambio 008 (aplicado en la PC): ~196 viajes de prueba por centros 010 (Córdoba) y 012 (Buenos Aires).
+- Los cambios de la base se documentan también en la planilla logitrack_completo (pedido del usuario).
+
 ## Asistente "Nuevo envío" (2026-11-23)
 - Pedido del usuario: flujos guiados, pedir la menor cantidad de códigos posible, buscar clientes por
   nombre o DNI y darlos de alta en el momento. Aplicar el mismo estilo en otras pantallas.

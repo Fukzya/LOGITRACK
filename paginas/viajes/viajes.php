@@ -16,8 +16,21 @@
                     <input class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="input-salida" type="datetime-local" required/>
                 </div>
                 <div class="flex flex-col gap-space-xs">
-                    <label class="text-label-sm text-on-surface-variant" for="input-llegada">Llegada (opcional)</label>
+                    <label class="text-label-sm text-on-surface-variant" for="input-llegada">Llegada real (al cerrar el viaje)</label>
                     <input class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="input-llegada" type="datetime-local"/>
+                    <small class="text-xs text-on-surface-variant">La llegada estimada la calcula la base: salida + 24 h.</small>
+                </div>
+                <div class="flex flex-col gap-space-xs md:col-span-2">
+                    <label class="text-label-sm text-on-surface-variant" for="input-origen">Sale de</label>
+                    <select class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="input-origen" required>
+                        <option value="">Sucursal de origen</option>
+                    </select>
+                </div>
+                <div class="flex flex-col gap-space-xs md:col-span-2">
+                    <label class="text-label-sm text-on-surface-variant" for="input-destino">Llega a</label>
+                    <select class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="input-destino" required>
+                        <option value="">Sucursal de destino</option>
+                    </select>
                 </div>
                 <div class="flex flex-col gap-space-xs">
                     <label class="text-label-sm text-on-surface-variant" for="input-vehiculo">Vehículo asignado</label>
@@ -81,6 +94,7 @@
                         <th id="th-id" class="py-3.5 px-4 font-headline-sm hover:text-primary transition-colors cursor-pointer whitespace-nowrap" title="Ordenar">ID</th>
                         <th id="th-salida" class="py-3.5 px-4 font-headline-sm hover:text-primary transition-colors cursor-pointer whitespace-nowrap" title="Ordenar">Salida</th>
                         <th id="th-llegada" class="py-3.5 px-4 font-headline-sm hover:text-primary transition-colors cursor-pointer whitespace-nowrap" title="Ordenar">Llegada</th>
+                        <th class="py-3.5 px-4 font-headline-sm whitespace-nowrap">Ruta</th>
                         <th class="py-3.5 px-4 font-headline-sm whitespace-nowrap">Vehículo</th>
                         <th class="py-3.5 px-4 font-headline-sm whitespace-nowrap">Chofer</th>
                         <th class="py-3.5 px-4 font-headline-sm text-center whitespace-nowrap">Envíos</th>

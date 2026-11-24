@@ -10,8 +10,8 @@ const estado = {
     destinatario: null,
     direcciones: [],     // del destinatario
     direccion: null,     // la elegida
-    viaje: { modo: null, id: null, datos: null },
-    viajes: [],          // los que se muestran en el paso 3
+    viaje: { modo: null, ids: [] },   // ids: [viaje] directo o [viaje1, viaje2] con trasbordo
+    rutas: { opciones: [], viajes: [] }, // lo que devuelve procedimiento_buscar_rutas
     recursos: null,      // vehículos y choferes libres para un viaje nuevo
 };
 let sucursales = [];               // [{cod, nombre, provincia_cod}]
@@ -23,7 +23,7 @@ cargarCatalogo('input-tipo', 'tipos_contenido');
 api('../../api/catalogos.php?tipo=provincias').then(ps => ps.forEach(p => provincias.set(String(p.cod), p.nombre)));
 api('../../api/catalogos.php?tipo=sucursales').then(ss => {
     sucursales = ss;
-    for (const id of ['input-suc-orig', 'input-suc-dest']) llenarSelect($(id), ss); // agrupadas por provincia
+    for (const id of ['input-suc-orig', 'input-suc-dest', 'nv-origen', 'nv-destino']) llenarSelect($(id), ss); // por provincia
 }).catch(mostrarError);
 
 const hoy = new Date();
@@ -217,67 +217,133 @@ for (const clave of Object.keys(camposSucursal)) {
 
 // ------------------------------------------------------------ paso 3: viaje
 const peso = () => Number($('input-peso').value);
+const llegadaEstimada = salida => { // misma regla que la columna calculada de la base: salida + 24 h
+    const d = new Date(salida.replace(' ', 'T'));
+    d.setHours(d.getHours() + 24);
+    return isoLocal(d).slice(0, 16).replace('T', ' ');
+};
+const viajePorId = id => estado.rutas.viajes.find(v => String(v.viaje_id) === String(id));
+const claveRuta = ids => ids.join('-');
+
+function esperaTexto(desde, hasta) {
+    const h = Math.round((new Date(hasta.replace(' ', 'T')) - new Date(desde.replace(' ', 'T'))) / 36e5);
+    return h >= 24 ? `${Math.floor(h / 24)} d ${h % 24} h` : `${h} h`;
+}
 
 async function cargarViajes() {
-    const caja = $('lista-viajes');
-    caja.innerHTML = '<p class="text-sm text-on-surface-variant">Buscando viajes…</p>';
+    for (const id of ['lista-directos', 'lista-trasbordos', 'lista-otros']) {
+        $(id).innerHTML = '<p class="text-sm text-on-surface-variant">Buscando viajes…</p>';
+    }
+    const params = new URLSearchParams({
+        rutas: 1, sucursal_orig: $('input-suc-orig').value, sucursal_dest: $('input-suc-dest').value, peso: peso(),
+    });
     try {
-        estado.viajes = await api(`../../api/viajes.php?disponibles=1&sucursal_dest=${encodeURIComponent($('input-suc-dest').value)}`);
+        estado.rutas = await api(`../../api/viajes.php?${params}`);
     } catch (err) { mostrarError(err); return; }
 
-    // Si el viaje elegido antes ya no está o no tiene lugar con el peso nuevo, se desmarca.
-    const previo = estado.viajes.find(v => String(v.viaje_id) === String(estado.viaje.id));
-    if (estado.viaje.modo === 'existente' && (!previo || Number(previo.libre) < peso())) {
-        estado.viaje = { modo: null, id: null, datos: null };
+    // Si la ruta elegida antes ya no está (cambió el peso o las sucursales), se desmarca.
+    const v = estado.viaje;
+    if (v.modo === 'existente') {
+        const sigue = estado.rutas.opciones.some(o => claveRuta(idsDe(o)) === claveRuta(v.ids))
+                   || (v.ids.length === 1 && viajePorId(v.ids[0]) && Number(viajePorId(v.ids[0]).libre) >= peso());
+        if (!sigue) estado.viaje = { modo: null, ids: [] };
     }
 
-    const provDestino = provincias.get(String(sucursales.find(s => s.cod === $('input-suc-dest').value)?.provincia_cod)) || '';
-    if (!estado.viajes.length) {
-        caja.innerHTML = '<p class="text-sm text-on-surface-variant md:col-span-2">No hay viajes programados: creá uno nuevo.</p>';
-    } else {
-        caja.innerHTML = estado.viajes.map(v => tarjetaViaje(v, provDestino)).join('');
-    }
+    // Viaje nuevo: por defecto, directo entre las sucursales del envío.
+    if (!$('nv-origen').value)  $('nv-origen').value  = $('input-suc-orig').value;
+    if (!$('nv-destino').value) $('nv-destino').value = $('input-suc-dest').value;
+
+    const directos   = estado.rutas.opciones.filter(o => o.tipo === 'DIRECTO');
+    const trasbordos = estado.rutas.opciones.filter(o => o.tipo === 'TRASBORDO');
+    $('cuenta-directos').textContent   = `(${directos.length})`;
+    $('cuenta-trasbordos').textContent = `(${trasbordos.length})`;
+    $('lista-directos').innerHTML = directos.length
+        ? directos.map(tarjetaDirecto).join('')
+        : '<p class="text-sm text-on-surface-variant">No hay viajes directos programados entre esas provincias.</p>';
+    $('lista-trasbordos').innerHTML = trasbordos.length
+        ? trasbordos.map(tarjetaTrasbordo).join('')
+        : '<p class="text-sm text-on-surface-variant">No hay combinaciones con un trasbordo.</p>';
+    pintarOtros();
     marcarSeleccion();
 }
 
-function tarjetaViaje(v, provDestino) {
-    const sinLugar = Number(v.libre) < peso();
-    const recomendado = v.recomendado == 1;
+const idsDe = o => (o.viaje2_id ? [o.viaje1_id, o.viaje2_id] : [o.viaje1_id]);
+
+// Un tramo (un viaje) dentro de una tarjeta.
+function tramoHtml(v, titulo = '') {
     const pct = Math.min(100, Math.round(Number(v.carga) / Number(v.capacidad) * 100));
-    const ruta = Number(v.cantidad_envios) > 0
-        ? `<div><span class="text-on-surface-variant">Desde:</span> ${esc(v.origenes)}</div>
-           <div><span class="text-on-surface-variant">Hacia:</span> ${esc(v.destinos)}</div>`
-        : '<div class="text-on-surface-variant italic">Sin envíos todavía: ruta libre</div>';
-    const borde = sinLugar ? 'border-surface-container bg-surface-container opacity-60 cursor-not-allowed'
-                : recomendado ? 'border-green-500 bg-green-50 hover:border-green-600'
-                : 'border-surface-container bg-white hover:border-primary/60';
     return `
-        <button type="button" data-viaje="${esc(v.viaje_id)}" ${sinLugar ? 'disabled' : ''}
-                class="tarjeta-viaje text-left rounded-xl border-2 p-4 flex flex-col gap-2 transition-colors ${borde}">
+        <div class="flex flex-col gap-1">
             <div class="flex items-center justify-between gap-2">
-                <span class="text-sm font-bold text-on-surface">Viaje ${esc(v.viaje_id)}</span>
-                ${recomendado ? `<span class="text-xs font-semibold text-green-800 bg-green-200 rounded-full px-2 py-0.5">Recomendado · va a ${esc(provDestino)}</span>` : ''}
-                ${sinLugar ? '<span class="text-xs font-semibold text-on-surface-variant bg-surface-container-highest rounded-full px-2 py-0.5">Sin lugar</span>' : ''}
+                <span class="text-sm font-bold text-on-surface">${titulo}Viaje ${esc(v.viaje_id)}</span>
+                <span class="text-xs text-on-surface-variant">${esc(v.tipo_veh_nombre)} ${esc(v.vehiculo_patente)}</span>
             </div>
-            <div class="flex items-center gap-1 text-sm text-on-surface"><span class="material-symbols-outlined text-[18px] text-primary">event</span>Sale ${esc(fechaHora(v.fecha_salida))}</div>
-            <div class="text-xs flex flex-col gap-0.5">${ruta}</div>
-            <div class="text-xs text-on-surface-variant">${esc(v.tipo_veh_nombre)} ${esc(v.vehiculo_patente)} · ${esc(v.chofer_nombre)} · ${esc(v.cantidad_envios)} envío(s)</div>
-            <div class="flex flex-col gap-1">
-                <div class="h-1.5 rounded-full bg-surface-container-high overflow-hidden"><div class="h-full ${pct > 85 ? 'bg-red-500' : 'bg-primary'}" style="width:${Math.max(pct, 2)}%"></div></div>
-                <span class="text-xs text-on-surface-variant">Quedan ${esc(kg(v.libre))} de ${esc(kg(v.capacidad))}</span>
-            </div>
+            <div class="text-sm text-on-surface">${esc(v.origen)} <span class="text-primary">→</span> ${esc(v.destino)}</div>
+            <div class="text-xs text-on-surface-variant">Sale ${esc(fechaHora(v.fecha_salida))} · llega aprox. ${esc(fechaHora(v.llegada_estimada))}</div>
+            <div class="text-xs text-on-surface-variant">${esc(v.chofer_nombre)} · ${esc(v.cantidad_envios)} envío(s) · quedan ${esc(kg(v.libre))}</div>
+            <div class="h-1 rounded-full bg-surface-container-high overflow-hidden"><div class="h-full ${pct > 85 ? 'bg-red-500' : 'bg-primary'}" style="width:${Math.max(pct, 2)}%"></div></div>
+        </div>`;
+}
+
+const etiquetaExacta = (exacta, texto) => exacta
+    ? `<span class="text-xs font-semibold text-green-800 bg-green-200 rounded-full px-2 py-0.5">${texto}</span>`
+    : '<span class="text-xs font-semibold text-amber-800 bg-amber-100 rounded-full px-2 py-0.5">Misma provincia, otra sucursal</span>';
+
+function tarjetaDirecto(o) {
+    const v = viajePorId(o.viaje1_id);
+    return `
+        <button type="button" data-ruta="${esc(o.viaje1_id)}"
+                class="tarjeta-ruta text-left rounded-xl border-2 border-green-500 bg-green-50 hover:border-green-600 p-4 flex flex-col gap-2">
+            ${etiquetaExacta(o.prioridad == 1, 'Recomendado · mismas sucursales')}
+            ${tramoHtml(v)}
         </button>`;
 }
 
-// Elegir un viaje existente, "crear nuevo" o "más tarde".
+function tarjetaTrasbordo(o) {
+    const a = viajePorId(o.viaje1_id), b = viajePorId(o.viaje2_id);
+    return `
+        <button type="button" data-ruta="${esc(o.viaje1_id)}-${esc(o.viaje2_id)}"
+                class="tarjeta-ruta text-left rounded-xl border-2 border-sky-400 bg-sky-50 hover:border-sky-600 p-4 flex flex-col gap-3">
+            <div class="flex items-center justify-between gap-2">
+                ${etiquetaExacta(o.prioridad == 3, 'Recomendado con trasbordo')}
+                <span class="text-xs font-semibold text-on-surface">Llega aprox. ${esc(fechaHora(o.llegada_final))}</span>
+            </div>
+            ${tramoHtml(a, 'Tramo 1 · ')}
+            <div class="flex items-center gap-2 text-xs text-sky-800 bg-sky-100 rounded-lg px-3 py-1.5">
+                <span class="material-symbols-outlined text-[18px]">sync_alt</span>
+                Trasbordo en ${esc(a.destino)} · espera ${esc(esperaTexto(a.llegada_estimada, b.fecha_salida))}
+            </div>
+            ${tramoHtml(b, 'Tramo 2 · ')}
+        </button>`;
+}
+
+// Todos los viajes programados, para que el que asigna elija otro si quiere (como directo).
+function pintarOtros() {
+    const filtro = $('filtro-otros').value.trim().toLowerCase();
+    const lista = estado.rutas.viajes.filter(v => !filtro ||
+        `${v.viaje_id} ${v.origen} ${v.destino}`.toLowerCase().includes(filtro));
+    $('cuenta-otros').textContent = `(${estado.rutas.viajes.length})`;
+    $('lista-otros').innerHTML = lista.slice(0, 60).map(v => {
+        const sinLugar = Number(v.libre) < peso();
+        return `
+            <button type="button" data-ruta="${esc(v.viaje_id)}" ${sinLugar ? 'disabled' : ''}
+                    class="tarjeta-ruta text-left rounded-xl border-2 p-4 ${sinLugar ? 'border-surface-container bg-surface-container opacity-60 cursor-not-allowed' : 'border-surface-container bg-white hover:border-primary/60'}">
+                ${sinLugar ? '<span class="text-xs font-semibold text-on-surface-variant">Sin lugar para este paquete</span>' : ''}
+                ${tramoHtml(v)}
+            </button>`;
+    }).join('') + (lista.length > 60 ? `<p class="text-xs text-on-surface-variant">y ${lista.length - 60} más: usá el filtro.</p>` : '');
+    marcarSeleccion();
+}
+$('filtro-otros').addEventListener('input', pintarOtros);
+
+// Elegir una ruta (uno o dos viajes), "crear nuevo" o "más tarde".
 document.addEventListener('click', e => {
-    const tarjeta = e.target.closest('.tarjeta-viaje');
+    const tarjeta = e.target.closest('.tarjeta-ruta');
     const opcion = e.target.closest('[data-opcion-viaje]');
     if (tarjeta && !tarjeta.disabled) {
-        const v = estado.viajes.find(x => String(x.viaje_id) === tarjeta.dataset.viaje);
-        estado.viaje = { modo: 'existente', id: v.viaje_id, datos: v };
+        estado.viaje = { modo: 'existente', ids: tarjeta.dataset.ruta.split('-').map(Number) };
     } else if (opcion) {
-        estado.viaje = { modo: opcion.dataset.opcionViaje, id: null, datos: null };
+        estado.viaje = { modo: opcion.dataset.opcionViaje, ids: [] };
     } else {
         return;
     }
@@ -286,20 +352,26 @@ document.addEventListener('click', e => {
 
 function marcarSeleccion() {
     const v = estado.viaje;
-    document.querySelectorAll('.tarjeta-viaje').forEach(t =>
-        t.classList.toggle('ring-4', v.modo === 'existente' && t.dataset.viaje === String(v.id)));
-    document.querySelectorAll('.tarjeta-viaje, .opcion-viaje').forEach(t => t.classList.add('ring-primary/50'));
-    document.querySelectorAll('.opcion-viaje').forEach(o =>
-        o.classList.toggle('ring-4', o.dataset.opcionViaje === v.modo));
+    const clave = claveRuta(v.ids);
+    document.querySelectorAll('.tarjeta-ruta').forEach(t => {
+        t.classList.add('ring-primary/60');
+        t.classList.toggle('ring-4', v.modo === 'existente' && t.dataset.ruta === clave);
+    });
+    document.querySelectorAll('.opcion-viaje').forEach(o => {
+        o.classList.add('ring-primary/60');
+        o.classList.toggle('ring-4', o.dataset.opcionViaje === v.modo);
+    });
     $('form-viaje-nuevo').hidden = v.modo !== 'nuevo';
 }
 
-// Viaje nuevo: al elegir la salida se piden los vehículos y choferes libres ese día.
+// Viaje nuevo: al elegir la salida se muestra la llegada estimada y se piden vehículos y choferes libres.
 $('nv-salida').addEventListener('change', async () => {
-    const fecha = $('nv-salida').value.slice(0, 10);
+    const salida = $('nv-salida').value;
+    const fecha = salida.slice(0, 10);
     const vSel = $('nv-vehiculo'), cSel = $('nv-chofer');
     vSel.length = 1; cSel.length = 1;
     vSel.disabled = cSel.disabled = true;
+    $('nv-llegada').textContent = salida ? `Llegada estimada: ${fechaHora(llegadaEstimada(salida))}` : '';
     if (!fecha) return;
     try {
         estado.recursos = await api(`../../api/viajes.php?recursos=1&fecha=${fecha}`);
@@ -326,13 +398,31 @@ $('nv-vehiculo').addEventListener('change', () => {
 });
 
 // ------------------------------------------------------------ paso 4: confirmar
+function textoTramo(v) {
+    return `Viaje ${v.viaje_id}: ${v.origen} → ${v.destino} · sale ${fechaHora(v.fecha_salida)} · ` +
+           `llega aprox. ${fechaHora(v.llegada_estimada)} · ${v.tipo_veh_nombre} ${v.vehiculo_patente} · ${v.chofer_nombre}`;
+}
+
 function armarResumen() {
     const v = estado.viaje;
-    const textoViaje = v.modo === 'existente'
-        ? `Viaje ${v.id}: sale ${fechaHora(v.datos.fecha_salida)} · ${v.datos.tipo_veh_nombre} ${v.datos.vehiculo_patente} · ${v.datos.chofer_nombre}`
-        : v.modo === 'nuevo'
-            ? `Viaje nuevo: sale ${fechaHora($('nv-salida').value.replace('T', ' '))} · ${textoOpcion('nv-vehiculo')} · ${textoOpcion('nv-chofer')}`
-            : 'Sin viaje por ahora (queda pendiente de asignar)';
+    const filasViaje = [];
+    if (v.modo === 'existente') {
+        const tramos = v.ids.map(viajePorId);
+        if (tramos.length === 2) {
+            filasViaje.push(['Tramo 1', textoTramo(tramos[0])]);
+            filasViaje.push(['Trasbordo', `En ${tramos[0].destino}`]);
+            filasViaje.push(['Tramo 2', textoTramo(tramos[1])]);
+        } else {
+            filasViaje.push(['Viaje', textoTramo(tramos[0])]);
+        }
+        filasViaje.push(['Llegada estimada a destino', fechaHora(tramos[tramos.length - 1].llegada_estimada)]);
+    } else if (v.modo === 'nuevo') {
+        const salida = $('nv-salida').value.replace('T', ' ');
+        filasViaje.push(['Viaje nuevo', `${textoOpcion('nv-origen')} → ${textoOpcion('nv-destino')} · sale ${fechaHora(salida)} · ${textoOpcion('nv-vehiculo')} · ${textoOpcion('nv-chofer')}`]);
+        filasViaje.push(['Llegada estimada a destino', fechaHora(llegadaEstimada(salida))]);
+    } else {
+        filasViaje.push(['Viaje', 'Sin viaje por ahora (queda pendiente de asignar)']);
+    }
     const d = estado.direccion;
     const filas = [
         ['Remitente', nombreCliente(estado.remitente)],
@@ -341,7 +431,7 @@ function armarResumen() {
         ['Paquete', `${kg(peso())} · ${textoOpcion('input-tipo')}`],
         ['Sucursales', `${textoOpcion('input-suc-orig')} → ${textoOpcion('input-suc-dest')}`],
         ['Fecha del envío', new Date($('input-fecha').value + 'T00:00').toLocaleDateString('es-AR')],
-        ['Viaje', textoViaje],
+        ...filasViaje,
     ];
     $('resumen').innerHTML = filas.map(([k, val]) => `
         <div class="flex flex-col border-b border-surface-container pb-2">
@@ -365,10 +455,12 @@ $('btn-confirmar').addEventListener('click', async () => {
         direccion_entrega_id: estado.direccion.direccion_id,
         viaje_modo: v.modo,
     };
-    if (v.modo === 'existente') cuerpo.viaje_id = v.id;
+    if (v.modo === 'existente') cuerpo.viajes = v.ids;
     if (v.modo === 'nuevo') {
         cuerpo.viaje_nuevo = {
             fecha_salida: $('nv-salida').value,
+            sucursal_origen_cod: $('nv-origen').value,
+            sucursal_destino_cod: $('nv-destino').value,
             vehiculo_patente: $('nv-vehiculo').value,
             chofer_legajo: $('nv-chofer').value,
         };
@@ -381,8 +473,8 @@ $('btn-confirmar').addEventListener('click', async () => {
         document.querySelectorAll('[data-paso], #pasos').forEach(s => { s.hidden = true; });
         $('resultado-titulo').textContent = r.mensaje;
         $('link-historial').href = `../historial_estado/historial_estado.php?nro_envio=${r.nro_envio}`;
-        $('link-viaje').hidden = !r.viaje_id;
-        $('link-viaje').href = `../viaje_envio/viaje_envio.php?viaje_id=${r.viaje_id}`;
+        $('link-viaje').hidden = !r.viajes.length;
+        $('link-viaje').href = `../viaje_envio/viaje_envio.php?nro_envio=${r.nro_envio}`;
         $('resultado').hidden = false;
     } catch (err) {
         $('error-confirmar').textContent = err.message;

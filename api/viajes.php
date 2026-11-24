@@ -2,7 +2,6 @@
 /* Controlador de viajes: valida, llama al modelo Viaje y responde JSON. */
 require_once '../config/api.php';
 require_once '../modelos/Viaje.php';
-require_once '../modelos/Sucursal.php';
 require_once '../config/validaciones.php';
 
 $viajes = new Viaje($pdo);
@@ -12,11 +11,14 @@ $errores = [1452 => 'El vehículo o el chofer elegidos no existen.'];
 switch ($_SERVER['REQUEST_METHOD']) {
 
     case 'GET':
-        // Asistente de envío: viajes que todavía no salieron, primero los que ya van a la
-        // provincia de la sucursal de destino del envío.
-        if (isset($_GET['disponibles'])) {
-            $sd = trim($_GET['sucursal_dest'] ?? '');
-            responder($viajes->disponibles($sd === '' ? null : (new Sucursal($pdo))->provincia($sd)));
+        // Asistente de envío: rutas directas y con trasbordo (procedimiento_buscar_rutas) y la
+        // lista de todos los viajes que todavía no salieron.
+        if (isset($_GET['rutas'])) {
+            responder($viajes->buscarRutas(
+                campo_codigo($_GET, 'sucursal_orig', 'La sucursal de origen', '/^[0-9]{3}$/', '3 dígitos', false),
+                campo_codigo($_GET, 'sucursal_dest', 'La sucursal de destino', '/^[0-9]{3}$/', '3 dígitos', false),
+                campo_decimal($_GET, 'peso', 'El peso (kg)', 0.01, 999999.99)
+            ));
         }
         // Asistente de envío: vehículos y choferes libres para crear un viaje ese día.
         if (isset($_GET['recursos'])) {

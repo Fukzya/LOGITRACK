@@ -3,8 +3,10 @@
  * Controlador del asistente "Nuevo envío" (paginas/nuevo_envio).
  *
  * POST con los datos del envío y qué hacer con el viaje:
- *   viaje_modo = 'existente' (+ viaje_id) | 'nuevo' (+ viaje_nuevo {fecha_salida, vehiculo_patente,
- *                chofer_legajo}) | 'ninguno' (se asigna más tarde)
+ *   viaje_modo = 'existente' (+ viajes: [id] directo o [id1, id2] con trasbordo, en orden)
+ *              | 'nuevo' (+ viaje_nuevo {fecha_salida, sucursal_origen_cod, sucursal_destino_cod,
+ *                vehiculo_patente, chofer_legajo})
+ *              | 'ninguno' (se asigna más tarde)
  *
  * Todo pasa en UNA transacción: crear el viaje (si es nuevo), crear el envío (procedimiento
  * procedimiento_crear_envio) y asignarlo (procedimiento procedimiento_asignar_envio_a_viaje).
@@ -43,9 +45,11 @@ if ($direcciones->dueno($e['direccion_entrega_id']) !== $e['destinatario_dni']) 
 $modo = campo_opcion($d, 'viaje_modo', 'El viaje', ['existente', 'nuevo', 'ninguno']);
 
 $viajeNuevo = null;
-$viajeId    = null;
+$tramos     = [];   // ids de los viajes, en el orden en que los recorre el envío
 if ($modo === 'existente') {
-    $viajeId = campo_entero($d, 'viaje_id', 'El viaje');
+    $lista = is_array($d['viajes'] ?? null) ? array_values($d['viajes']) : [];
+    if (count($lista) < 1 || count($lista) > 2) error_api('Elegí un viaje directo o dos viajes con un trasbordo.');
+    foreach ($lista as $i => $id) $tramos[] = campo_entero(['v' => $id], 'v', 'El viaje ' . ($i + 1));
 } elseif ($modo === 'nuevo') {
     $viajeNuevo = datos_viaje(is_array($d['viaje_nuevo'] ?? null) ? $d['viaje_nuevo'] : []);
     $viajeNuevo['fecha_llegada'] = null; // un viaje nuevo todavía no llegó
@@ -67,22 +71,24 @@ if ($modo === 'existente') {
 $pdo->beginTransaction();
 try {
     if ($viajeNuevo !== null) {
-        $viajeId = $viajes->crear($viajeNuevo);
+        $tramos = [$viajes->crear($viajeNuevo)];
     }
 
     $nro = $envios->crear($e); // se suma a esta transacción
 
-    if ($viajeId !== null) {
+    foreach ($tramos as $viajeId) {
         // FOR UPDATE: bloquea el viaje para que nadie le cargue peso mientras verificamos la capacidad.
         $v = $viajes->bloquearParaAsignar($viajeId);
-        if ($v === null)                   throw new ValidacionException('El viaje elegido no existe.');
-        if ($v['fecha_llegada'] !== null)  throw new ValidacionException('El viaje elegido ya terminó.');
-        if ($v['fecha_salida'] <= $ahora) throw new ValidacionException('El viaje elegido ya salió.');
+        if ($v === null)                   throw new ValidacionException("El viaje $viajeId no existe.");
+        if ($v['fecha_llegada'] !== null)  throw new ValidacionException("El viaje $viajeId ya terminó.");
+        if ($v['fecha_salida'] <= $ahora)  throw new ValidacionException("El viaje $viajeId ya salió.");
         $libre = (float)$v['capacidad'] - $v['carga'];
         if ($e['peso_kg'] > $libre) {
             throw new ValidacionException(sprintf('El viaje %d ya no tiene lugar: quedan %s kg libres y el envío pesa %s kg.',
                 $viajeId, number_format($libre, 2, ',', '.'), number_format($e['peso_kg'], 2, ',', '.')));
         }
+        // El trigger trigger_before_insert_viaje_envio numera el tramo y controla el trasbordo
+        // (que el 2.º viaje salga de donde llega el 1.º y después de su llegada estimada).
         $asignar->asignarConProcedimiento($viajeId, $nro);
     }
 
@@ -92,13 +98,15 @@ try {
     if ($t instanceof PDOException && codigo_mysql($t) === 1452) {
         error_api('El remitente, el destinatario, una sucursal o el tipo de contenido no existen.');
     }
-    throw $t; // manejar_error() responde el mensaje adecuado
+    throw $t; // manejar_error() responde el mensaje adecuado (los SIGNAL de los triggers, tal cual)
 }
 
 $mensaje = "Envío $nro creado";
-if ($viajeId !== null) {
-    $mensaje .= $viajeNuevo !== null ? " y asignado al viaje nuevo $viajeId." : " y asignado al viaje $viajeId.";
+if (count($tramos) === 2) {
+    $mensaje .= " y asignado a los viajes {$tramos[0]} y {$tramos[1]} (con trasbordo).";
+} elseif ($tramos) {
+    $mensaje .= $viajeNuevo !== null ? " y asignado al viaje nuevo {$tramos[0]}." : " y asignado al viaje {$tramos[0]}.";
 } else {
     $mensaje .= ' sin viaje (queda pendiente de asignar).';
 }
-responder(['mensaje' => $mensaje, 'nro_envio' => $nro, 'viaje_id' => $viajeId], 201);
+responder(['mensaje' => $mensaje, 'nro_envio' => $nro, 'viajes' => $tramos], 201);

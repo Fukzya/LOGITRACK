@@ -21,50 +21,37 @@ class Viaje extends Modelo
         if (!empty($f['solo_activos'])) { $cond[] = 'v.fecha_llegada IS NULL'; }
 
         return $this->paginar(
-            "v.viaje_id, v.fecha_salida, v.fecha_llegada,
+            "v.viaje_id, v.fecha_salida, v.llegada_estimada, v.fecha_llegada,
+             v.sucursal_origen_cod, so.sucursal_completa AS origen,
+             v.sucursal_destino_cod, sd.sucursal_completa AS destino,
              v.vehiculo_patente, CONCAT(ve.marca, ' ', ve.modelo) AS vehiculo,
              v.chofer_legajo, CONCAT(c.nombre, ' ', c.apellido) AS chofer_nombre,
              (SELECT COUNT(*) FROM viaje_envio x WHERE x.viaje_id = v.viaje_id) AS cantidad_envios",
             'viaje v JOIN vehiculo ve ON ve.vehiculo_patente = v.vehiculo_patente
-                     JOIN chofer c    ON c.chofer_legajo     = v.chofer_legajo',
+                     JOIN chofer c    ON c.chofer_legajo     = v.chofer_legajo
+                     JOIN vista_sucursal_ubicacion so ON so.sucursal_cod = v.sucursal_origen_cod
+                     JOIN vista_sucursal_ubicacion sd ON sd.sucursal_cod = v.sucursal_destino_cod',
             $cond, $par, self::ORDENABLES, $p['orden'], $p['dir'], $p['pagina']
         );
     }
 
     /**
-     * Viajes que todavía no salieron, para el asistente de envío. La "ruta" de un viaje sale de los
-     * envíos que ya lleva: sus sucursales de origen y las provincias de destino. recomendado = 1 si
-     * alguno de esos envíos va a la provincia $provinciaDestino. libre = capacidad del vehículo - carga.
+     * Rutas para un envío, con el procedimiento almacenado procedimiento_buscar_rutas: viajes
+     * directos y combinaciones de dos viajes con un trasbordo. Devuelve:
+     *   opciones: [{tipo, prioridad, viaje1_id, viaje2_id, llegada_final}]
+     *   viajes:   todos los viajes programados (vista_viajes_programados), para mostrar el detalle
+     *             de cada opción y la lista de "otros viajes".
      */
-    public function disponibles(?int $provinciaDestino): array
+    public function buscarRutas(string $origen, string $destino, float $peso): array
     {
-        $st = $this->pdo->prepare(
-            "SELECT v.viaje_id, v.fecha_salida, v.vehiculo_patente,
-                    CONCAT(ve.marca, ' ', ve.modelo) AS vehiculo, tv.tipo_veh_nombre,
-                    CONCAT(c.nombre, ' ', c.apellido) AS chofer_nombre,
-                    tv.tipo_veh_capacidad_kg AS capacidad,
-                    COALESCE(SUM(e.peso_kg), 0) AS carga,
-                    tv.tipo_veh_capacidad_kg - COALESCE(SUM(e.peso_kg), 0) AS libre,
-                    COUNT(e.nro_envio) AS cantidad_envios,
-                    GROUP_CONCAT(DISTINCT so.sucursal_completa ORDER BY so.sucursal_completa SEPARATOR ', ') AS origenes,
-                    GROUP_CONCAT(DISTINCT p.provincia_nombre ORDER BY p.provincia_nombre SEPARATOR ', ') AS destinos,
-                    COALESCE(MAX(p.provincia_cod = :prov), 0) AS recomendado
-               FROM viaje v
-               JOIN vehiculo ve      ON ve.vehiculo_patente = v.vehiculo_patente
-               JOIN tipo_vehiculo tv ON tv.tipo_veh_cod     = ve.tipo_veh_cod
-               JOIN chofer c         ON c.chofer_legajo     = v.chofer_legajo
-               LEFT JOIN viaje_envio x ON x.viaje_id      = v.viaje_id
-               LEFT JOIN envio e       ON e.nro_envio     = x.nro_envio
-               LEFT JOIN vista_sucursal_ubicacion so ON so.sucursal_cod = e.sucursal_orig_cod
-               LEFT JOIN sucursal sd   ON sd.sucursal_cod = e.sucursal_dest_cod
-               LEFT JOIN localidad ld  ON ld.localidad_cod = sd.sucursal_localidad_cod
-               LEFT JOIN provincia p   ON p.provincia_cod = ld.provincia_cod
-              WHERE v.fecha_salida > NOW() AND v.fecha_llegada IS NULL
-              GROUP BY v.viaje_id
-              ORDER BY recomendado DESC, v.fecha_salida
-              LIMIT 100");
-        $st->execute([':prov' => $provinciaDestino ?? 0]);
-        return $st->fetchAll(PDO::FETCH_ASSOC);
+        $st = $this->pdo->prepare('CALL procedimiento_buscar_rutas(:o, :d, :p)');
+        $st->execute([':o' => $origen, ':d' => $destino, ':p' => $peso]);
+        $opciones = $st->fetchAll(PDO::FETCH_ASSOC);
+        $st->closeCursor();
+
+        $viajes = $this->pdo->query('SELECT * FROM vista_viajes_programados ORDER BY fecha_salida')
+                            ->fetchAll(PDO::FETCH_ASSOC);
+        return ['opciones' => $opciones, 'viajes' => $viajes];
     }
 
     /** Vehículos y choferes activos sin otro viaje ese día (para crear un viaje desde el asistente). */
@@ -139,9 +126,11 @@ class Viaje extends Modelo
 
     public function crear(array $v): int
     {
-        $this->ejecutar('INSERT INTO viaje (fecha_salida, fecha_llegada, vehiculo_patente, chofer_legajo)
-                         VALUES (:s, :l, :p, :c)',
+        $this->ejecutar('INSERT INTO viaje (fecha_salida, fecha_llegada, sucursal_origen_cod, sucursal_destino_cod,
+                                            vehiculo_patente, chofer_legajo)
+                         VALUES (:s, :l, :o, :d, :p, :c)',
                         [':s' => $v['fecha_salida'], ':l' => $v['fecha_llegada'],
+                         ':o' => $v['sucursal_origen_cod'], ':d' => $v['sucursal_destino_cod'],
                          ':p' => $v['vehiculo_patente'], ':c' => $v['chofer_legajo']]);
         return (int)$this->pdo->lastInsertId();
     }
@@ -150,9 +139,11 @@ class Viaje extends Modelo
     public function actualizar(int $id, array $v): bool
     {
         return $this->ejecutar('UPDATE viaje SET fecha_salida = :s, fecha_llegada = :l,
+                                       sucursal_origen_cod = :o, sucursal_destino_cod = :d,
                                        vehiculo_patente = :p, chofer_legajo = :c
                                 WHERE viaje_id = :id',
                                [':s' => $v['fecha_salida'], ':l' => $v['fecha_llegada'],
+                                ':o' => $v['sucursal_origen_cod'], ':d' => $v['sucursal_destino_cod'],
                                 ':p' => $v['vehiculo_patente'], ':c' => $v['chofer_legajo'], ':id' => $id]) > 0;
     }
 

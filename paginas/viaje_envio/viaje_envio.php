@@ -59,8 +59,9 @@
                         <th class="py-3.5 px-4 font-headline-sm whitespace-nowrap">Salida</th>
                         <th class="py-3.5 px-4 font-headline-sm whitespace-nowrap">Llegada</th>
                         <th id="th-envio" class="py-3.5 px-4 font-headline-sm hover:text-primary transition-colors cursor-pointer whitespace-nowrap" title="Ordenar">Envío</th>
+                        <th class="py-3.5 px-4 font-headline-sm whitespace-nowrap" title="1 = directo o primer viaje; 2 = después del trasbordo">Tramo</th>
                         <th class="py-3.5 px-4 font-headline-sm whitespace-nowrap">Fecha del envío</th>
-                        <th class="py-3.5 px-4 font-headline-sm whitespace-nowrap">Origen → Destino</th>
+                        <th class="py-3.5 px-4 font-headline-sm whitespace-nowrap">Recorrido del viaje</th>
                         <th class="py-3.5 px-4 font-headline-sm text-center whitespace-nowrap min-w-[170px]">Acciones</th>
                     </tr>
                 </thead>

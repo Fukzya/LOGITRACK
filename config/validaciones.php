@@ -28,9 +28,15 @@ function datos_viaje(array $d): array
     $v = [
         'fecha_salida'     => campo_fecha_hora($d, 'fecha_salida', 'La fecha de salida'),
         'fecha_llegada'    => campo_fecha_hora($d, 'fecha_llegada', 'La fecha de llegada', false),
+        'sucursal_origen_cod'  => campo_codigo($d, 'sucursal_origen_cod', 'La sucursal de origen del viaje', '/^[0-9]{3}$/', '3 dígitos', false),
+        'sucursal_destino_cod' => campo_codigo($d, 'sucursal_destino_cod', 'La sucursal de destino del viaje', '/^[0-9]{3}$/', '3 dígitos', false),
         'vehiculo_patente' => campo_codigo($d, 'vehiculo_patente', 'El vehículo', '/^[A-Z0-9]{6,10}$/', 'una patente'),
         'chofer_legajo'    => campo_entero($d, 'chofer_legajo', 'El chofer'),
     ];
+    // Misma regla que el CHECK ck_viaje_origen_destino.
+    if ($v['sucursal_origen_cod'] === $v['sucursal_destino_cod']) {
+        throw new ValidacionException('El viaje tiene que ir de una sucursal a otra distinta.');
+    }
     // Misma regla que trigger_before_update_viaje, también para el alta.
     if ($v['fecha_llegada'] !== null && $v['fecha_llegada'] <= $v['fecha_salida']) {
         throw new ValidacionException('La fecha de llegada tiene que ser posterior a la de salida.');
