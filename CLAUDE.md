@@ -13,7 +13,7 @@ triggers, vistas, seguridad en BD y código, CRUD, transacciones, índices) y po
   En PowerShell 5.1 los mensajes con comillas se rompen: escribir el mensaje en un archivo del
   scratchpad y usar `git commit -F archivo`.
 - Cambios a la base: NUNCA editar `database/logitrack.sql` a mano. Cada cambio es un script nuevo
-  numerado en `database/cambios/` (el próximo es 010_...), con un encabezado que explica qué y por
+  numerado en `database/cambios/` (el próximo es 011_...), con un encabezado que explica qué y por
   qué, y se corre con `Get-Content -Raw -Encoding UTF8 script.sql | mysql -uroot
   --default-character-set=utf8mb4 logitrack` (mysql en c:\xampp\mysql\bin).
 - Cada cambio de la base se documenta TAMBIÉN en la planilla (ver "Planilla").
@@ -37,7 +37,7 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
 ## Estado del checklist (2026-11-23)
 - Normalización: hecha en la planilla (0FN a 3FN), 17 tablas + USUARIO. Actualizada con 007.
 - CRUD: terminado (MVC, 15 entidades).
-- Sesiones: PRÓXIMO TEMA. Hoy hay login básico (config/session.php con timeout, api/login.php,
+- Sesiones: EN CURSO. Hoy hay login básico (config/session.php con timeout, api/login.php,
   check_session, logout). Falta analizar contra la teoría (vencimiento, regeneración de id,
   conexiones concurrentes en la base, etc.).
 - Procedimientos: se usan procedimiento_crear_envio, procedimiento_asignar_envio_a_viaje y
@@ -57,10 +57,7 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
   procedimientos con EXIT HANDLER y explicarlo.
 
 ## Pendiente inmediato
-- Propuesto y sin respuesta: script 010 de limpieza de datos de prueba del usuario que quedaron
-  fuera de las reglas de 009: envíos 8019, 8104 y 8110 con fecha_envio 2026-11-24 (futura),
-  estado 31332 del envío 8110 con fecha 22/11 (anterior a su RECIBIDO) y viaje 3001 con
-  llegada real futura. Después: análisis de sesiones.
+- Análisis de sesiones (en curso).
 - Decidido NO hacer: "envío programado" (fecha de envío futura). fecha_envio = día en que se
   recibe el paquete; lo que es futuro es el viaje al que se asigna.
 
@@ -81,6 +78,7 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
   del último / nada después de uno final; fecha_envio no futura; llegada real no futura;
   incidente dentro del viaje (procedimiento_validar_fecha_incidente); no asignar a viajes que ya
   salieron; editar un viaje no puede romper un trasbordo ni superar la capacidad.
+- 010 limpieza: envíos 8019/8104/8110 a fecha 23/11, borrados los estados 31332 y 31244, viaje 3001 sin llegada real. Los envíos 8015-8018 (junio) tienen RECIBIDO 1 día antes de fecha_envio: viejos, no se tocan.
 - Los datos de prueba originales (2024) se generaron al azar y NO cumplen las reglas nuevas
   (envíos con hasta 9 viajes, estados antes de la fecha del envío, etc.). No se corrigen: los
   triggers controlan lo nuevo. Decirlo así en la defensa.
