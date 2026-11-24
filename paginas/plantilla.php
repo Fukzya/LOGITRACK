@@ -431,9 +431,9 @@ function inicio_pagina(string $titulo, bool $soloAdmin = false, string $seccionA
             <div class="flex flex-col w-full gap-space-xl pb-16">
                 <!-- Top Navigation & Header -->
                 <div class="flex flex-col gap-space-sm">
-                    <a class="inline-flex items-center gap-1 text-sm font-label-md text-primary hover:underline w-fit" href="../../index.php">
-                        <span class="material-symbols-outlined text-[16px]">arrow_back</span>
-                        Volver al menú
+                    <a class="group inline-flex items-center gap-1 text-sm font-label-md text-primary no-underline w-fit" href="../../index.php">
+                        <span class="material-symbols-outlined text-[16px] transition-transform group-hover:-translate-x-0.5">arrow_back</span>
+                        <span class="group-hover:underline">Volver al menú</span>
                     </a>
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-3">
