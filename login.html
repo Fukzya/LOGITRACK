@@ -1,27 +1,103 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>LogiTrack - Login</title>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>LogiTrack - Iniciar sesión</title>
+    <style>
+        [hidden] { display: none !important; }
+        @layer base {
+            html, body { margin: 0; padding: 0; }
+            body { overscroll-behavior: none; }
+        }
+    </style>
+    <script src="assets/tailwind.js"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#c2410c",
+                        "primary-container": "#ea580c",
+                        "on-primary": "#ffffff",
+                        "surface": "#faf6f0",
+                        "surface-container": "#f5efe6",
+                        "surface-container-low": "#fef3c7",
+                        "surface-container-high": "#f0e6dc",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface": "#1c1917",
+                        "on-surface-variant": "#464555",
+                        "outline": "#777587",
+                        "error": "#ba1a1a",
+                        "error-container": "#ffdad6",
+                        "on-error-container": "#93000a"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "2xl": "1rem",
+                        "full": "0.75rem"
+                    },
+                    fontFamily: {
+                        "sans": ["Inter", "sans-serif"]
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="assets/material-symbols.css" rel="stylesheet"/>
+    <link href="assets/inter.css" rel="stylesheet"/>
 </head>
-<body>
-    <h1>LogiTrack</h1>
-    <h2>Iniciar sesión</h2>
+<body class="bg-[#faf6f0] font-sans text-on-surface flex items-center justify-center min-h-screen p-4">
 
-    <form id="form-login">
-        <label>Usuario:<br>
-            <input type="text" id="username" placeholder="Usuario" autocomplete="username">
-        </label>
-        <br><br>
-        <label>Contraseña:<br>
-            <input type="password" id="password" placeholder="Contraseña" autocomplete="current-password">
-        </label>
-        <br><br>
-        <button type="submit" id="btn-login">Ingresar</button>
-    </form>
+    <div class="bg-surface-container-lowest rounded-2xl p-8 md:p-10 shadow-[0_4px_20px_rgba(0,0,0,0.06)] max-w-md w-full border border-surface-container flex flex-col gap-6">
+        
+        <!-- Identidad de marca -->
+        <div class="flex flex-col items-center text-center gap-3">
+            <div class="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center text-on-primary font-bold text-3xl shadow-sm">
+                L
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight text-on-surface">LogiTrack</h1>
+                <p class="text-sm text-on-surface-variant mt-1">Sistema de Gestión y Trazabilidad Logística</p>
+            </div>
+        </div>
 
-    <div id="mensaje"></div>
+        <!-- Formulario de ingreso -->
+        <form id="form-login" class="flex flex-col gap-4">
+            <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant" for="username">Usuario</label>
+                <div class="relative flex items-center">
+                    <span class="material-symbols-outlined absolute left-3 text-outline text-[20px]">person</span>
+                    <input class="w-full bg-[#fef3c7] pl-10 pr-4 py-2.5 rounded-xl text-sm border-0 focus:ring-2 focus:ring-primary outline-none text-on-surface transition-all" id="username" placeholder="Ingresá tu usuario" autocomplete="username" required type="text"/>
+                </div>
+            </div>
 
-    <script src="login.js"></script>
+            <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant" for="password">Contraseña</label>
+                <div class="relative flex items-center">
+                    <span class="material-symbols-outlined absolute left-3 text-outline text-[20px]">lock</span>
+                    <input class="w-full bg-[#fef3c7] pl-10 pr-4 py-2.5 rounded-xl text-sm border-0 focus:ring-2 focus:ring-primary outline-none text-on-surface transition-all" id="password" placeholder="••••••••" autocomplete="current-password" required type="password"/>
+                </div>
+            </div>
+
+            <!-- Mensaje de error/alerta dinámico -->
+            <div id="mensaje" class="text-xs font-medium text-on-error-container bg-error-container px-3 py-2 rounded-lg empty:hidden text-center transition-all"></div>
+
+            <button class="bg-primary hover:bg-primary-container text-on-primary font-semibold py-3 px-4 rounded-xl shadow-sm transition-colors text-center w-full mt-2 flex items-center justify-center gap-2" id="btn-login" type="submit">
+                <span>Ingresar al sistema</span>
+                <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+            </button>
+        </form>
+
+        <div class="pt-4 border-t border-surface-container text-center">
+            <span class="text-xs text-on-surface-variant">LogiTrack &copy; 2026 - Control Integral de Flotas y Envíos</span>
+        </div>
+
+    </div>
+
+    <script src="login.js?v=2"></script>  <!-- subir el número al cambiar login.js, para que el navegador no use la copia vieja -->
 </body>
 </html>

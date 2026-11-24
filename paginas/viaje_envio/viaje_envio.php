@@ -1,33 +1,72 @@
-<?php require '../plantilla.php'; inicio_pagina('Envíos por viaje'); ?>
+<?php require '../plantilla.php'; inicio_pagina('Viaje-Envío'); ?>
 
-    <form id="form-asignacion">
-        <h3 id="titulo-form">Asignar un envío a un viaje</h3>
-        <input type="number" id="input-viaje" placeholder="ID del viaje" required min="1">
-        <input type="number" id="input-envio" placeholder="Nro de envío" required min="1">
-        <button type="submit">Asignar</button>
-    </form>
+    <!-- Formulario de Asignación -->
+    <div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] flex flex-col gap-space-lg" id="asignar-envio-card">
+        <div class="flex items-center justify-between">
+            <h2 class="text-headline-md text-on-surface flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">link</span>
+                <span id="titulo-form">Asignar un envío a un viaje</span>
+            </h2>
+            <span class="text-xs text-on-surface-variant">Asocie números de despacho a los viajes programados</span>
+        </div>
+        <form id="form-asignacion" class="flex flex-col gap-space-md">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+                <div class="flex flex-col gap-space-xs">
+                    <label class="text-label-sm text-on-surface-variant" for="input-viaje">ID del viaje</label>
+                    <input class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="input-viaje" placeholder="ID de viaje" required min="1" type="number"/>
+                </div>
+                <div class="flex flex-col gap-space-xs">
+                    <label class="text-label-sm text-on-surface-variant" for="input-envio">Nro de envío</label>
+                    <input class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="input-envio" placeholder="Nro de envío" required min="1" type="number"/>
+                </div>
+                <div class="flex flex-col gap-space-xs justify-end">
+                    <button class="bg-primary hover:bg-primary-container text-on-primary px-4 py-2 rounded-lg text-label-md transition-colors shadow-sm whitespace-nowrap h-10" type="submit">Asignar</button>
+                </div>
+            </div>
+        </form>
+    </div>
 
-    <hr>
-    <input type="number" id="filtro-viaje" placeholder="Buscar por ID de viaje">
-    <input type="number" id="filtro-envio" placeholder="Buscar por nro de envío">
-    <button id="btn-filtrar">Filtrar</button>
-    <button id="btn-limpiar">Limpiar</button>
-    <hr>
+    <!-- Tarjeta de Filtros -->
+    <div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] flex flex-col gap-space-md">
+        <div class="flex items-center justify-between">
+            <h3 class="text-headline-sm text-on-surface">Filtros de Búsqueda</h3>
+            <span class="material-symbols-outlined text-outline">tune</span>
+        </div>
+        <div class="flex flex-wrap items-end gap-space-md">
+            <div class="flex flex-col gap-space-xs">
+                <label class="text-label-sm text-on-surface-variant" for="filtro-viaje">Buscar por ID de viaje</label>
+                <input class="bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none w-48 text-on-surface" id="filtro-viaje" placeholder="ID de viaje" type="number"/>
+            </div>
+            <div class="flex flex-col gap-space-xs">
+                <label class="text-label-sm text-on-surface-variant" for="filtro-envio">Buscar por nro de envío</label>
+                <input class="bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none w-48 text-on-surface" id="filtro-envio" placeholder="Nro de envío" type="number"/>
+            </div>
+            <div class="flex items-center gap-2 h-10">
+                <button class="bg-primary hover:bg-primary-container text-on-primary px-4 py-2 rounded-lg text-label-md transition-colors" type="button" id="btn-filtrar">Filtrar</button>
+                <button class="bg-surface-container hover:bg-surface-container-high text-on-surface px-4 py-2 rounded-lg text-label-md transition-colors" type="button" id="btn-limpiar">Limpiar</button>
+            </div>
+        </div>
+    </div>
 
-    <div id="paginacion"></div>
-    <table border="1">
-        <thead>
-            <tr>
-                <th id="th-viaje">Viaje</th>
-                <th>Salida</th>
-                <th>Llegada</th>
-                <th id="th-envio">Envío</th>
-                <th>Fecha del envío</th>
-                <th>Origen → Destino</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody id="tabla-asignaciones"></tbody>
-    </table>
+    <!-- Tarjeta de Tabla -->
+    <div class="bg-surface-container-lowest rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] flex flex-col overflow-hidden">
+        <div id="paginacion"></div>
+        <div class="overflow-x-auto w-full">
+            <table class="w-full min-w-[950px] text-left border-collapse">
+                <thead>
+                    <tr class="bg-surface-container text-on-surface text-label-sm border-b border-surface-container-highest select-none">
+                        <th id="th-viaje" class="py-3.5 px-4 font-headline-sm hover:text-primary transition-colors cursor-pointer whitespace-nowrap" title="Ordenar">Viaje</th>
+                        <th class="py-3.5 px-4 font-headline-sm whitespace-nowrap">Salida</th>
+                        <th class="py-3.5 px-4 font-headline-sm whitespace-nowrap">Llegada</th>
+                        <th id="th-envio" class="py-3.5 px-4 font-headline-sm hover:text-primary transition-colors cursor-pointer whitespace-nowrap" title="Ordenar">Envío</th>
+                        <th class="py-3.5 px-4 font-headline-sm whitespace-nowrap">Fecha del envío</th>
+                        <th class="py-3.5 px-4 font-headline-sm whitespace-nowrap">Origen → Destino</th>
+                        <th class="py-3.5 px-4 font-headline-sm text-center whitespace-nowrap min-w-[170px]">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-asignaciones" class="divide-y divide-surface-container text-sm text-on-surface"></tbody>
+            </table>
+        </div>
+    </div>
 
 <?php fin_pagina('viaje_envio.js'); ?>

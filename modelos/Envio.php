@@ -28,6 +28,11 @@ class Envio extends Modelo
              e.sucursal_orig_cod, so.sucursal_nombre AS sucursal_orig_nombre,
              e.sucursal_dest_cod, sd.sucursal_nombre AS sucursal_dest_nombre,
              e.direccion_entrega_id, CONCAT(d.calle_y_numero, ', ', l.localidad_nombre) AS direccion_entrega,
+             (SELECT est.estado_nombre
+                FROM historial_estado h JOIN estado_envio est ON est.estado_cod = h.estado
+               WHERE h.nro_envio = e.nro_envio
+               ORDER BY h.fecha_hora DESC, h.id_historial DESC
+               LIMIT 1) AS ultimo_estado,
              e.activo",
             'envio e
              JOIN tipo_contenido tc ON tc.tipo_cont_cod   = e.tipo_cont_cod

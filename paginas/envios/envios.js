@@ -21,8 +21,14 @@ pantallaCrud({
         f => esc(f.sucursal_orig_nombre),
         f => esc(f.sucursal_dest_nombre),
         f => `${esc(f.direccion_entrega)}<br><small>ID ${esc(f.direccion_entrega_id)}</small>`,
+        f => esc(f.ultimo_estado ?? 'Sin estados'),
         celdaEstado,
     ],
+    // Abre el historial completo de ese envío (historial_estado.php lee el filtro desde la URL).
+    accionesExtra: f => `<button data-accion="historial" data-clave="${esc(f.nro_envio)}">Ver historial</button>`,
+    acciones: {
+        historial: f => { location.href = `../historial_estado/historial_estado.php?nro_envio=${encodeURIComponent(f.nro_envio)}`; },
+    },
     form: 'form-envio',
     titulo: 'titulo-form',
     tituloAlta: 'Nuevo envío',

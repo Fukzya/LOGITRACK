@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/Modelo.php';
 
-/** Modelo HistorialEstado: los estados por los que pasa cada envío. */
+/** Modelo HistorialEstado: los estados por los que pasa cada envío (registro inmutable: solo altas). */
 class HistorialEstado extends Modelo
 {
     private const ORDENABLES = [
@@ -40,17 +40,6 @@ class HistorialEstado extends Modelo
         return (int)$this->pdo->lastInsertId();
     }
 
-    public function actualizar(int $id, array $h): bool
-    {
-        return $this->ejecutar('UPDATE historial_estado SET nro_envio = :n, sucursal_cod = :s, estado = :e,
-                                       fecha_hora = :f, observacion = :o
-                                WHERE id_historial = :id',
-                               [':n' => $h['nro_envio'], ':s' => $h['sucursal_cod'], ':e' => $h['estado'],
-                                ':f' => $h['fecha_hora'], ':o' => $h['observacion'], ':id' => $id]) > 0;
-    }
-
-    public function eliminar(int $id): bool
-    {
-        return $this->ejecutar('DELETE FROM historial_estado WHERE id_historial = :id', [':id' => $id]) > 0;
-    }
+    // No hay actualizar() ni eliminar(): el historial es inmutable. Un cambio de estado es
+    // siempre una fila nueva, así queda registrado todo el recorrido del envío.
 }

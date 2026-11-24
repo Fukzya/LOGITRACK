@@ -1,38 +1,95 @@
 <?php require '../plantilla.php'; inicio_pagina('Viajes'); ?>
 
-    <form id="form-viaje">
-        <h3 id="titulo-form">Nuevo viaje</h3>
-        <label>Salida <input type="datetime-local" id="input-salida" required></label>
-        <label>Llegada (opcional) <input type="datetime-local" id="input-llegada"></label>
-        <select id="input-vehiculo" required><option value="">Elegí el vehículo</option></select>
-        <select id="input-chofer" required><option value="">Elegí el chofer</option></select>
-        <button type="submit">Agregar</button>
-        <button type="button" class="btn-cancelar" hidden>Cancelar</button>
-    </form>
+    <!-- Formulario de Nuevo Viaje / Edición -->
+    <div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] flex flex-col gap-space-lg" id="nuevo-viaje-card">
+        <div class="flex items-center justify-between">
+            <h2 class="text-headline-md text-on-surface flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">route</span>
+                <span id="titulo-form">Nuevo viaje</span>
+            </h2>
+            <span class="text-xs text-on-surface-variant">Complete los datos para programar un viaje logístico</span>
+        </div>
+        <form id="form-viaje" class="flex flex-col gap-space-md">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-space-md">
+                <div class="flex flex-col gap-space-xs">
+                    <label class="text-label-sm text-on-surface-variant" for="input-salida">Fecha y hora de salida</label>
+                    <input class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="input-salida" type="datetime-local" required/>
+                </div>
+                <div class="flex flex-col gap-space-xs">
+                    <label class="text-label-sm text-on-surface-variant" for="input-llegada">Llegada (opcional)</label>
+                    <input class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="input-llegada" type="datetime-local"/>
+                </div>
+                <div class="flex flex-col gap-space-xs">
+                    <label class="text-label-sm text-on-surface-variant" for="input-vehiculo">Vehículo asignado</label>
+                    <select class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="input-vehiculo" required>
+                        <option value="">Elegí el vehículo</option>
+                    </select>
+                </div>
+                <div class="flex flex-col gap-space-xs">
+                    <label class="text-label-sm text-on-surface-variant" for="input-chofer">Chofer asignado</label>
+                    <div class="flex gap-2">
+                        <select class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="input-chofer" required>
+                            <option value="">Elegí el chofer</option>
+                        </select>
+                        <button class="bg-primary hover:bg-primary-container text-on-primary px-4 py-2 rounded-lg text-label-md transition-colors shadow-sm whitespace-nowrap shrink-0" type="submit">Agregar</button>
+                        <button class="btn-cancelar bg-surface-container hover:bg-surface-container-high text-on-surface px-4 py-2 rounded-lg text-label-md transition-colors whitespace-nowrap shrink-0" type="button" hidden>Cancelar</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
 
-    <hr>
-    <label>Salida desde: <input type="date" id="filtro-fecha-desde"></label>
-    <label>Salida hasta: <input type="date" id="filtro-fecha-hasta"></label>
-    <select id="filtro-chofer"><option value="">Todos los choferes</option></select>
-    <label><input type="checkbox" id="filtro-solo-activos"> Solo viajes en curso</label>
-    <button id="btn-filtrar">Filtrar</button>
-    <button id="btn-limpiar">Limpiar</button>
-    <hr>
+    <!-- Tarjeta de Filtros -->
+    <div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] flex flex-col gap-space-md">
+        <div class="flex items-center justify-between">
+            <h3 class="text-headline-sm text-on-surface">Filtros y Búsqueda</h3>
+            <span class="material-symbols-outlined text-outline">tune</span>
+        </div>
+        <div class="flex flex-wrap items-end gap-space-md">
+            <div class="flex flex-col gap-space-xs">
+                <label class="text-label-sm text-on-surface-variant" for="filtro-fecha-desde">Salida desde</label>
+                <input class="bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none w-40 text-on-surface" id="filtro-fecha-desde" type="date"/>
+            </div>
+            <div class="flex flex-col gap-space-xs">
+                <label class="text-label-sm text-on-surface-variant" for="filtro-fecha-hasta">Salida hasta</label>
+                <input class="bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none w-40 text-on-surface" id="filtro-fecha-hasta" type="date"/>
+            </div>
+            <div class="flex flex-col gap-space-xs">
+                <label class="text-label-sm text-on-surface-variant" for="filtro-chofer">Chofer</label>
+                <select class="bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="filtro-chofer">
+                    <option value="">Todos los choferes</option>
+                </select>
+            </div>
+            <div class="flex items-center gap-2 h-10">
+                <button class="bg-primary hover:bg-primary-container text-on-primary px-4 py-2 rounded-lg text-label-md transition-colors" type="button" id="btn-filtrar">Filtrar</button>
+                <button class="bg-surface-container hover:bg-surface-container-high text-on-surface px-4 py-2 rounded-lg text-label-md transition-colors" type="button" id="btn-limpiar">Limpiar</button>
+            </div>
+            <div class="flex items-center gap-2 ml-auto h-10">
+                <input class="w-4 h-4 text-primary rounded accent-primary cursor-pointer" id="filtro-solo-activos" type="checkbox"/>
+                <label class="text-sm text-on-surface select-none cursor-pointer" for="filtro-solo-activos">Solo viajes en curso</label>
+            </div>
+        </div>
+    </div>
 
-    <div id="paginacion"></div>
-    <table border="1">
-        <thead>
-            <tr>
-                <th id="th-id">ID</th>
-                <th id="th-salida">Salida</th>
-                <th id="th-llegada">Llegada</th>
-                <th>Vehículo</th>
-                <th>Chofer</th>
-                <th>Envíos</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody id="tabla-viajes"></tbody>
-    </table>
+    <!-- Tarjeta de Tabla -->
+    <div class="bg-surface-container-lowest rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] flex flex-col overflow-hidden">
+        <div id="paginacion"></div>
+        <div class="overflow-x-auto w-full">
+            <table class="w-full min-w-[950px] text-left border-collapse">
+                <thead>
+                    <tr class="bg-surface-container text-on-surface text-label-sm border-b border-surface-container-highest select-none">
+                        <th id="th-id" class="py-3.5 px-4 font-headline-sm hover:text-primary transition-colors cursor-pointer whitespace-nowrap" title="Ordenar">ID</th>
+                        <th id="th-salida" class="py-3.5 px-4 font-headline-sm hover:text-primary transition-colors cursor-pointer whitespace-nowrap" title="Ordenar">Salida</th>
+                        <th id="th-llegada" class="py-3.5 px-4 font-headline-sm hover:text-primary transition-colors cursor-pointer whitespace-nowrap" title="Ordenar">Llegada</th>
+                        <th class="py-3.5 px-4 font-headline-sm whitespace-nowrap">Vehículo</th>
+                        <th class="py-3.5 px-4 font-headline-sm whitespace-nowrap">Chofer</th>
+                        <th class="py-3.5 px-4 font-headline-sm text-center whitespace-nowrap">Envíos</th>
+                        <th class="py-3.5 px-4 font-headline-sm text-center whitespace-nowrap min-w-[170px]">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-viajes" class="divide-y divide-surface-container text-sm text-on-surface"></tbody>
+            </table>
+        </div>
+    </div>
 
 <?php fin_pagina('viajes.js'); ?>

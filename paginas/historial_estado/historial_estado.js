@@ -1,4 +1,6 @@
-// Pantalla del historial de estados de los envíos (baja física).
+// Pantalla del historial de estados de los envíos.
+// El historial es inmutable: solo se registran estados nuevos, no se editan ni se borran.
+// Se puede abrir filtrado desde Envíos: historial_estado.php?nro_envio=123
 cargarCatalogo('input-estado', 'estados');
 cargarCatalogo('filtro-estado', 'estados');
 cargarCatalogo('input-sucursal', 'sucursales');
@@ -21,7 +23,6 @@ pantallaCrud({
     form: 'form-historial',
     titulo: 'titulo-form',
     tituloAlta: 'Registrar un estado',
-    tituloEdicion: f => `Editando registro ${f.id_historial}`,
     campos: {
         'input-envio': 'nro_envio',
         'input-sucursal': 'sucursal_cod',
@@ -38,5 +39,6 @@ pantallaCrud({
     },
     orden: { col: 'id_historial', dir: 'DESC' },
     encabezados: { 'th-id': 'id_historial', 'th-envio': 'nro_envio', 'th-fecha': 'fecha_hora' },
-    baja: 'fisica',
+    editable: false,
+    baja: null,
 });

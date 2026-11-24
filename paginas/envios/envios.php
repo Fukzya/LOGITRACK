@@ -1,50 +1,130 @@
 <?php require '../plantilla.php'; inicio_pagina('Envíos'); ?>
 
+    <!-- Formulario de Nuevo Envío / Edición -->
     <!-- El alta se hace con el procedimiento almacenado procedimiento_crear_envio, en una transacción. -->
-    <form id="form-envio">
-        <h3 id="titulo-form">Nuevo envío</h3>
-        <label>Fecha <input type="date" id="input-fecha" required></label>
-        <input type="number" id="input-peso" placeholder="Peso (kg)" required min="0.01" max="999999.99" step="0.01">
-        <select id="input-tipo" required><option value="">Tipo de contenido</option></select>
-        <input type="number" id="input-remitente" placeholder="DNI remitente" required min="1" max="99999999">
-        <input type="number" id="input-destinatario" placeholder="DNI destinatario" required min="1" max="99999999">
-        <select id="input-suc-orig" required><option value="">Sucursal de origen</option></select>
-        <select id="input-suc-dest" required><option value="">Sucursal de destino</option></select>
-        <input type="number" id="input-direccion" placeholder="ID dirección de entrega" required min="1">
-        <button type="submit">Agregar</button>
-        <button type="button" class="btn-cancelar" hidden>Cancelar</button>
-    </form>
+    <div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] flex flex-col gap-space-lg" id="nuevo-envio-card">
+        <div class="flex items-center justify-between">
+            <h2 class="text-headline-md text-on-surface flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">local_shipping</span>
+                <span id="titulo-form">Nuevo envío</span>
+            </h2>
+            <span class="text-xs text-on-surface-variant">Complete los datos obligatorios para registrar un despacho</span>
+        </div>
+        <form id="form-envio" class="flex flex-col gap-space-md">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-space-md">
+                <div class="flex flex-col gap-space-xs">
+                    <label class="text-label-sm text-on-surface-variant" for="input-fecha">Fecha</label>
+                    <input class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="input-fecha" type="date" required/>
+                </div>
+                <div class="flex flex-col gap-space-xs">
+                    <label class="text-label-sm text-on-surface-variant" for="input-peso">Peso (kg)</label>
+                    <input class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="input-peso" placeholder="0.00" required min="0.01" max="999999.99" step="0.01" type="number"/>
+                </div>
+                <div class="flex flex-col gap-space-xs">
+                    <label class="text-label-sm text-on-surface-variant" for="input-tipo">Tipo de contenido</label>
+                    <select class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="input-tipo" required>
+                        <option value="">Tipo de contenido</option>
+                    </select>
+                </div>
+                <div class="flex flex-col gap-space-xs">
+                    <label class="text-label-sm text-on-surface-variant" for="input-remitente">DNI remitente</label>
+                    <input class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="input-remitente" placeholder="Ej: 10002166" required min="1" max="99999999" type="number"/>
+                </div>
+                <div class="flex flex-col gap-space-xs">
+                    <label class="text-label-sm text-on-surface-variant" for="input-destinatario">DNI destinatario</label>
+                    <input class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="input-destinatario" placeholder="Ej: 10003330" required min="1" max="99999999" type="number"/>
+                </div>
+                <div class="flex flex-col gap-space-xs">
+                    <label class="text-label-sm text-on-surface-variant" for="input-suc-orig">Sucursal de origen</label>
+                    <select class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="input-suc-orig" required>
+                        <option value="">Sucursal de origen</option>
+                    </select>
+                </div>
+                <div class="flex flex-col gap-space-xs">
+                    <label class="text-label-sm text-on-surface-variant" for="input-suc-dest">Sucursal de destino</label>
+                    <select class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="input-suc-dest" required>
+                        <option value="">Sucursal de destino</option>
+                    </select>
+                </div>
+                <div class="flex flex-col gap-space-xs">
+                    <label class="text-label-sm text-on-surface-variant" for="input-direccion">ID dirección de entrega</label>
+                    <div class="flex gap-2">
+                        <input class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="input-direccion" placeholder="ID dir" required min="1" type="number"/>
+                        <button class="bg-primary hover:bg-primary-container text-on-primary px-4 py-2 rounded-lg text-label-md transition-colors shadow-sm whitespace-nowrap shrink-0" type="submit">Agregar</button>
+                        <button class="btn-cancelar bg-surface-container hover:bg-surface-container-high text-on-surface px-4 py-2 rounded-lg text-label-md transition-colors whitespace-nowrap shrink-0" type="button" hidden>Cancelar</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
 
-    <hr>
-    <label>Fecha desde: <input type="date" id="filtro-fecha-desde"></label>
-    <label>Fecha hasta: <input type="date" id="filtro-fecha-hasta"></label>
-    <select id="filtro-sucursal-orig"><option value="">Todas las sucursales de origen</option></select>
-    <select id="filtro-tipo"><option value="">Todos los tipos</option></select>
-    <button id="btn-filtrar">Filtrar</button>
-    <button id="btn-limpiar">Limpiar</button>
-    <?php if ($esAdmin): ?>
-    <label><input type="checkbox" id="filtro-mostrar-inactivos"> Mostrar envíos inactivos</label>
-    <?php endif; ?>
-    <hr>
+    <!-- Tarjeta de Filtros -->
+    <div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] flex flex-col gap-space-md">
+        <div class="flex items-center justify-between">
+            <h3 class="text-headline-sm text-on-surface">Filtros y Búsqueda Avanzada</h3>
+            <span class="material-symbols-outlined text-outline">tune</span>
+        </div>
+        <div class="flex flex-wrap items-end gap-space-md">
+            <div class="flex flex-col gap-space-xs">
+                <label class="text-label-sm text-on-surface-variant" for="filtro-fecha-desde">Fecha desde</label>
+                <input class="bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none w-40 text-on-surface" id="filtro-fecha-desde" type="date"/>
+            </div>
+            <div class="flex flex-col gap-space-xs">
+                <label class="text-label-sm text-on-surface-variant" for="filtro-fecha-hasta">Fecha hasta</label>
+                <input class="bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none w-40 text-on-surface" id="filtro-fecha-hasta" type="date"/>
+            </div>
+            <div class="flex flex-col gap-space-xs">
+                <label class="text-label-sm text-on-surface-variant" for="filtro-sucursal-orig">Sucursal de origen</label>
+                <select class="bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="filtro-sucursal-orig">
+                    <option value="">Todas las sucursales de origen</option>
+                </select>
+            </div>
+            <div class="flex flex-col gap-space-xs">
+                <label class="text-label-sm text-on-surface-variant" for="filtro-tipo">Tipos</label>
+                <select class="bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="filtro-tipo">
+                    <option value="">Todos los tipos</option>
+                </select>
+            </div>
+            <div class="flex items-center gap-2 h-10">
+                <button class="bg-primary hover:bg-primary-container text-on-primary px-4 py-2 rounded-lg text-label-md transition-colors" type="button" id="btn-filtrar">Filtrar</button>
+                <button class="bg-surface-container hover:bg-surface-container-high text-on-surface px-4 py-2 rounded-lg text-label-md transition-colors" type="button" id="btn-limpiar">Limpiar</button>
+            </div>
+            <?php if ($esAdmin): ?>
+            <div class="flex items-center gap-2 ml-auto h-10">
+                <input class="w-4 h-4 text-primary rounded accent-primary cursor-pointer" id="filtro-mostrar-inactivos" type="checkbox"/>
+                <label class="text-sm text-on-surface select-none cursor-pointer" for="filtro-mostrar-inactivos">Mostrar envíos inactivos</label>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
 
-    <div id="paginacion"></div>
-    <table border="1">
-        <thead>
-            <tr>
-                <th id="th-nro">Nro</th>
-                <th id="th-fecha">Fecha</th>
-                <th id="th-peso">Peso (kg)</th>
-                <th>Tipo</th>
-                <th>Remitente</th>
-                <th>Destinatario</th>
-                <th>Origen</th>
-                <th>Destino</th>
-                <th>Dirección de entrega</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody id="tabla-envios"></tbody>
-    </table>
+    <!-- Tarjeta Principal de Tabla -->
+    <div class="bg-surface-container-lowest rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] flex flex-col overflow-hidden">
+        <!-- Paginación superior dinámica -->
+        <div id="paginacion"></div>
+
+        <!-- Tabla con desplazamiento horizontal para evitar cortes -->
+        <div class="overflow-x-auto w-full">
+            <table class="w-full min-w-[1150px] text-left border-collapse">
+                <thead>
+                    <tr class="bg-surface-container text-on-surface text-label-sm border-b border-surface-container-highest select-none">
+                        <th id="th-nro" class="py-3.5 px-4 font-headline-sm hover:text-primary transition-colors cursor-pointer whitespace-nowrap" title="Ordenar">Nro</th>
+                        <th id="th-fecha" class="py-3.5 px-4 font-headline-sm hover:text-primary transition-colors cursor-pointer whitespace-nowrap" title="Ordenar">Fecha</th>
+                        <th id="th-peso" class="py-3.5 px-4 font-headline-sm text-right hover:text-primary transition-colors cursor-pointer whitespace-nowrap" title="Ordenar">Peso (kg)</th>
+                        <th class="py-3.5 px-4 font-headline-sm whitespace-nowrap">Tipo</th>
+                        <th class="py-3.5 px-4 font-headline-sm whitespace-nowrap">Remitente</th>
+                        <th class="py-3.5 px-4 font-headline-sm whitespace-nowrap">Destinatario</th>
+                        <th class="py-3.5 px-4 font-headline-sm whitespace-nowrap">Origen</th>
+                        <th class="py-3.5 px-4 font-headline-sm whitespace-nowrap">Destino</th>
+                        <th class="py-3.5 px-4 font-headline-sm min-w-[200px]">Dirección de entrega</th>
+                        <th class="py-3.5 px-4 font-headline-sm whitespace-nowrap">Último estado</th>
+                        <th class="py-3.5 px-4 font-headline-sm text-center whitespace-nowrap" title="Baja lógica: un envío inactivo fue dado de baja">Registro</th>
+                        <th class="py-3.5 px-4 font-headline-sm text-center whitespace-nowrap min-w-[170px]">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-envios" class="divide-y divide-surface-container text-sm text-on-surface"></tbody>
+            </table>
+        </div>
+    </div>
 
 <?php fin_pagina('envios.js'); ?>

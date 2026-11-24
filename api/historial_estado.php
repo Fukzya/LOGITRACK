@@ -1,5 +1,6 @@
 <?php
-/* Controlador del historial de estados: valida, llama al modelo HistorialEstado y responde JSON. */
+/* Controlador del historial de estados: valida, llama al modelo HistorialEstado y responde JSON.
+   Solo permite consultar y registrar estados nuevos (el historial es inmutable). */
 require_once '../config/api.php';
 require_once '../modelos/HistorialEstado.php';
 
@@ -36,17 +37,10 @@ switch ($_SERVER['REQUEST_METHOD']) {
         $id = intentar(fn() => $historial->crear($h), $errores);
         responder(['mensaje' => 'Estado registrado.', 'id' => $id], 201);
 
+    // El historial es inmutable: no se edita ni se borra, cada cambio de estado es una fila nueva.
     case 'PUT':
-        $d  = leer_json();
-        $id = campo_entero($d, 'id_historial', 'El registro');
-        $h  = datos_historial($d);
-        if (!intentar(fn() => $historial->actualizar($id, $h), $errores)) error_api('No existe ese registro.', 404);
-        responder(['mensaje' => 'Estado actualizado.']);
-
     case 'DELETE':
-        $id = campo_entero(leer_json(), 'id_historial', 'El registro');
-        if (!$historial->eliminar($id)) error_api('No existe ese registro.', 404);
-        responder(['mensaje' => 'Estado eliminado.']);
+        error_api('El historial no se modifica ni se borra: para cambiar el estado de un envío, registrá un estado nuevo.', 405);
 
     default:
         error_api('Método no permitido.', 405);

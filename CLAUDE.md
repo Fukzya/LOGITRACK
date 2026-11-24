@@ -39,6 +39,17 @@ Ver README.md para la estructura y la instalación.
   ninguna pantalla (procedimientos); los permisos de escritura por rol (seguridad);
   la dirección de entrega de los envíos es aleatoria en los datos (calidad de datos).
 
+## Diseño visual (Antigravity, revisado el 2026-11-23)
+- El usuario rediseña el front con Antigravity (solo vistas .php, plantilla, index, login).
+  Al revisar sus cambios: verificar que no agregue elementos sin función (ya pasó con un
+  buscador y una campanita) y que `hidden` no quede pisado por clases flex/grid (la plantilla
+  tiene `[hidden] { display: none !important; }`).
+- Tailwind, Inter y Material Symbols están en `assets/` (sin internet). No volver a los CDN.
+- Los scripts de las pantallas se cargan con `?v=filemtime` (`con_version()` en plantilla.php);
+  `login.html` es estático: subir a mano el `?v=` de login.js si cambia.
+- Historial de estados INMUTABLE en la app: la API rechaza PUT/DELETE (405). Pendiente para el
+  tema triggers: protegerlo también en la base (trigger que rechace UPDATE/DELETE).
+
 ## Material de la cátedra
 - `base de datos 2 campus/` (no se versiona) tiene todo el campus. Ya está resumido por tema en
   `docs/teoria_campus.md`: leer ese archivo en lugar de los PDF.

@@ -1,5 +1,6 @@
-const API_CHECK = 'http://localhost/logitrack/api/check_session.php';
-const API_LOGIN = 'http://localhost/logitrack/api/login.php';
+// Rutas relativas: funcionan entre por localhost, 127.0.0.1 o el nombre de la PC.
+const API_CHECK = 'api/check_session.php';
+const API_LOGIN = 'api/login.php';
 
 document.addEventListener('DOMContentLoaded', function () {
     fetch(API_CHECK)

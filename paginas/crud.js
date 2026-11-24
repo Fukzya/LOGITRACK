@@ -29,6 +29,14 @@ function pantallaCrud(cfg) {
     let pagina = 1;
     let filas = new Map();       // clave -> fila, para precargar el formulario
     let editando = null;         // null = alta; si no, la fila que se edita
+    // Sin edición, sin baja y sin acciones propias, la tabla no lleva columna "Acciones".
+    const conAcciones = editable || baja !== null || !!cfg.accionesExtra;
+
+    // Los filtros se pueden precargar desde la URL: pantalla.php?nro_envio=123
+    const desdeUrl = new URLSearchParams(location.search);
+    for (const [id, param] of Object.entries(cfg.filtros || {})) {
+        if (desdeUrl.has(param) && $(id)) $(id).value = desdeUrl.get(param);
+    }
 
     // ------------------------------------------------------------ listado
     async function listar(p = 1) {
@@ -44,9 +52,9 @@ function pantallaCrud(cfg) {
             const data = await api(`${cfg.api}?${params}`);
             pagina = data.pagina;
             filas = new Map(data.datos.map(f => [String(f[cfg.clave]), f]));
-            const columnas = cfg.columnas.length + 1;
+            const columnas = cfg.columnas.length + (conAcciones ? 1 : 0);
             $(cfg.tabla).innerHTML = data.datos.map(f => `
-                <tr>${cfg.columnas.map(c => `<td>${c(f)}</td>`).join('')}<td>${botones(f)}</td></tr>`
+                <tr>${cfg.columnas.map(c => `<td>${c(f)}</td>`).join('')}${conAcciones ? `<td>${botones(f)}</td>` : ''}</tr>`
             ).join('') || `<tr><td colspan="${columnas}">No hay registros con esos filtros.</td></tr>`;
 
             if (cfg.paginacion && $(cfg.paginacion)) {
