@@ -33,6 +33,7 @@ function inicio_pagina(string $titulo, bool $soloAdmin = false, string $seccionA
     }
 
     $iconosDefault = [
+        'nuevo_envio'      => 'add_box',
         'envios'           => 'local_shipping',
         'viajes'           => 'route',
         'viaje_envio'      => 'link',
@@ -335,6 +336,9 @@ function inicio_pagina(string $titulo, bool $soloAdmin = false, string $seccionA
 
                 <div class="flex flex-col gap-1">
                     <span class="px-3 text-xs uppercase tracking-wider text-orange-400/70 font-headline-sm mb-1">Operaciones</span>
+                    <a class="<?= $seccionActiva === 'nuevo_envio' ? $activoClass : $normalClass ?>" data-path="nuevo-envio" href="../nuevo_envio/nuevo_envio.php">
+                        <span class="material-symbols-outlined text-[20px]">add_box</span>Nuevo envío guiado
+                    </a>
                     <a class="<?= $seccionActiva === 'envios' ? $activoClass : $normalClass ?>" data-path="envios" href="../envios/envios.php">
                         <span class="material-symbols-outlined text-[20px]">local_shipping</span>Envíos
                     </a>
@@ -455,8 +459,11 @@ function con_version(string $ruta): string
     return htmlspecialchars($ruta . ($archivo ? '?v=' . filemtime($archivo) : ''));
 }
 
-/** $js: el script propio de la pantalla (ej. 'clientes.js'). */
-function fin_pagina(string $js): void
+/**
+ * $js: el script propio de la pantalla (ej. 'clientes.js').
+ * $extras: componentes compartidos que usa esa pantalla (ej. ['../selector_cliente.js']).
+ */
+function fin_pagina(string $js, array $extras = []): void
 {
     global $esAdmin;
     ?>
@@ -468,6 +475,9 @@ function fin_pagina(string $js): void
     <script src="<?= con_version('../comun.js') ?>"></script>
     <script src="<?= con_version('../catalogos.js') ?>"></script>
     <script src="<?= con_version('../crud.js') ?>"></script>
+<?php foreach ($extras as $extra): ?>
+    <script src="<?= con_version($extra) ?>"></script>
+<?php endforeach; ?>
     <script src="<?= con_version($js) ?>"></script>
 </body>
 </html>

@@ -26,6 +26,21 @@ Ver README.md para la estructura y la instalación.
   chofer.chofer_tipo_licencia. Estados unificados a códigos (RECIBIDO, EN_TRANSITO, ...).
   Los <select> del front se llenan desde `api/catalogos.php`.
 - Cambio 004 (aplicado en la PC): 1773 mails de clientes tenían tildes (inválidos); se normalizaron.
+- Cambio 005 (aplicado en la PC): 30 viajes de prueba con fecha futura (20 con envíos que les dan
+  "ruta").
+
+## Asistente "Nuevo envío" (2026-11-23)
+- Pedido del usuario: flujos guiados, pedir la menor cantidad de códigos posible, buscar clientes por
+  nombre o DNI y darlos de alta en el momento. Aplicar el mismo estilo en otras pantallas.
+- `paginas/nuevo_envio/` (4 pasos) + `paginas/selector_cliente.js` (buscador reutilizable, se carga
+  con `fin_pagina($js, ['../selector_cliente.js'])`) + `api/asistente_envio.php` (una transacción:
+  viaje nuevo + envío por procedimiento + asignación por procedimiento, con FOR UPDATE y control de
+  capacidad del vehículo).
+- El viaje NO tiene origen/destino (decisión del usuario): la ruta se deduce de sus envíos y se
+  "recomiendan" (en verde) los que ya van a la provincia de la sucursal de destino; no es obligatorio.
+- Licencia especial (camión/semi) = chofer con licencia C o E (regla en el controlador).
+- PHP de XAMPP tiene zona horaria Europe/Berlin: para comparar con "ahora" usar `SELECT NOW()` de la base.
+- `config/validaciones.php`: `datos_envio()` y `datos_viaje()` compartidos por los controladores.
 
 ## CRUD en MVC (terminado el 2026-11-23, opción B)
 - Las 15 entidades: `modelos/<Entidad>.php` (solo SQL, heredan de `Modelo.php`) +

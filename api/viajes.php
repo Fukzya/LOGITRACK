@@ -2,29 +2,26 @@
 /* Controlador de viajes: valida, llama al modelo Viaje y responde JSON. */
 require_once '../config/api.php';
 require_once '../modelos/Viaje.php';
+require_once '../modelos/Sucursal.php';
+require_once '../config/validaciones.php';
 
 $viajes = new Viaje($pdo);
-
-function datos_viaje(array $d): array
-{
-    $v = [
-        'fecha_salida'     => campo_fecha_hora($d, 'fecha_salida', 'La fecha de salida'),
-        'fecha_llegada'    => campo_fecha_hora($d, 'fecha_llegada', 'La fecha de llegada', false),
-        'vehiculo_patente' => campo_codigo($d, 'vehiculo_patente', 'El vehículo', '/^[A-Z0-9]{6,10}$/', 'una patente'),
-        'chofer_legajo'    => campo_entero($d, 'chofer_legajo', 'El chofer'),
-    ];
-    // Misma regla que trigger_before_update_viaje, también para el alta.
-    if ($v['fecha_llegada'] !== null && $v['fecha_llegada'] <= $v['fecha_salida']) {
-        throw new ValidacionException('La fecha de llegada tiene que ser posterior a la de salida.');
-    }
-    return $v;
-}
 
 $errores = [1452 => 'El vehículo o el chofer elegidos no existen.'];
 
 switch ($_SERVER['REQUEST_METHOD']) {
 
     case 'GET':
+        // Asistente de envío: viajes que todavía no salieron, primero los que ya van a la
+        // provincia de la sucursal de destino del envío.
+        if (isset($_GET['disponibles'])) {
+            $sd = trim($_GET['sucursal_dest'] ?? '');
+            responder($viajes->disponibles($sd === '' ? null : (new Sucursal($pdo))->provincia($sd)));
+        }
+        // Asistente de envío: vehículos y choferes libres para crear un viaje ese día.
+        if (isset($_GET['recursos'])) {
+            responder($viajes->recursosLibres(campo_fecha($_GET, 'fecha', 'La fecha')));
+        }
         $filtros = [
             'fecha_desde'  => campo_fecha($_GET, 'fecha_desde', 'La fecha desde', false),
             'fecha_hasta'  => campo_fecha($_GET, 'fecha_hasta', 'La fecha hasta', false),

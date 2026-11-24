@@ -25,6 +25,14 @@ class Sucursal extends Modelo
         );
     }
 
+    /** Provincia donde está una sucursal activa (null si no existe o está dada de baja). */
+    public function provincia(string $cod): ?int
+    {
+        $f = $this->fila('SELECT l.provincia_cod FROM sucursal s JOIN localidad l ON l.localidad_cod = s.sucursal_localidad_cod
+                           WHERE s.sucursal_cod = :cod AND s.activo = 1', [':cod' => $cod]);
+        return $f ? (int)$f['provincia_cod'] : null;
+    }
+
     public function crear(array $s): void
     {
         $this->ejecutar('INSERT INTO sucursal (sucursal_cod, sucursal_nombre, sucursal_localidad_cod, direccion)

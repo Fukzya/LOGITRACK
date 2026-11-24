@@ -50,25 +50,36 @@ class Envio extends Modelo
      * Alta mediante el procedimiento almacenado, dentro de una transacción: si algo falla se hace
      * ROLLBACK y no queda un envío a medias. El trigger trigger_after_insert_envio registra el estado
      * inicial (RECIBIDO) en historial_estado. Devuelve el número de envío creado.
+     * Si ya hay una transacción abierta (el asistente crea envío + viaje + asignación juntos), se
+     * suma a esa y el COMMIT o ROLLBACK lo decide quien la abrió.
      */
     public function crear(array $e): int
     {
+        if ($this->pdo->inTransaction()) {
+            return $this->llamarProcedimiento($e);
+        }
         $this->pdo->beginTransaction();
         try {
-            $st = $this->pdo->prepare('CALL procedimiento_crear_envio(:fecha, :peso, :tipo, :rem, :dest, :so, :sd, :dir)');
-            $st->execute([
-                ':fecha' => $e['fecha_envio'], ':peso' => $e['peso_kg'], ':tipo' => $e['tipo_cont_cod'],
-                ':rem'   => $e['remitente_dni'], ':dest' => $e['destinatario_dni'],
-                ':so'    => $e['sucursal_orig_cod'], ':sd' => $e['sucursal_dest_cod'], ':dir' => $e['direccion_entrega_id'],
-            ]);
-            $nro = (int)$st->fetchColumn();
-            $st->closeCursor();
+            $nro = $this->llamarProcedimiento($e);
             $this->pdo->commit();
             return $nro;
         } catch (Throwable $t) {
             if ($this->pdo->inTransaction()) $this->pdo->rollBack();
             throw $t;
         }
+    }
+
+    private function llamarProcedimiento(array $e): int
+    {
+        $st = $this->pdo->prepare('CALL procedimiento_crear_envio(:fecha, :peso, :tipo, :rem, :dest, :so, :sd, :dir)');
+        $st->execute([
+            ':fecha' => $e['fecha_envio'], ':peso' => $e['peso_kg'], ':tipo' => $e['tipo_cont_cod'],
+            ':rem'   => $e['remitente_dni'], ':dest' => $e['destinatario_dni'],
+            ':so'    => $e['sucursal_orig_cod'], ':sd' => $e['sucursal_dest_cod'], ':dir' => $e['direccion_entrega_id'],
+        ]);
+        $nro = (int)$st->fetchColumn();
+        $st->closeCursor();
+        return $nro;
     }
 
     /** Si cambia la sucursal de destino, trigger_after_update_envio registra REDIRIGIDO en el historial. */

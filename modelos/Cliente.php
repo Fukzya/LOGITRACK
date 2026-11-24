@@ -11,7 +11,7 @@ class Cliente extends Modelo
         'localidad_nombre' => 'l.localidad_nombre',
     ];
 
-    /** $f: dni, nombre, apellido (opcionales). */
+    /** $f: dni, nombre, apellido, buscar (opcionales). buscar = DNI que empieza con el texto o nombre/apellido que lo contiene. */
     public function listar(array $f, array $p, bool $inactivos): array
     {
         $cond = [];
@@ -20,9 +20,16 @@ class Cliente extends Modelo
         if (!empty($f['dni']))      { $cond[] = 'c.cliente_dni = :dni';     $par[':dni'] = $f['dni']; }
         if (!empty($f['nombre']))   { $cond[] = 'c.nombre LIKE :nombre';     $par[':nombre'] = '%' . $f['nombre'] . '%'; }
         if (!empty($f['apellido'])) { $cond[] = 'c.apellido LIKE :apellido'; $par[':apellido'] = '%' . $f['apellido'] . '%'; }
+        if (!empty($f['buscar'])) {
+            $cond[] = "(CAST(c.cliente_dni AS CHAR) LIKE :b_dni
+                        OR CONCAT(c.nombre, ' ', c.apellido) LIKE :b_txt1
+                        OR CONCAT(c.apellido, ' ', c.nombre) LIKE :b_txt2)";
+            $par[':b_dni']  = $f['buscar'] . '%';
+            $par[':b_txt1'] = $par[':b_txt2'] = '%' . $f['buscar'] . '%';
+        }
 
         return $this->paginar(
-            'c.cliente_dni, c.nombre, c.apellido, c.mail, c.telefono, c.localidad_cod, l.localidad_nombre, c.activo',
+            'c.cliente_dni, c.nombre, c.apellido, c.mail, c.telefono, c.localidad_cod, l.localidad_nombre, l.provincia_cod, c.activo',
             'cliente c JOIN localidad l ON l.localidad_cod = c.localidad_cod',
             $cond, $par, self::ORDENABLES, $p['orden'], $p['dir'], $p['pagina']
         );

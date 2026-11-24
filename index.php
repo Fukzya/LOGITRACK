@@ -158,6 +158,9 @@ $rol = $_SESSION['rol'] ?? 'operador';
 
                 <div class="flex flex-col gap-1">
                     <span class="px-3 text-xs uppercase tracking-wider text-orange-400/70 font-headline-sm mb-1">Operaciones</span>
+                    <a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#3d241c] hover:text-white transition-colors" data-path="nuevo-envio" href="paginas/nuevo_envio/nuevo_envio.php">
+                        <span class="material-symbols-outlined text-[20px]">add_box</span>Nuevo envío guiado
+                    </a>
                     <a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#3d241c] hover:text-white transition-colors" data-path="envios" href="paginas/envios/envios.php">
                         <span class="material-symbols-outlined text-[20px]">local_shipping</span>Envíos
                     </a>
@@ -266,6 +269,18 @@ $rol = $_SESSION['rol'] ?? 'operador';
                         </div>
                     </div>
                 </div>
+
+                <!-- Acceso rápido: asistente paso a paso (envío + viaje en un solo recorrido) -->
+                <a href="paginas/nuevo_envio/nuevo_envio.php" class="group flex items-center gap-5 rounded-2xl bg-primary text-on-primary p-6 shadow-md hover:bg-primary-container transition-colors">
+                    <div class="w-14 h-14 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-[32px]">add_box</span>
+                    </div>
+                    <div class="flex-1">
+                        <h2 class="text-headline-md">Nuevo envío</h2>
+                        <p class="text-sm text-on-primary-container mt-1">Paso a paso: buscás al remitente y al destinatario por nombre o DNI, cargás el paquete y elegís el viaje. Sin códigos.</p>
+                    </div>
+                    <span class="material-symbols-outlined text-[28px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                </a>
 
                 <!-- Sección: Operaciones -->
                 <div class="flex flex-col gap-4">

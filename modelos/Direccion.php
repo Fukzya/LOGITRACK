@@ -22,12 +22,19 @@ class Direccion extends Modelo
         if (!empty($f['localidad']))   { $cond[] = 'd.localidad_cod = :loc';       $par[':loc'] = $f['localidad']; }
 
         return $this->paginar(
-            "d.direccion_id, d.calle_y_numero, d.localidad_cod, l.localidad_nombre,
+            "d.direccion_id, d.calle_y_numero, d.localidad_cod, l.localidad_nombre, l.provincia_cod,
              d.cliente_dni, CONCAT(c.nombre, ' ', c.apellido) AS cliente_nombre, d.activo",
             'direccion d JOIN localidad l ON l.localidad_cod = d.localidad_cod
                          JOIN cliente c   ON c.cliente_dni   = d.cliente_dni',
             $cond, $par, self::ORDENABLES, $p['orden'], $p['dir'], $p['pagina']
         );
+    }
+
+    /** DNI del cliente dueño de una dirección activa, o null si no existe o está dada de baja. */
+    public function dueno(int $id): ?int
+    {
+        $f = $this->fila('SELECT cliente_dni FROM direccion WHERE direccion_id = :id AND activo = 1', [':id' => $id]);
+        return $f ? (int)$f['cliente_dni'] : null;
     }
 
     public function crear(array $d): int

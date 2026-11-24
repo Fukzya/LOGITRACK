@@ -35,6 +35,14 @@ class ViajeEnvio extends Modelo
         $this->ejecutar('INSERT INTO viaje_envio (viaje_id, nro_envio) VALUES (:v, :e)', [':v' => $viaje, ':e' => $envio]);
     }
 
+    /** Asigna con el procedimiento almacenado procedimiento_asignar_envio_a_viaje (rechaza duplicados). */
+    public function asignarConProcedimiento(int $viaje, int $envio): void
+    {
+        $st = $this->pdo->prepare('CALL procedimiento_asignar_envio_a_viaje(:v, :e)');
+        $st->execute([':v' => $viaje, ':e' => $envio]);
+        $st->closeCursor(); // el procedimiento devuelve un SELECT con un mensaje: hay que consumirlo
+    }
+
     public function quitar(int $viaje, int $envio): bool
     {
         return $this->ejecutar('DELETE FROM viaje_envio WHERE viaje_id = :v AND nro_envio = :e',
