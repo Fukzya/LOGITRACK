@@ -2,7 +2,7 @@
 -- Cambio 006: vista vista_sucursal_ubicacion
 -- =============================================================================
 -- Para qué: en todas las pantallas una sucursal se muestra con su provincia, por ejemplo
--- "Sucursal Puerto 46 (Corrientes)", porque el nombre solo no dice dónde queda.
+-- "Sucursal Puerto 46 (Mendoza)", porque el nombre solo no dice dónde queda.
 --
 -- La provincia no está en la tabla sucursal (sería una dependencia transitiva: sucursal ->
 -- localidad -> provincia, lo que 3FN evita). Se obtiene con dos JOIN. En lugar de repetir esos JOIN

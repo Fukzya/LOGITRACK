@@ -44,7 +44,10 @@ Ver README.md para la estructura y la instalación.
   Datos históricos: origen/destino = sucursal más frecuente de sus envíos; hay envíos con hasta 9
   tramos (datos al azar), las reglas valen para lo nuevo.
 - Cambio 008 (aplicado en la PC): ~196 viajes de prueba por centros 010 (Córdoba) y 012 (Buenos Aires).
-- Los cambios de la base se documentan también en la planilla logitrack_completo (pedido del usuario).
+- REGLA (pedido del usuario): cada cambio de la base se documenta también en la planilla
+  logitrack_completo (id 1EoWc3-FiO3lrLnfPtyVn2zzXPr9a5W_p6m-kMcvyQV8): una fila en la pestaña
+  "Cambios en la base" (sheetId 2003) y, si cambia la estructura, la pestaña de datos de la tabla
+  y la 3FN (dependencias, decisiones de diseño y resultado).
 
 ## Asistente "Nuevo envío" (2026-11-23)
 - Pedido del usuario: flujos guiados, pedir la menor cantidad de códigos posible, buscar clientes por
