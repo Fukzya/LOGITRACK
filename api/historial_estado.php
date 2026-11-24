@@ -12,8 +12,10 @@ function datos_historial(array $d): array
         'nro_envio'    => campo_entero($d, 'nro_envio', 'El número de envío'),
         'sucursal_cod' => campo_codigo($d, 'sucursal_cod', 'La sucursal', '/^[0-9]{3}$/', '3 dígitos', false),
         'estado'       => campo_codigo($d, 'estado', 'El estado', '/^[A-Z_]{3,30}$/', 'un código de estado'),
-        // Si no se indica, el estado se registra con la fecha y hora actuales.
-        'fecha_hora'   => campo_fecha_hora($d, 'fecha_hora', 'La fecha y hora', false) ?? date('Y-m-d H:i:s'),
+        // Si no se indica, el modelo usa NOW() de la base. Las reglas de fechas (no en el futuro,
+        // no antes del último estado, nada después de uno final) las controla
+        // trigger_before_insert_historial_estado y su mensaje llega tal cual.
+        'fecha_hora'   => campo_fecha_hora($d, 'fecha_hora', 'La fecha y hora', false),
         'observacion'  => campo_texto($d, 'observacion', 'La observación', 1000, false),
     ];
 }

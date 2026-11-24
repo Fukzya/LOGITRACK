@@ -29,7 +29,7 @@
                 </div>
                 <div class="flex flex-col gap-space-xs">
                     <label class="text-label-sm text-on-surface-variant" for="input-fecha">Fecha y hora (vacío = ahora)</label>
-                    <input class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="input-fecha" type="datetime-local"/>
+                    <input class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="input-fecha" data-hasta-ahora type="datetime-local"/>
                 </div>
                 <div class="flex flex-col gap-space-xs md:col-span-2">
                     <label class="text-label-sm text-on-surface-variant" for="input-observacion">Observación (opcional)</label>

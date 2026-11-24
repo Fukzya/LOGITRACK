@@ -17,7 +17,7 @@
                 </div>
                 <div class="flex flex-col gap-space-xs">
                     <label class="text-label-sm text-on-surface-variant" for="input-llegada">Llegada real (al cerrar el viaje)</label>
-                    <input class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="input-llegada" type="datetime-local"/>
+                    <input class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="input-llegada" data-hasta-ahora type="datetime-local"/>
                     <small class="text-xs text-on-surface-variant">La llegada estimada la calcula la base: salida + 24 h.</small>
                 </div>
                 <div class="flex flex-col gap-space-xs md:col-span-2">

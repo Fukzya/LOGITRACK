@@ -71,7 +71,7 @@ $btnSec  = 'bg-surface-container hover:bg-surface-container-high text-on-surface
             <label class="flex flex-col gap-1 md:col-span-2 <?= $etiqueta ?>">Tipo de contenido
                 <select id="input-tipo" required class="<?= $input ?>"><option value="">Elegí el tipo</option></select></label>
             <label class="flex flex-col gap-1 md:col-span-2 <?= $etiqueta ?>">Fecha del envío
-                <input id="input-fecha" type="date" required class="<?= $input ?>"/></label>
+                <input id="input-fecha" data-hasta-ahora type="date" required class="<?= $input ?>"/></label>
             <label class="flex flex-col gap-1 md:col-span-3 <?= $etiqueta ?>">Sucursal de origen
                 <select id="input-suc-orig" required class="<?= $input ?>"><option value="">Elegí la sucursal</option></select>
                 <small id="pista-orig" class="text-xs text-green-700"></small>

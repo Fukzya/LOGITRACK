@@ -12,6 +12,9 @@
  */
 
 ini_set('display_errors', '0');
+// XAMPP trae PHP con la zona horaria de Berlín: se usa la de Argentina, la misma que la base.
+// (Las reglas de fechas se comparan con NOW() de la base, en los triggers.)
+date_default_timezone_set('America/Argentina/Buenos_Aires');
 header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/session.php';

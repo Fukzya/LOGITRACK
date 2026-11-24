@@ -34,7 +34,7 @@ class HistorialEstado extends Modelo
     public function crear(array $h): int
     {
         $this->ejecutar('INSERT INTO historial_estado (nro_envio, sucursal_cod, estado, fecha_hora, observacion)
-                         VALUES (:n, :s, :e, :f, :o)',
+                         VALUES (:n, :s, :e, COALESCE(:f, NOW()), :o)', // sin fecha: la hora de la base
                         [':n' => $h['nro_envio'], ':s' => $h['sucursal_cod'], ':e' => $h['estado'],
                          ':f' => $h['fecha_hora'], ':o' => $h['observacion']]);
         return (int)$this->pdo->lastInsertId();

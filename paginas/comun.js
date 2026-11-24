@@ -53,3 +53,20 @@ async function api(url, metodo = 'GET', cuerpo = null) {
 function mostrarError(err) {
     alert('Error: ' + err.message);
 }
+
+/**
+ * Fechas que no pueden estar en el futuro (fecha de un envío, de un estado, de un incidente,
+ * llegada real de un viaje): los campos con el atributo data-hasta-ahora no dejan elegir más allá
+ * de hoy / ahora. La regla de verdad está en la base (triggers); esto solo avisa antes.
+ */
+function limitarHastaAhora(campo) {
+    const d = new Date();
+    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString();
+    campo.max = campo.type === 'date' ? local.slice(0, 10) : local.slice(0, 16);
+}
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-hasta-ahora]').forEach(campo => {
+        limitarHastaAhora(campo);
+        campo.addEventListener('focus', () => limitarHastaAhora(campo)); // el "ahora" avanza
+    });
+});

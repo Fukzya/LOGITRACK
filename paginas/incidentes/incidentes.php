@@ -17,7 +17,7 @@
                 </div>
                 <div class="flex flex-col gap-space-xs">
                     <label class="text-label-sm text-on-surface-variant" for="input-fecha">Fecha y hora</label>
-                    <input class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="input-fecha" type="datetime-local" required/>
+                    <input class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="input-fecha" data-hasta-ahora type="datetime-local" required/>
                 </div>
                 <div class="flex flex-col gap-space-xs">
                     <label class="text-label-sm text-on-surface-variant" for="input-tipo">Tipo de incidente</label>
