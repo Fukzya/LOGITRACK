@@ -1,9 +1,6 @@
 <?php
-session_start();
-if (!isset($_SESSION['usuario_id'])) {
-    header("Location: login.html");
-    exit;
-}
+require_once __DIR__ . '/config/session.php';
+verificar_sesion_pagina('');
 header("Cache-Control: no-store, no-cache, must-revalidate");
 header("Pragma: no-cache");
 
@@ -218,6 +215,9 @@ $rol = $_SESSION['rol'] ?? 'operador';
                     <?php if ($esAdmin): ?>
                     <a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#3d241c] hover:text-white transition-colors" data-path="gestion-de-usuarios" href="paginas/usuarios/usuarios.php">
                         <span class="material-symbols-outlined text-[20px]">manage_accounts</span>Gestión de usuarios
+                    </a>
+                    <a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#3d241c] hover:text-white transition-colors" data-path="sesiones" href="paginas/sesiones/sesiones.php">
+                        <span class="material-symbols-outlined text-[20px]">devices</span>Sesiones
                     </a>
                     <?php endif; ?>
                 </div>
@@ -509,6 +509,19 @@ $rol = $_SESSION['rol'] ?? 'operador';
                             <div class="mt-4">
                                 <h3 class="text-headline-sm text-on-surface group-hover:text-primary transition-colors">Gestión de usuarios</h3>
                                 <p class="text-xs text-on-surface-variant mt-1">Alta de operadores, asignación de roles (admin/operador) y restablecimiento de claves.</p>
+                            </div>
+                        </a>
+
+                        <a href="paginas/sesiones/sesiones.php" class="group bg-surface-container-lowest rounded-xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] border border-transparent hover:border-primary/40 hover:shadow-md transition-all flex flex-col justify-between">
+                            <div class="flex items-start justify-between">
+                                <div class="w-10 h-10 rounded-lg bg-[#fef3c7] flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
+                                    <span class="material-symbols-outlined text-[22px]">devices</span>
+                                </div>
+                                <span class="material-symbols-outlined text-outline group-hover:text-primary group-hover:translate-x-1 transition-all text-[20px]">arrow_forward</span>
+                            </div>
+                            <div class="mt-4">
+                                <h3 class="text-headline-sm text-on-surface group-hover:text-primary transition-colors">Sesiones</h3>
+                                <p class="text-xs text-on-surface-variant mt-1">Quién está conectado ahora, historial de ingresos y conexiones abiertas en la base.</p>
                             </div>
                         </a>
                         <?php endif; ?>

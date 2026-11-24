@@ -2,16 +2,11 @@
 /*
  * Encabezado y pie comunes de todas las pantallas (capa Vista).
  * Se ejecuta en el servidor antes de mandar nada al navegador:
- *   - sin sesión iniciada, redirige al login;
+ *   - sin sesión válida (o vencida, cerrada, usuario dado de baja...), redirige al login;
  *   - las pantallas solo para admin redirigen al menú si entra un operador.
  */
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-if (!isset($_SESSION['usuario_id'])) {
-    header('Location: ../../login.html');
-    exit;
-}
+require_once __DIR__ . '/../config/session.php';
+verificar_sesion_pagina('../../');
 header('Cache-Control: no-store, no-cache, must-revalidate');
 header('Pragma: no-cache');
 
@@ -49,6 +44,7 @@ function inicio_pagina(string $titulo, bool $soloAdmin = false, string $seccionA
         'localidades'      => 'pin_drop',
         'tipo_contenido'   => 'inventory_2',
         'usuarios'         => 'manage_accounts',
+        'sesiones'         => 'devices',
     ];
 
     if ($icono === '') {
@@ -396,6 +392,9 @@ function inicio_pagina(string $titulo, bool $soloAdmin = false, string $seccionA
                     <?php if ($esAdmin): ?>
                     <a class="<?= $seccionActiva === 'usuarios' ? $activoClass : $normalClass ?>" data-path="gestion-de-usuarios" href="../usuarios/usuarios.php">
                         <span class="material-symbols-outlined text-[20px]">manage_accounts</span>Gestión de usuarios
+                    </a>
+                    <a class="<?= $seccionActiva === 'sesiones' ? $activoClass : $normalClass ?>" data-path="sesiones" href="../sesiones/sesiones.php">
+                        <span class="material-symbols-outlined text-[20px]">devices</span>Sesiones
                     </a>
                     <?php endif; ?>
                 </div>

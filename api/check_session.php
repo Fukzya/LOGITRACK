@@ -1,13 +1,16 @@
 <?php
+// ¿Hay una sesión válida? Lo usan el login (para saltearlo) y las pantallas (para volver al login).
 require_once '../config/session.php';
 header('Content-Type: application/json; charset=utf-8');
 
-if (!empty($_SESSION['usuario_id'])) {
+$motivo = motivo_sesion_invalida();
+if ($motivo === null) {
     echo json_encode([
         'autenticado' => true,
         'username'    => $_SESSION['username'],
-        'rol'         => $_SESSION['rol']
+        'rol'         => $_SESSION['rol'],
     ]);
 } else {
-    echo json_encode(['autenticado' => false]);
+    terminar_sesion_php();
+    echo json_encode(['autenticado' => false, 'motivo' => $motivo]);
 }

@@ -2,7 +2,20 @@
 const API_CHECK = 'api/check_session.php';
 const API_LOGIN = 'api/login.php';
 
+// Por qué se volvió al login (lo manda la pantalla o la API en ?motivo=...).
+const MOTIVOS = {
+    VENCIDA:           'Tu sesión venció por inactividad. Volvé a entrar.',
+    CERRADA_POR_ADMIN: 'Un administrador cerró tu sesión.',
+    BAJA_USUARIO:      'Tu usuario fue dado de baja.',
+    CAMBIO_ROL:        'Tu rol cambió. Volvé a entrar.',
+};
+
 document.addEventListener('DOMContentLoaded', function () {
+    const motivo = new URLSearchParams(location.search).get('motivo');
+    if (MOTIVOS[motivo]) {
+        document.getElementById('mensaje').textContent = MOTIVOS[motivo];
+    }
+
     fetch(API_CHECK)
         .then(res => res.json())
         .then(data => {

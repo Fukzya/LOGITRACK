@@ -1,13 +1,17 @@
 // Utilidades compartidas por todas las pantallas (capa Vista).
 
-// Si la sesión venció, volver al login.
+// Sin sesión válida, volver al login mostrando el motivo (vencida, cerrada por un admin...).
+function irAlLogin(motivo) {
+    window.location.href = '../../login.html' + (motivo && motivo !== 'SIN_SESION' ? '?motivo=' + motivo : '');
+}
+
 fetch('../../api/check_session.php')
     .then(res => res.json())
-    .then(data => { if (!data.autenticado) window.location.href = '../../login.html'; });
+    .then(data => { if (!data.autenticado) irAlLogin(data.motivo); });
 
 function cerrarSesion(e) {
     e.preventDefault();
-    fetch('../../api/logout.php').finally(() => { window.location.href = '../../login.html'; });
+    fetch('../../api/logout.php', { method: 'POST' }).finally(() => { window.location.href = '../../login.html'; });
 }
 
 /**
@@ -43,8 +47,8 @@ async function api(url, metodo = 'GET', cuerpo = null) {
         throw new Error('El servidor devolvió una respuesta inválida.');
     }
     if (res.status === 401) {
-        window.location.href = '../../login.html';
-        throw new Error('La sesión expiró.');
+        irAlLogin(data.motivo);
+        throw new Error(data.error || 'La sesión expiró.');
     }
     if (!res.ok) throw new Error(data.error || 'No se pudo completar la operación.');
     return data;

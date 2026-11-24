@@ -13,13 +13,13 @@ triggers, vistas, seguridad en BD y código, CRUD, transacciones, índices) y po
   En PowerShell 5.1 los mensajes con comillas se rompen: escribir el mensaje en un archivo del
   scratchpad y usar `git commit -F archivo`.
 - Cambios a la base: NUNCA editar `database/logitrack.sql` a mano. Cada cambio es un script nuevo
-  numerado en `database/cambios/` (el próximo es 011_...), con un encabezado que explica qué y por
+  numerado en `database/cambios/` (el próximo es 012_...), con un encabezado que explica qué y por
   qué, y se corre con `Get-Content -Raw -Encoding UTF8 script.sql | mysql -uroot
   --default-character-set=utf8mb4 logitrack` (mysql en c:\xampp\mysql\bin).
 - Cada cambio de la base se documenta TAMBIÉN en la planilla (ver "Planilla").
 - Antes de proponer, analizar los datos reales de la base (consultas) y decir lo que no cierra.
 - Probar todo antes de entregar: API con curl (bash, cookie jar en el scratchpad) y pantallas con
-  Playwright. Para la sesión se crea un usuario temporal `zz_prueba_op` (password_hash con php -r)
+  Playwright. Para la sesión se crea un usuario temporal `zz_prueba_op` (y `zz_prueba_admin` si hace falta admin; borrar también sus filas de `sesion`) (password_hash con php -r)
   y se borra al terminar, junto con los datos de prueba (los rechazos de transacciones dejan
   huecos en los AUTO_INCREMENT: es normal). Borrar la carpeta `.playwright-mcp/` antes del commit.
 - Si el usuario no está de acuerdo con algo o no lo entiende, explicarle con ejemplos concretos y
@@ -30,16 +30,20 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
 (+ índices/EXPLAIN). Para cada tema:
 1. Análisis: qué está hecho y qué falta según la teoría (`docs/teoria_campus.md`, NO releer los PDF
    de `base de datos 2 campus/`) y según el código/base reales.
-2. Plan propuesto. Esperar la aprobación antes de implementar.
-3. Implementar, probar, commit/push, actualizar planilla y este archivo.
-4. Resumen corto y didáctico para la defensa: qué es, de qué se encarga, dónde y cómo lo aplicamos.
+2. Explicación del concepto con ejemplos de LogiTrack (antes de pedir decisiones).
+3. Plan COMPLETO (no resumido). Esperar la aprobación antes de implementar.
+4. Implementar, probar, commit/push, actualizar planilla y este archivo.
+5. Resumen corto y didáctico para la defensa: qué es, de qué se encarga, dónde y cómo lo aplicamos.
 
-## Estado del checklist (2026-11-23)
+## Estado del checklist (2026-11-24)
 - Normalización: hecha en la planilla (0FN a 3FN), 17 tablas + USUARIO. Actualizada con 007.
 - CRUD: terminado (MVC, 15 entidades).
-- Sesiones: EN CURSO. Hoy hay login básico (config/session.php con timeout, api/login.php,
-  check_session, logout). Falta analizar contra la teoría (vencimiento, regeneración de id,
-  conexiones concurrentes en la base, etc.).
+- Sesiones: TERMINADO (011). config/session.php es el único control (API verificar_sesion,
+  pantallas verificar_sesion_pagina(raíz), check_session); cookie HttpOnly + SameSite=Strict +
+  use_strict_mode; tabla sesion en la base decide el vencimiento (funcion_sesion_activa, 30 min),
+  trigger en usuario cierra sesiones por baja/cambio de rol; pantalla paginas/sesiones (admin);
+  login.html?motivo=...; logout solo POST. Varias sesiones por usuario permitidas (decisión).
+  Guía de defensa: docs/defensa_sesiones.md. Demo de FOR UPDATE / aislamiento queda para transacciones.
 - Procedimientos: se usan procedimiento_crear_envio, procedimiento_asignar_envio_a_viaje y
   procedimiento_buscar_rutas (asistente). Faltan pantallas para procedimiento_cerrar_viaje
   (api/cerrar_viaje.php sin uso, estilo viejo) y registrar_estado_envio / resumen_por_sucursal
@@ -57,7 +61,7 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
   procedimientos con EXIT HANDLER y explicarlo.
 
 ## Pendiente inmediato
-- Análisis de sesiones (en curso).
+- Próximo tema: procedimientos (analizar, explicar, plan completo).
 - Decidido NO hacer: "envío programado" (fecha de envío futura). fecha_envio = día en que se
   recibe el paquete; lo que es futuro es el viaje al que se asigna.
 
@@ -79,11 +83,14 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
   incidente dentro del viaje (procedimiento_validar_fecha_incidente); no asignar a viajes que ya
   salieron; editar un viaje no puede romper un trasbordo ni superar la capacidad.
 - 010 limpieza: envíos 8019/8104/8110 a fecha 23/11, borrados los estados 31332 y 31244, viaje 3001 sin llegada real. Los envíos 8015-8018 (junio) tienen RECIBIDO 1 día antes de fecha_envio: viejos, no se tocan.
+- 011 sesiones: tabla sesion (token_hash SHA-256, motivo_cierre ENUM, CHECK fin/motivo),
+  funcion_minutos_sesion, funcion_sesion_activa, procedimiento_iniciar_sesion / cerrar_sesion /
+  cerrar_sesiones_vencidas, trigger_after_update_usuario, vista_sesiones_abiertas.
 - Los datos de prueba originales (2024) se generaron al azar y NO cumplen las reglas nuevas
   (envíos con hasta 9 viajes, estados antes de la fecha del envío, etc.). No se corrigen: los
   triggers controlan lo nuevo. Decirlo así en la defensa.
 - Sugerido al usuario y pendiente: regenerar database/logitrack.sql desde HeidiSQL con
-  `--routines --triggers` para que el volcado incluya 002-009.
+  `--routines --triggers` para que el volcado incluya 002-011.
 
 ## Planilla (Google Sheets, conector de Sheets)
 - logitrack_completo, id 1EoWc3-FiO3lrLnfPtyVn2zzXPr9a5W_p6m-kMcvyQV8 (locale en_US: fórmulas con
