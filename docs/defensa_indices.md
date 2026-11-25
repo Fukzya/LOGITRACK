@@ -57,8 +57,11 @@ SELECT estado FROM historial_estado WHERE nro_envio = 2749
 | | type | key | Extra |
 |---|---|---|---|
 | Con `idx_historial_envio_fecha` | ref | idx_historial_envio_fecha | Using where |
-| Solo con el índice de nro_envio | ref | idx_historial_envio | Using where; **Using filesort** |
+| Solo con un índice de nro_envio (el que había antes del 015) | ref | idx_historial_envio | Using where; **Using filesort** |
 | Sin ninguno de los dos | index | idx_historial_fecha | lee **16.054 filas** para encontrar 1 |
+
+(La fila del medio se midió antes del 018, que borró `idx_historial_envio` por redundante.
+Hoy, con `IGNORE INDEX (idx_historial_envio_fecha)` se ve la última fila.)
 
 Con el índice compuesto, los estados de cada envío ya están **ordenados por fecha dentro del
 índice**: lee el último y listo. Esta consulta se hace una vez por cada envío en la vista de
@@ -107,12 +110,15 @@ Un índice compuesto `(a, b, c)` sirve para buscar por `a`, por `a, b` y por `a,
 por `b` sola. Es como una guía telefónica ordenada por apellido y nombre: sirve para buscar
 "González", no para buscar a todos los "Juan".
 
-Por eso hay **dos índices redundantes** (heredados del volcado original):
-- `idx_historial_envio (nro_envio)`: ya lo cubre `idx_historial_envio_fecha (nro_envio, ...)`.
-- `fk_ve_envio (nro_envio)` en viaje_envio: ya lo cubre el UNIQUE `(nro_envio, tramo)`.
+Así encontramos **dos índices redundantes** (heredados del volcado original) y los borramos en el
+script **018**:
+- `idx_historial_envio (nro_envio)`: ya lo cubría `idx_historial_envio_fecha (nro_envio, ...)`.
+- `fk_ve_envio (nro_envio)` en viaje_envio: ya lo cubría el UNIQUE `(nro_envio, tramo)`.
 
-No dan resultados incorrectos, pero cada INSERT en historial y en viaje_envio actualiza un índice
-de más. Se pueden borrar (la FK sigue funcionando con el compuesto).
+No daban resultados incorrectos, pero cada alta de un estado o de una asignación actualizaba un
+índice de más. Las claves foráneas siguen funcionando: InnoDB usa el índice compuesto, que empieza
+por `nro_envio`. Comprobado con EXPLAIN después del 018: el último estado usa
+`idx_historial_envio_fecha` y las asignaciones de un envío usan `uq_viaje_envio_tramo`.
 
 ## Mantenimiento
 
@@ -128,9 +134,9 @@ de más. Se pueden borrar (la FK sigue funcionando con el compuesto).
 EXPLAIN SELECT nro_envio FROM envio WHERE fecha_envio BETWEEN '2026-11-01' AND '2026-11-30';
 -- 2) Lo mismo con función sobre la columna: ya no puede buscar en el índice
 EXPLAIN SELECT nro_envio FROM envio WHERE YEAR(fecha_envio) = 2026 AND MONTH(fecha_envio) = 11;
--- 3) El filesort del último estado, con y sin el índice compuesto
-EXPLAIN SELECT estado FROM historial_estado WHERE nro_envio = 2749 ORDER BY fecha_hora DESC, id_historial DESC LIMIT 1;
-EXPLAIN SELECT estado FROM historial_estado IGNORE INDEX (idx_historial_envio_fecha)
+-- 3) El último estado, con y sin el índice compuesto (ANALYZE muestra las filas leídas: 1 contra miles)
+ANALYZE SELECT estado FROM historial_estado WHERE nro_envio = 2749 ORDER BY fecha_hora DESC, id_historial DESC LIMIT 1;
+ANALYZE SELECT estado FROM historial_estado IGNORE INDEX (idx_historial_envio_fecha)
          WHERE nro_envio = 2749 ORDER BY fecha_hora DESC, id_historial DESC LIMIT 1;
 ```
 

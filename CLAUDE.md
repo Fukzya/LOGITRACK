@@ -13,12 +13,15 @@ triggers, vistas, seguridad en BD y código, CRUD, transacciones, índices) y po
   En PowerShell 5.1 los mensajes con comillas se rompen: escribir el mensaje en un archivo del
   scratchpad y usar `git commit -F archivo`.
 - Cambios a la base: NUNCA editar `database/logitrack.sql` a mano. Cada cambio es un script nuevo
-  numerado en `database/cambios/` (el próximo es 018_...), con un encabezado que explica qué y por
+  numerado en `database/cambios/` (el próximo es 019_...), con un encabezado que explica qué y por
   qué, y se corre con `Get-Content -Raw -Encoding UTF8 script.sql | mysql
   --defaults-extra-file=C:/Users/santi/.logitrack/root.cnf --default-character-set=utf8mb4 logitrack`
   (mysql en c:\xampp\mysql\bin). Desde 016 root TIENE contraseña: está en ese archivo, fuera del
   repo (nunca mostrarla ni versionarla). Tabla, vista o rutina nueva que use la app = agregar sus
   GRANT a rol_operador / rol_admin (si no, la app da 403 "Acceso denegado por la base").
+  Después de cada script: REGENERAR el volcado con mysqldump (comando en README, "Cambios a la
+  base"). Ojo al probar un volcado en otra base: tiene DOS `USE logitrack` (líneas ~24 y ~2107,
+  antes de las vistas finales); hay que renombrar los dos o las vistas se recrean en la real.
 - Cada cambio de la base se documenta TAMBIÉN en la planilla (ver "Planilla").
 - Antes de proponer, analizar los datos reales de la base (consultas) y decir lo que no cierra.
 - Probar todo antes de entregar: API con curl (bash, cookie jar en el scratchpad) y pantallas con
@@ -123,11 +126,11 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
   datos inválidos del script ajeno. La copia logitrack_carga YA NO está en la PC (25/11): para
   volver a medir, regenerarla con carga_100k.sql (medir_consultas.sh usa root.cnf).
   Guía: docs/defensa_indices.md (EXPLAIN/ANALYZE reales con y sin cada índice vía IGNORE INDEX).
-  Hallazgo (preguntado al usuario, sin decidir): 2 índices redundantes por prefijo izquierdo,
-  idx_historial_envio (cubierto por idx_historial_envio_fecha) y fk_ve_envio (cubierto por el
-  UNIQUE nro_envio+tramo). Borrarlos sería el 018.
-  Lo que falta del checklist (orden acordado): guía de índices (hecha) -> regenerar
-  database/logitrack.sql con --routines --triggers -> instalación desde cero -> guía general.
+  018 (aprobado): borrados 2 índices redundantes por prefijo izquierdo, idx_historial_envio y
+  fk_ve_envio (la FK sigue, usa el compuesto). Volcado regenerado con mysqldump (25/11): trae
+  001-018; al instalar solo se corren 016 y 017 (cuentas/GRANT viven en la base mysql).
+  Lo que falta del checklist (orden acordado): instalación desde cero (probar README completo en
+  una base/PC limpia) -> guía general de defensa (una página: checklist -> dónde -> demo).
 
 ## Pendiente inmediato
 - Próximo: seguridad parte 2 (preguntar). Ojo: con el paso de los días los
@@ -177,8 +180,9 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
 - Los datos de prueba originales (2024) se generaron al azar y NO cumplen las reglas nuevas
   (envíos con hasta 9 viajes, estados antes de la fecha del envío, etc.). No se corrigen: los
   triggers controlan lo nuevo. Decirlo así en la defensa.
-- Sugerido al usuario y pendiente: regenerar database/logitrack.sql desde HeidiSQL con
-  `--routines --triggers` para que el volcado incluya 002-015.
+- 018 índices redundantes borrados (idx_historial_envio, fk_ve_envio). Re-ejecutable (IF EXISTS).
+- database/logitrack.sql = mysqldump --single-transaction --routines --triggers --databases
+  logitrack del 25/11/2026 (incluye 001-018). El volcado viejo de HeidiSQL quedó en el historial de git.
 
 ## Planilla (Google Sheets, conector de Sheets)
 - logitrack_completo, id 1EoWc3-FiO3lrLnfPtyVn2zzXPr9a5W_p6m-kMcvyQV8 (locale en_US: fórmulas con
@@ -232,6 +236,7 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
   (no tocar).
 
 ## Commits recientes (rama main)
+- Indices redundantes (018) y volcado regenerado con mysqldump --routines --triggers
 - Transacciones (017): capacidad sin carreras (FOR UPDATE + lectura con bloqueo), demo
 - Seguridad parte 1 (016): cuentas por rol, permisos por rol en la app, .htaccess
 - Índices (015) + prueba de 100k (database/pruebas)
