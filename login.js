@@ -41,13 +41,23 @@ document.addEventListener('DOMContentLoaded', function () {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: username, password: password })
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.ok) {
+        // La respuesta se lee como texto: si PHP falla devuelve HTML (no JSON) y hay que avisarlo igual.
+        .then(res => res.text().then(texto => {
+            let data;
+            try { data = JSON.parse(texto); } catch (err) { data = null; }
+            if (data && data.ok) {
                 window.location.href = 'index.php';
-            } else {
-                document.getElementById('mensaje').textContent = data.mensaje;
+                return;
             }
+            // "mensaje" = usuario o contraseña; "error" = falla de la base (por ejemplo, faltan las
+            // cuentas: correr database/configurar_cuentas.php).
+            // CAMBIAR: el texto si el servidor responde algo inesperado.
+            document.getElementById('mensaje').textContent =
+                (data && (data.mensaje || data.error)) ||
+                'Error del servidor (' + res.status + '). Detalle en C:\\xampp\\php\\logs\\php_error_log.';
+        }))
+        .catch(() => {
+            document.getElementById('mensaje').textContent = 'No se pudo contactar al servidor (¿Apache está prendido?).';
         });
     });
 });
