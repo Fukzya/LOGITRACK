@@ -20,7 +20,7 @@ config/       conexion.php (cuenta de base según el rol), session.php (login / 
 database/
   logitrack.sql   Volcado completo (mysqldump --routines --triggers), con los cambios 001-018
   cambios/        Historial de cambios a la base (ya aplicados en el volcado: no se ejecutan)
-docs/         teoria_campus.md: resumen del material de la cátedra por tema
+docs/         defensa_general.md (por dónde empezar), una guía por tema y teoria_campus.md
 index.php     Menú principal (requiere sesión)
 login.html    Pantalla de login
 ```
