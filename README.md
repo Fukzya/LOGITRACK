@@ -19,7 +19,7 @@ config/       conexion.php (cuenta de base según el rol), session.php (login / 
               respuestas JSON y traducción de errores de la base)
 database/
   logitrack.sql   Volcado completo (mysqldump --routines --triggers), con los cambios 001-018
-  cambios/        Scripts que modifican la base, numerados y en orden
+  cambios/        Historial de cambios a la base (ya aplicados en el volcado: no se ejecutan)
 docs/         teoria_campus.md: resumen del material de la cátedra por tema
 index.php     Menú principal (requiere sesión)
 login.html    Pantalla de login
@@ -29,18 +29,16 @@ login.html    Pantalla de login
 
 1. Clonar el repo dentro de `C:\xampp\htdocs\` para que quede en `C:\xampp\htdocs\LOGITRACK`.
 2. Levantar Apache y MySQL desde el panel de XAMPP.
-3. En HeidiSQL, importar `database/logitrack.sql` (como root). Crea la base `logitrack` con todo:
-   tablas, datos, vistas, procedimientos, funciones y triggers, con los cambios 001 a 018 ya
-   aplicados. **No hay que correr esos scripts de nuevo.**
-4. Correr, como root y en este orden, `database/cambios/016_cuentas_y_roles.sql` y
-   `database/cambios/017_concurrencia_capacidad.sql`. Los usuarios, roles y permisos (GRANT) se
-   guardan en la base del sistema `mysql`, no en `logitrack`, así que el volcado no los trae.
-   016 crea las cuentas y sus permisos; 017 vuelve a crear sus triggers (iguales) y da el permiso
-   sobre su función.
-5. Darles contraseña a las cuentas de la app (016 las deja bloqueadas):
-   `C:\xampp\php\php database\configurar_cuentas.php` (pide la contraseña de root).
-   Genera `config/credenciales.php`, que no se versiona.
-6. Abrir http://localhost/LOGITRACK/
+3. En HeidiSQL, importar `database/logitrack.sql` (como root). Crea la base `logitrack` completa:
+   tablas, datos, vistas, procedimientos, funciones y triggers.
+4. Crear las cuentas de la aplicación, en una consola dentro de la carpeta del proyecto:
+   `C:\xampp\php\php database\configurar_cuentas.php` (pide la contraseña de root; Enter si no
+   tiene). Crea los roles, los permisos y las cuentas con contraseñas al azar, y las guarda en
+   `config/credenciales.php`, que no se versiona. Hace falta porque los usuarios y permisos se
+   guardan en la base del sistema `mysql`, no en `logitrack`, y el volcado no los trae.
+5. Abrir http://localhost/LOGITRACK/
+
+No hay que ejecutar ningún script de `database/cambios/`: ya están aplicados en el volcado.
 
 **Seguridad:** la app nunca usa root. Se conecta con `logitrack_login`, `logitrack_operador` o
 `logitrack_admin` según el rol de la sesión (mínimo privilegio, ver `docs/defensa_seguridad.md`).
@@ -59,9 +57,9 @@ asignen envíos a la misma moto al mismo tiempo y muestra que no se supera la ca
 
 ## Cambios a la base
 
-Cada cambio de estructura va como un archivo nuevo en `database/cambios/`,
-con número correlativo (`002_...sql`, `003_...sql`). No se edita un script
-que ya se ejecutó: si hay que corregir algo, se agrega uno nuevo.
+Para el desarrollo: cada cambio de estructura se escribió como un archivo nuevo en
+`database/cambios/`, con número correlativo y un encabezado que explica qué cambió y por qué.
+Quedan como historial (y para la defensa); para instalar no se usan.
 
 Después de cada script nuevo se regenera el volcado (también es el backup lógico de la base):
 
@@ -76,7 +74,7 @@ C:\xampp\mysql\bin\mysqldump -uroot -p --default-character-set=utf8mb4 --single-
   a los que están usando la app.
 - `--databases logitrack`: incluye el `CREATE DATABASE` y el `USE`.
 - Los usuarios y permisos no viajan en el volcado (están en la base `mysql`): por eso el paso 4
-  de la instalación.
+  de la instalación (`configurar_cuentas.php`).
 
 ## Pendientes conocidos
 

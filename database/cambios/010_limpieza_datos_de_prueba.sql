@@ -35,4 +35,4 @@ SELECT COUNT(*) AS estados_antes_del_envio
   FROM historial_estado h JOIN envio e ON e.nro_envio = h.nro_envio
  WHERE e.nro_envio IN (8019, 8104, 8110) AND DATE(h.fecha_hora) < e.fecha_envio;
 -- Nota: los envíos 8015-8018 (junio 2026) tienen el RECIBIDO un día antes de fecha_envio.
--- Son datos viejos, como los de 2024: no se corrigen (ver CLAUDE.md).
+-- Son datos viejos, como los de 2024: no se corrigen.
