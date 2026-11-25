@@ -4,6 +4,7 @@ cargarCatalogo('filtro-tipo', 'tipos_vehiculo');
 
 pantallaCrud({
     api: '../../api/vehiculos.php',
+    entidad: 'vehiculos',
     clave: 'vehiculo_patente',
     nombre: 'el vehículo',
     tabla: 'tabla-vehiculos',

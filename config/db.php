@@ -1,14 +1,9 @@
 <?php
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
+/*
+ * Conexión de la API. Sin cabeceras CORS: las pantallas y la API están en el mismo sitio, así
+ * que el navegador no necesita permiso para "otro origen" (y otro sitio no puede usar la API).
+ */
 header('Content-Type: application/json; charset=utf-8');
-
-// Manejar preflight request
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
 
 require_once __DIR__ . '/conexion.php';
 $pdo = conexion();

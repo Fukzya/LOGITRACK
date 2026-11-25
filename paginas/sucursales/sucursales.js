@@ -3,6 +3,7 @@ cargarCatalogo('input-localidad', 'localidades');
 
 pantallaCrud({
     api: '../../api/sucursales.php',
+    entidad: 'sucursales',
     clave: 'sucursal_cod',
     nombre: 'la sucursal',
     tabla: 'tabla-sucursales',

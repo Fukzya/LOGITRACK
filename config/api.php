@@ -19,6 +19,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/session.php';
 verificar_sesion();
+require_once __DIR__ . '/permisos.php';
 require_once __DIR__ . '/db.php';
 
 /** Error de datos de entrada: termina en un 400 con el mensaje tal cual. */
@@ -222,6 +223,12 @@ function manejar_error(Throwable $e): void
             case 4025: error_api('Alguno de los datos no cumple las reglas de la base.', 400);
             case 1644: // SIGNAL SQLSTATE '45000' de un trigger o procedimiento: el mensaje es nuestro
                 error_api($e->errorInfo[2] ?? 'Operación rechazada por la base de datos.', 400);
+            // La cuenta de base del rol no tiene el permiso (GRANT, script 016): segunda barrera.
+            case 1142: // command denied (tabla)
+            case 1143: // command denied (columna)
+            case 1370: // EXECUTE denied (procedimiento o función)
+                error_log('[LogiTrack API] Permiso de base denegado: ' . $e->getMessage());
+                error_api('Acceso denegado por la base de datos: tu rol no tiene permiso para esta operación.', 403);
         }
     }
     error_log('[LogiTrack API] ' . $e);

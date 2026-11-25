@@ -4,6 +4,7 @@ cargarCatalogo('filtro-localidad', 'localidades');
 
 pantallaCrud({
     api: '../../api/direcciones.php',
+    entidad: 'direcciones',
     clave: 'direccion_id',
     nombre: 'la dirección',
     tabla: 'tabla-direcciones',

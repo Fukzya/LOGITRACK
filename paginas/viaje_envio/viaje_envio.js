@@ -4,6 +4,7 @@ const API_ASIGNACIONES = '../../api/viaje_envio.php';
 
 pantallaCrud({
     api: API_ASIGNACIONES,
+    entidad: 'viaje_envio',
     clave: 'asignacion',
     nombre: 'la asignación',
     tabla: 'tabla-asignaciones',

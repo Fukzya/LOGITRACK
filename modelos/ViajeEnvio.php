@@ -33,12 +33,10 @@ class ViajeEnvio extends Modelo
         );
     }
 
-    public function asignar(int $viaje, int $envio): void
-    {
-        $this->ejecutar('INSERT INTO viaje_envio (viaje_id, nro_envio) VALUES (:v, :e)', [':v' => $viaje, ':e' => $envio]);
-    }
-
-    /** Asigna con el procedimiento almacenado procedimiento_asignar_envio_a_viaje (rechaza duplicados). */
+    /**
+     * Asigna con el procedimiento almacenado procedimiento_asignar_envio_a_viaje (rechaza duplicados).
+     * Es la única forma de asignar: las cuentas de la app tienen EXECUTE, no INSERT sobre viaje_envio.
+     */
     public function asignarConProcedimiento(int $viaje, int $envio): void
     {
         $st = $this->pdo->prepare('CALL procedimiento_asignar_envio_a_viaje(:v, :e)');

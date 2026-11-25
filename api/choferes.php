@@ -1,6 +1,7 @@
 <?php
 /* Controlador de choferes: valida, llama al modelo Chofer y responde JSON. */
 require_once '../config/api.php';
+exigir_permiso_crud('choferes');
 require_once '../modelos/Chofer.php';
 
 $choferes = new Chofer($pdo);

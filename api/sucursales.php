@@ -1,6 +1,7 @@
 <?php
 /* Controlador de sucursales: valida, llama al modelo Sucursal y responde JSON. */
 require_once '../config/api.php';
+exigir_permiso_crud('sucursales');
 require_once '../modelos/Sucursal.php';
 
 $sucursales = new Sucursal($pdo);

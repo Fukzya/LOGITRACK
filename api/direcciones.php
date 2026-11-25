@@ -1,6 +1,7 @@
 <?php
 /* Controlador de direcciones: valida, llama al modelo Direccion y responde JSON. */
 require_once '../config/api.php';
+exigir_permiso_crud('direcciones');
 require_once '../modelos/Direccion.php';
 
 $direcciones = new Direccion($pdo);

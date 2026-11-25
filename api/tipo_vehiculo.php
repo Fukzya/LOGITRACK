@@ -1,6 +1,7 @@
 <?php
 /* Controlador de tipos de vehículo: valida, llama al modelo TipoVehiculo y responde JSON. */
 require_once '../config/api.php';
+exigir_permiso_crud('tipo_vehiculo');
 require_once '../modelos/TipoVehiculo.php';
 
 $tipos = new TipoVehiculo($pdo);

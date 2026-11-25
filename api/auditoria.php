@@ -3,9 +3,7 @@
 require_once '../config/api.php';
 require_once '../modelos/Auditoria.php';
 
-if (!es_admin()) {
-    error_api('Acceso denegado: solo un administrador puede ver la auditoría.', 403);
-}
+exigir_permiso('auditoria', 'gestionar');   // no figura en PERMISOS_OPERADOR: solo admin
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     error_api('La auditoría no se modifica: la escriben los triggers de la base.', 405);
 }

@@ -8,6 +8,7 @@ cargarCatalogo('filtro-sucursal', 'sucursales');
 
 pantallaCrud({
     api: '../../api/historial_estado.php',
+    entidad: 'historial_estado',
     clave: 'id_historial',
     nombre: 'el registro',
     tabla: 'tabla-historial',

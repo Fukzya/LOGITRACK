@@ -5,7 +5,8 @@ desktop.ini
 .vscode/
 .idea/
 
-# Configuración local (si algún día se separan credenciales)
+# Contraseñas de las cuentas de la base (las genera database/configurar_cuentas.php)
+config/credenciales.php
 config/db.local.php
 
 # Material del campus (119 MB, de la cátedra). Resumen en docs/teoria_campus.md

@@ -13,9 +13,12 @@ triggers, vistas, seguridad en BD y código, CRUD, transacciones, índices) y po
   En PowerShell 5.1 los mensajes con comillas se rompen: escribir el mensaje en un archivo del
   scratchpad y usar `git commit -F archivo`.
 - Cambios a la base: NUNCA editar `database/logitrack.sql` a mano. Cada cambio es un script nuevo
-  numerado en `database/cambios/` (el próximo es 016_...), con un encabezado que explica qué y por
-  qué, y se corre con `Get-Content -Raw -Encoding UTF8 script.sql | mysql -uroot
-  --default-character-set=utf8mb4 logitrack` (mysql en c:\xampp\mysql\bin).
+  numerado en `database/cambios/` (el próximo es 017_...), con un encabezado que explica qué y por
+  qué, y se corre con `Get-Content -Raw -Encoding UTF8 script.sql | mysql
+  --defaults-extra-file=C:/Users/santi/.logitrack/root.cnf --default-character-set=utf8mb4 logitrack`
+  (mysql en c:\xampp\mysql\bin). Desde 016 root TIENE contraseña: está en ese archivo, fuera del
+  repo (nunca mostrarla ni versionarla). Tabla, vista o rutina nueva que use la app = agregar sus
+  GRANT a rol_operador / rol_admin (si no, la app da 403 "Acceso denegado por la base").
 - Cada cambio de la base se documenta TAMBIÉN en la planilla (ver "Planilla").
 - Antes de proponer, analizar los datos reales de la base (consultas) y decir lo que no cierra.
 - Probar todo antes de entregar: API con curl (bash, cookie jar en el scratchpad) y pantallas con
@@ -73,9 +76,27 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
   Medido: función dentro de una vista + ORDER BY -> filesort calcula la función para todas las
   filas (550 ms -> 110 ms sacándola; Modelo::conNombreDeEstado la calcula para la página).
   Guía: docs/defensa_vistas.md. La vista con columnas ocultas + GRANT queda para seguridad.
-- Seguridad: pendiente (el usuario avisó que es extenso). Notas: la app usa root sin contraseña,
-  CORS `*` en config/db.php, operadores pueden escribir todo (faltan permisos por rol),
-  calidad de datos (direcciones de entrega de terceros en los datos históricos).
+- Seguridad PARTE 1: TERMINADA (016). El usuario eligió los 3 problemas más graves + contraseña de root.
+  (1) Cuentas de base por rol (decisión del usuario: una por rol, no una sola): rol_login /
+  rol_operador / rol_admin (hereda operador), cuentas logitrack_login/_operador/_admin@localhost;
+  config/conexion.php elige la cuenta por $_SESSION['rol'] (conexion('login') en api/login.php e
+  iniciar_sesion). Claves al azar en config/credenciales.php (.gitignore), las genera
+  database/configurar_cuentas.php (CLI). GRANT por columna (operador sin `activo`), envío/estado/
+  asignación solo por procedimiento (api/viaje_envio.php pasó a asignarConProcedimiento), nadie
+  UPDATE/DELETE en historial ni auditoria, PROCESS solo admin. Errores 1142/1143/1370 -> 403.
+  (2) config/permisos.php = tabla de permisos del operador (lista blanca; admin todo):
+  exigir_permiso_crud('entidad') en cada API, exigir_permiso() en asistente/viaje_completo/
+  usuarios/sesiones/auditoria; plantilla pasa PERMISOS al JS, crud.js usa cfg.entidad (oculta
+  form y botones, muestra "Solo consulta"). Operador: alta/edición de envíos, clientes,
+  direcciones, viajes, incidentes; asignar/quitar; cerrar viaje; NO bajas; recursos y catálogos
+  solo ver. (3) .htaccess raíz: -Indexes, 403 a database/ docs/ config/ modelos/ .git/ campus y
+  a *.md *.sql *.sh *.ini. Además: CORS * sacado; root/pma con clave
+  (C:\Users\santi\.logitrack\root.cnf), phpMyAdmin auth cookie (copia config.inc.php.antes_seguridad).
+  Guía: docs/defensa_seguridad.md.
+- Seguridad PARTE 2 (pendiente, el usuario la dejó para después): límite de intentos del login,
+  auditor externo con vista + masking (GRANT SELECT solo a la vista), backups con
+  mysqldump --routines --triggers, calidad de datos (901 pares nombre+apellido repetidos,
+  direcciones de terceros), explicar SSL (no aplica: misma PC).
 - Transacciones: el asistente, viaje_completo y "agregar envíos" usan transacción PHP + FOR
   UPDATE; cerrar_viaje la tiene dentro del procedimiento. Falta decidir si el asistente pasa a
   procedimiento con EXIT HANDLER y explicar aislamiento / bloqueos.
@@ -89,11 +110,14 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
   1,85 s -> 95 ms, Historial 0,9 s -> 104 ms (resultados comparados contra la vista: iguales).
   Arreglo grande NO aprobado (no hacer): estado actual precalculado por trigger para pendientes,
   tablero y resumen (funciones fila por fila: 6,8 s con 100k). Riesgo: los triggers rechazan
-  datos inválidos del script ajeno. La copia logitrack_carga quedó en la PC para volver a medir.
+  datos inválidos del script ajeno. La copia logitrack_carga YA NO está en la PC (25/11): para
+  volver a medir, regenerarla con carga_100k.sql (medir_consultas.sh usa root.cnf).
 
 ## Pendiente inmediato
-- Próximo tema: seguridad (extenso; analizar, explicar, plan completo). Ojo: con el paso de los días los
+- Próximo: seguridad parte 2 o transacciones (preguntar). Ojo: con el paso de los días los
   viajes de prueba de 2026 van quedando "salidos sin cerrar" (es normal, se cierran con el botón).
+- Usuarios de prueba: insertarlos como root (la cuenta de la app no puede); al borrar, también sus
+  filas de sesion y de auditoria.
 - Decidido NO hacer: "envío programado" (fecha de envío futura). fecha_envio = día en que se
   recibe el paquete; lo que es futuro es el viaje al que se asigna.
 
@@ -130,6 +154,8 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
   envios_pendientes (último por fecha, solo activos), viajes_en_curso (borrada viajes_activos),
   clientes_con_envios con subconsultas (0,5 s -> 0,1 s).
 - 015 índices: historial (nro_envio, fecha_hora, id_historial), envio (fecha_envio), viaje (fecha_salida).
+- 016 seguridad: roles rol_login/rol_operador/rol_admin, cuentas logitrack_* (ACCOUNT LOCK hasta
+  configurar_cuentas.php), GRANT por tabla/columna/rutina, PROCESS a admin. Re-ejecutable (DROP primero).
 - Los datos de prueba originales (2024) se generaron al azar y NO cumplen las reglas nuevas
   (envíos con hasta 9 viajes, estados antes de la fecha del envío, etc.). No se corrigen: los
   triggers controlan lo nuevo. Decirlo así en la defensa.
@@ -188,6 +214,7 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
   (no tocar).
 
 ## Commits recientes (rama main)
+- Seguridad parte 1 (016): cuentas por rol, permisos por rol en la app, .htaccess
 - Índices (015) + prueba de 100k (database/pruebas)
 - Vistas (014): las 5 originales corregidas, listados y tablero del menú
 - Triggers (013): historial inmutable, auditoría, reglas en la base

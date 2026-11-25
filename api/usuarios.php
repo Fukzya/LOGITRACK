@@ -3,9 +3,7 @@
 require_once '../config/api.php';
 require_once '../modelos/Usuario.php';
 
-if (!es_admin()) {
-    error_api('Acceso denegado: solo un administrador puede gestionar usuarios.', 403);
-}
+exigir_permiso('usuarios', 'gestionar');   // no figura en PERMISOS_OPERADOR: solo admin
 
 $usuarios = new Usuario($pdo);
 const ROLES = ['admin', 'operador'];

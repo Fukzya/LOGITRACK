@@ -9,6 +9,7 @@ const kg = n => Number(n).toLocaleString('es-AR', { maximumFractionDigits: 2 });
 
 const pantalla = pantallaCrud({
     api: '../../api/viajes.php',
+    entidad: 'viajes',
     clave: 'viaje_id',
     nombre: 'el viaje',
     tabla: 'tabla-viajes',

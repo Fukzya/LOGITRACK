@@ -1,6 +1,7 @@
 <?php
 /* Controlador de la asignación envío-viaje: valida, llama al modelo ViajeEnvio y responde JSON. */
 require_once '../config/api.php';
+exigir_permiso_crud('viaje_envio');
 require_once '../modelos/ViajeEnvio.php';
 
 $asignaciones = new ViajeEnvio($pdo);
@@ -21,7 +22,8 @@ switch ($_SERVER['REQUEST_METHOD']) {
 
     case 'POST':
         [$viaje, $envio] = claves(leer_json());
-        intentar(fn() => $asignaciones->asignar($viaje, $envio), [
+        // Por procedimiento: las cuentas de la app no tienen INSERT directo sobre viaje_envio.
+        intentar(fn() => $asignaciones->asignarConProcedimiento($viaje, $envio), [
             1062 => "El envío $envio ya está asignado al viaje $viaje.",
             1452 => 'El viaje o el envío indicados no existen.',
         ]);

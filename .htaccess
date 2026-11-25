@@ -1,0 +1,14 @@
+# Seguridad del sitio (Apache). Lo que el navegador NO puede pedir.
+# PHP sigue pudiendo incluir estos archivos (require_once): la restricción es solo para HTTP.
+
+# 1) No listar el contenido de las carpetas.
+Options -Indexes
+
+# 2) Carpetas internas: volcados SQL, scripts de la base, documentación, credenciales y
+#    código que solo se incluye desde PHP. Cualquier pedido devuelve 403 (Prohibido).
+RedirectMatch 403 (?i)^/LOGITRACK/(database|docs|config|modelos|\.git|base\sde\sdatos\s2\scampus)(/|$)
+
+# 3) Tipos de archivo que nunca se sirven, estén donde estén.
+<FilesMatch "(?i)(\.(md|sql|sh|ini|cnf|log|bak)|^\.git.*|^\.htaccess)$">
+    Require all denied
+</FilesMatch>

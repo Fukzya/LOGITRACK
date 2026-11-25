@@ -3,6 +3,7 @@ cargarCatalogo('input-localidad', 'localidades');
 
 pantallaCrud({
     api: '../../api/clientes.php',
+    entidad: 'clientes',
     clave: 'cliente_dni',
     nombre: 'el cliente',
     tabla: 'tabla-clientes',

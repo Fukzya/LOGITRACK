@@ -1,6 +1,7 @@
 <?php
 /* Controlador de incidentes: valida, llama al modelo Incidente y responde JSON. */
 require_once '../config/api.php';
+exigir_permiso_crud('incidentes');
 require_once '../modelos/Incidente.php';
 
 $incidentes = new Incidente($pdo);

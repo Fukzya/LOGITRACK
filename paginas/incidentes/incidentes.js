@@ -4,6 +4,7 @@ cargarCatalogo('filtro-tipo', 'incidentes');
 
 pantallaCrud({
     api: '../../api/incidentes.php',
+    entidad: 'incidentes',
     clave: 'incidente_id',
     nombre: 'el incidente',
     tabla: 'tabla-incidentes',

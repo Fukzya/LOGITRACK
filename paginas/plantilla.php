@@ -6,6 +6,7 @@
  *   - las pantallas solo para admin redirigen al menú si entra un operador.
  */
 require_once __DIR__ . '/../config/session.php';
+require_once __DIR__ . '/../config/permisos.php';
 verificar_sesion_pagina('../../');
 header('Cache-Control: no-store, no-cache, must-revalidate');
 header('Pragma: no-cache');
@@ -478,7 +479,11 @@ function fin_pagina(string $js, array $extras = []): void
         </main>
     </div>
 
-    <script>const esAdmin = <?= $esAdmin ? 'true' : 'false' ?>;</script>
+    <script>
+        const esAdmin = <?= $esAdmin ? 'true' : 'false' ?>;
+        // Tabla de permisos del rol (config/permisos.php): solo para ocultar botones; la que manda es la API.
+        const PERMISOS = <?= json_encode(permisos_del_rol()) ?>;
+    </script>
     <script src="<?= con_version('../comun.js') ?>"></script>
     <script src="<?= con_version('../catalogos.js') ?>"></script>
     <script src="<?= con_version('../crud.js') ?>"></script>

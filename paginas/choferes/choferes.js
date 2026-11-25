@@ -4,6 +4,7 @@ cargarCatalogo('filtro-licencia', 'licencias');
 
 pantallaCrud({
     api: '../../api/choferes.php',
+    entidad: 'choferes',
     clave: 'chofer_legajo',
     nombre: 'el chofer',
     tabla: 'tabla-choferes',

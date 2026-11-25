@@ -1,6 +1,7 @@
 // Pantalla de tipos de vehículo (catálogo con baja física).
 pantallaCrud({
     api: '../../api/tipo_vehiculo.php',
+    entidad: 'tipo_vehiculo',
     clave: 'tipo_veh_cod',
     nombre: 'el tipo',
     tabla: 'tabla-tipos',

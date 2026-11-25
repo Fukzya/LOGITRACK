@@ -1,6 +1,8 @@
 <?php
 require_once '../config/session.php';
-require_once '../config/db.php';
+require_once '../config/conexion.php';
+header('Content-Type: application/json; charset=utf-8');
+$pdo = conexion('login');   // cuenta logitrack_login: solo lee usuario y abre la sesión
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);

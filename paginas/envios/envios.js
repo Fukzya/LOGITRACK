@@ -10,6 +10,7 @@ cargarCatalogo('estado-sucursal', 'sucursales');
 
 const pantalla = pantallaCrud({
     api: '../../api/envios.php',
+    entidad: 'envios',
     clave: 'nro_envio',
     nombre: 'el envío',
     tabla: 'tabla-envios',

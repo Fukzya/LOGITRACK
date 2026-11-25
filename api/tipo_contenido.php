@@ -1,6 +1,7 @@
 <?php
 /* Controlador de tipos de contenido: valida, llama al modelo TipoContenido y responde JSON. */
 require_once '../config/api.php';
+exigir_permiso_crud('tipo_contenido');
 require_once '../modelos/TipoContenido.php';
 
 $tipos = new TipoContenido($pdo);

@@ -1,6 +1,7 @@
 <?php
 /* Controlador de viajes: valida, llama al modelo Viaje y responde JSON. */
 require_once '../config/api.php';
+exigir_permiso_crud('viajes');
 require_once '../modelos/Viaje.php';
 require_once '../config/validaciones.php';
 

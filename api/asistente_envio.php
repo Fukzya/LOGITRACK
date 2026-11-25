@@ -14,6 +14,8 @@
  * nada a medias: ni un envío sin viaje ni un viaje vacío.
  */
 require_once '../config/api.php';
+exigir_permiso('envios', 'alta');
+exigir_permiso('viajes', 'alta');   // el asistente también puede crear el viaje
 require_once '../config/validaciones.php';
 require_once '../modelos/Envio.php';
 require_once '../modelos/Viaje.php';

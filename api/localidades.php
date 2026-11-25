@@ -1,6 +1,7 @@
 <?php
 /* Controlador de localidades: valida, llama al modelo Localidad y responde JSON. */
 require_once '../config/api.php';
+exigir_permiso_crud('localidades');
 require_once '../modelos/Localidad.php';
 
 $localidades = new Localidad($pdo);

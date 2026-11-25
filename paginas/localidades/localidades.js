@@ -4,6 +4,7 @@ cargarCatalogo('filtro-provincia', 'provincias');
 
 pantallaCrud({
     api: '../../api/localidades.php',
+    entidad: 'localidades',
     clave: 'localidad_cod',
     nombre: 'la localidad',
     tabla: 'tabla-localidades',

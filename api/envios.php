@@ -1,6 +1,7 @@
 <?php
 /* Controlador de envíos: valida, llama al modelo Envio y responde JSON. */
 require_once '../config/api.php';
+exigir_permiso_crud('envios');
 require_once '../modelos/Envio.php';
 require_once '../config/validaciones.php';
 

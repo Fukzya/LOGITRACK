@@ -2,6 +2,7 @@
 /* Controlador del historial de estados: valida, llama al modelo HistorialEstado y responde JSON.
    Solo permite consultar y registrar estados nuevos (el historial es inmutable). */
 require_once '../config/api.php';
+exigir_permiso_crud('historial_estado');
 require_once '../modelos/HistorialEstado.php';
 
 $historial = new HistorialEstado($pdo);

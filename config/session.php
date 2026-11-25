@@ -50,7 +50,7 @@ function token_sesion(): string
 function iniciar_sesion(int $usuario_id, string $username, string $rol): void
 {
     session_regenerate_id(true);
-    $sesionId = modelo_sesion()->iniciar($usuario_id, token_sesion(),
+    $sesionId = (new Sesion(conexion('login')))->iniciar($usuario_id, token_sesion(),
                                          $_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? null);
     $_SESSION = [
         'usuario_id' => $usuario_id,

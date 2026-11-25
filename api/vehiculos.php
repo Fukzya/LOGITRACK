@@ -1,6 +1,7 @@
 <?php
 /* Controlador de vehículos: valida, llama al modelo Vehiculo y responde JSON. */
 require_once '../config/api.php';
+exigir_permiso_crud('vehiculos');
 require_once '../modelos/Vehiculo.php';
 
 $vehiculos = new Vehiculo($pdo);

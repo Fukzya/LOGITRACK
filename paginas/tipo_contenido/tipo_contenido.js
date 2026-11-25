@@ -1,6 +1,7 @@
 // Pantalla de tipos de contenido (catálogo con baja física).
 pantallaCrud({
     api: '../../api/tipo_contenido.php',
+    entidad: 'tipo_contenido',
     clave: 'tipo_cont_cod',
     nombre: 'el tipo',
     tabla: 'tabla-tipos',

@@ -20,11 +20,14 @@
  *   accionesExtra  fila => html de botones adicionales (con data-accion)
  *   acciones       { nombreAccion: fila => ... } para esos botones
  *   antesDeGuardar datos => datos (opcional, para ajustar el cuerpo que se envía)
+ *   entidad        nombre en la tabla de permisos (config/permisos.php): sin permiso de alta/editar
+ *                  se oculta el formulario; sin editar/baja/reactivar, esos botones
  */
 function pantallaCrud(cfg) {
     const $ = id => document.getElementById(id);
     const baja = cfg.baja === undefined ? 'logica' : cfg.baja;
     const editable = cfg.editable !== false;
+    const permite = accion => !cfg.entidad || puede(cfg.entidad, accion);
     let orden = { ...(cfg.orden || {}) };
     let pagina = 1;
     let filas = new Map();       // clave -> fila, para precargar el formulario
@@ -74,12 +77,12 @@ function pantallaCrud(cfg) {
         const k = esc(f[cfg.clave]);
         const activo = baja !== 'logica' || f.activo == 1;
         let html = '';
-        if (activo && editable) html += `<button data-accion="editar" data-clave="${k}">Editar</button> `;
-        if (activo && baja === 'logica') html += `<button data-accion="baja" data-clave="${k}">Dar de baja</button> `;
-        if (baja === 'fisica') html += `<button data-accion="eliminar" data-clave="${k}">Eliminar</button> `;
-        if (!activo && typeof esAdmin !== 'undefined' && esAdmin) html += `<button data-accion="reactivar" data-clave="${k}">Reactivar</button> `;
+        if (activo && editable && permite('editar')) html += `<button data-accion="editar" data-clave="${k}">Editar</button> `;
+        if (activo && baja === 'logica' && permite('baja')) html += `<button data-accion="baja" data-clave="${k}">Dar de baja</button> `;
+        if (baja === 'fisica' && permite('baja')) html += `<button data-accion="eliminar" data-clave="${k}">Eliminar</button> `;
+        if (!activo && permite('reactivar') && typeof esAdmin !== 'undefined' && esAdmin) html += `<button data-accion="reactivar" data-clave="${k}">Reactivar</button> `;
         if (cfg.accionesExtra) html += cfg.accionesExtra(f);
-        return html;
+        return html || '<span class="text-on-surface-variant">Solo consulta</span>';
     }
 
     // ------------------------------------------------------------ formulario
@@ -174,6 +177,10 @@ function pantallaCrud(cfg) {
         });
     }
 
+    // Sin permiso de alta ni de edición, el formulario no se muestra (pantalla de solo consulta).
+    if (cfg.form && !permite('alta') && !permite('editar')) {
+        ($(cfg.form).closest('.rounded-xl') || $(cfg.form)).hidden = true;
+    }
     if (cfg.form) {
         $(cfg.form).addEventListener('submit', guardar);
         const cancelar = $(cfg.form).querySelector('.btn-cancelar');

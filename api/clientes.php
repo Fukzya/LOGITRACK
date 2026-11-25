@@ -4,6 +4,7 @@
  * No contiene SQL: eso vive en modelos/Cliente.php.
  */
 require_once '../config/api.php';
+exigir_permiso_crud('clientes');
 require_once '../modelos/Cliente.php';
 require_once '../modelos/Direccion.php';
 

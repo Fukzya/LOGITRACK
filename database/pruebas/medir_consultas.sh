@@ -4,7 +4,9 @@
 # Cada consulta se corre 3 veces y se informa el promedio en milisegundos (incluye abrir la
 # conexión, unos 30 ms, igual que un pedido de la app).
 BASE="${1:-logitrack_carga}"
-MYSQL="/c/xampp/mysql/bin/mysql -uroot --default-character-set=utf8mb4 -N $BASE"
+# root tiene contraseña (seguridad): se toma de un archivo de opciones fuera del repo.
+CNF="${LOGITRACK_ROOT_CNF:-$HOME/.logitrack/root.cnf}"
+MYSQL="/c/xampp/mysql/bin/mysql --defaults-extra-file=$CNF --default-character-set=utf8mb4 -N $BASE"
 
 declare -a NOMBRES CONSULTAS
 agregar() { NOMBRES+=("$1"); CONSULTAS+=("$2"); }

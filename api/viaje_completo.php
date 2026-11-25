@@ -7,6 +7,7 @@
  * trigger_before_insert_viaje_envio (capacidad, tramos). Si una falla, ROLLBACK: no queda el viaje.
  */
 require_once '../config/api.php';
+exigir_permiso('viajes', 'alta');
 require_once '../config/validaciones.php';
 require_once '../modelos/Viaje.php';
 require_once '../modelos/ViajeEnvio.php';

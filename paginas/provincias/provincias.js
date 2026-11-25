@@ -1,6 +1,7 @@
 // Pantalla de provincias (catálogo con baja física).
 pantallaCrud({
     api: '../../api/provincias.php',
+    entidad: 'provincias',
     clave: 'provincia_cod',
     nombre: 'la provincia',
     tabla: 'tabla-provincias',

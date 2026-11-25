@@ -1,6 +1,7 @@
 <?php
 /* Controlador de provincias: valida, llama al modelo Provincia y responde JSON. */
 require_once '../config/api.php';
+exigir_permiso_crud('provincias');
 require_once '../modelos/Provincia.php';
 
 $provincias = new Provincia($pdo);

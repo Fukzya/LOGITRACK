@@ -28,6 +28,15 @@ function esc(valor) {
 }
 
 /**
+ * ¿El rol de la sesión puede hacer `accion` sobre `entidad`? Usa la tabla de config/permisos.php
+ * (PERMISOS la pone la plantilla). Solo sirve para no mostrar botones inútiles: la API controla igual.
+ */
+function puede(entidad, accion) {
+    if (typeof PERMISOS === 'undefined' || PERMISOS === '*') return true;
+    return (PERMISOS[entidad] || []).includes(accion);
+}
+
+/**
  * Llama a la API y devuelve el JSON. Si la API responde con error, lanza un Error con el
  * mensaje que mandó el servidor ({"error": "..."}), para mostrarlo con mostrarError().
  *   api('../../api/clientes.php')                       -> GET

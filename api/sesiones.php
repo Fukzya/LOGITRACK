@@ -8,9 +8,7 @@
  */
 require_once '../config/api.php';
 
-if (!es_admin()) {
-    error_api('Acceso denegado: solo un administrador puede ver las sesiones.', 403);
-}
+exigir_permiso('sesiones', 'gestionar');   // no figura en PERMISOS_OPERADOR: solo admin
 
 $sesiones = modelo_sesion();
 $propia   = (int)$_SESSION['sesion_id'];
