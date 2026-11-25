@@ -26,8 +26,11 @@ class Viaje extends Modelo
              v.sucursal_destino_cod, sd.sucursal_completa AS destino,
              v.vehiculo_patente, CONCAT(ve.marca, ' ', ve.modelo) AS vehiculo,
              v.chofer_legajo, CONCAT(c.nombre, ' ', c.apellido) AS chofer_nombre,
-             (SELECT COUNT(*) FROM viaje_envio x WHERE x.viaje_id = v.viaje_id) AS cantidad_envios",
+             (SELECT COUNT(*) FROM viaje_envio x WHERE x.viaje_id = v.viaje_id) AS cantidad_envios,
+             funcion_carga_viaje(v.viaje_id) AS carga, tv.tipo_veh_capacidad_kg AS capacidad,
+             v.fecha_salida <= NOW() AS ya_salio",
             'viaje v JOIN vehiculo ve ON ve.vehiculo_patente = v.vehiculo_patente
+                     JOIN tipo_vehiculo tv ON tv.tipo_veh_cod = ve.tipo_veh_cod
                      JOIN chofer c    ON c.chofer_legajo     = v.chofer_legajo
                      JOIN vista_sucursal_ubicacion so ON so.sucursal_cod = v.sucursal_origen_cod
                      JOIN vista_sucursal_ubicacion sd ON sd.sucursal_cod = v.sucursal_destino_cod',
@@ -117,11 +120,106 @@ class Viaje extends Modelo
               WHERE v.viaje_id = :id
                 FOR UPDATE', [':id' => $id]);
         if ($viaje === null) return null;
-        $viaje['carga'] = (float)$this->fila(
-            'SELECT COALESCE(SUM(e.peso_kg), 0) AS carga
-               FROM viaje_envio x JOIN envio e ON e.nro_envio = x.nro_envio
-              WHERE x.viaje_id = :id', [':id' => $id])['carga'];
+        // La carga se lee después del bloqueo, con la función de la base.
+        $viaje['carga'] = (float)$this->fila('SELECT funcion_carga_viaje(:id) AS carga', [':id' => $id])['carga'];
         return $viaje;
+    }
+
+    /**
+     * Cierra el viaje con procedimiento_cerrar_viaje: pone la llegada real y deja sus envíos
+     * "En sucursal". El procedimiento abre y cierra su propia transacción (con FOR UPDATE y EXIT
+     * HANDLER), así que acá no se abre otra. $llegada null = ahora. Devuelve cuántos envíos
+     * cambiaron de estado (parámetro OUT).
+     */
+    public function cerrar(int $id, ?string $llegada): int
+    {
+        $this->ejecutar('CALL procedimiento_cerrar_viaje(:id, :llegada, @envios_actualizados)',
+                        [':id' => $id, ':llegada' => $llegada]);
+        return (int)$this->pdo->query('SELECT @envios_actualizados')->fetchColumn();
+    }
+
+    /** Datos de un viaje para la pantalla de detalle (carga con funcion_carga_viaje), o null. */
+    public function detalle(int $id): ?array
+    {
+        $viaje = $this->fila(
+            "SELECT v.viaje_id, v.fecha_salida, v.llegada_estimada, v.fecha_llegada,
+                    v.sucursal_origen_cod, so.sucursal_completa AS origen,
+                    v.sucursal_destino_cod, sd.sucursal_completa AS destino,
+                    v.vehiculo_patente, CONCAT(ve.marca, ' ', ve.modelo, ' (', tv.tipo_veh_nombre, ')') AS vehiculo,
+                    CONCAT(c.nombre, ' ', c.apellido) AS chofer_nombre,
+                    tv.tipo_veh_capacidad_kg AS capacidad, funcion_carga_viaje(v.viaje_id) AS carga,
+                    v.fecha_salida <= NOW() AS ya_salio
+               FROM viaje v
+               JOIN vehiculo ve      ON ve.vehiculo_patente = v.vehiculo_patente
+               JOIN tipo_vehiculo tv ON tv.tipo_veh_cod     = ve.tipo_veh_cod
+               JOIN chofer c         ON c.chofer_legajo     = v.chofer_legajo
+               JOIN vista_sucursal_ubicacion so ON so.sucursal_cod = v.sucursal_origen_cod
+               JOIN vista_sucursal_ubicacion sd ON sd.sucursal_cod = v.sucursal_destino_cod
+              WHERE v.viaje_id = :id", [':id' => $id]);
+        if ($viaje === null) return null;
+
+        $st = $this->pdo->prepare(
+            "SELECT x.nro_envio, x.tramo, e.peso_kg, e.fecha_envio,
+                    CONCAT(rem.nombre, ' ', rem.apellido) AS remitente,
+                    CONCAT(dest.nombre, ' ', dest.apellido) AS destinatario,
+                    sd.sucursal_completa AS destino_envio,
+                    funcion_ultimo_estado(e.nro_envio) AS ultimo_estado_cod
+               FROM viaje_envio x
+               JOIN envio e     ON e.nro_envio      = x.nro_envio
+               JOIN cliente rem ON rem.cliente_dni  = e.remitente_dni
+               JOIN cliente dest ON dest.cliente_dni = e.destinatario_dni
+               JOIN vista_sucursal_ubicacion sd ON sd.sucursal_cod = e.sucursal_dest_cod
+              WHERE x.viaje_id = :id
+              ORDER BY x.nro_envio");
+        $st->execute([':id' => $id]);
+        $viaje['envios'] = $this->conNombreDeEstado($st->fetchAll(PDO::FETCH_ASSOC));
+        return $viaje;
+    }
+
+    /**
+     * Envíos que se pueden agregar a un viaje que todavía no salió:
+     *  - sin viaje, que salen de la sucursal de origen del viaje ("Sale de acá"), o
+     *  - con un viaje que llega a la sucursal de origen antes de la salida ("Trasbordo").
+     * Activos, sin terminar (funcion_envio_terminado), recibidos en los 30 días antes de la salida y que entran
+     * en la capacidad libre. Primero los que van a la provincia de destino del viaje.
+     * Es una sugerencia: las reglas de verdad las controla trigger_before_insert_viaje_envio.
+     */
+    public function enviosPendientes(int $id): array
+    {
+        $st = $this->pdo->prepare(
+            "SELECT e.nro_envio, e.fecha_envio, e.peso_kg,
+                    CONCAT(rem.nombre, ' ', rem.apellido) AS remitente,
+                    CONCAT(dest.nombre, ' ', dest.apellido) AS destinatario,
+                    sd.sucursal_completa AS destino_envio,
+                    IF(ant.viaje_id IS NULL, 'Sale de acá', CONCAT('Trasbordo (llega en el viaje ', ant.viaje_id, ')')) AS motivo,
+                    sd.provincia_cod = vd.provincia_cod AS va_a_la_provincia
+               FROM viaje v
+               JOIN vista_sucursal_ubicacion vd ON vd.sucursal_cod = v.sucursal_destino_cod
+               JOIN vehiculo ve      ON ve.vehiculo_patente = v.vehiculo_patente
+               JOIN tipo_vehiculo tv ON tv.tipo_veh_cod     = ve.tipo_veh_cod
+               JOIN envio e
+               JOIN cliente rem  ON rem.cliente_dni  = e.remitente_dni
+               JOIN cliente dest ON dest.cliente_dni = e.destinatario_dni
+               JOIN vista_sucursal_ubicacion sd ON sd.sucursal_cod = e.sucursal_dest_cod
+               LEFT JOIN viaje_envio xa ON xa.nro_envio = e.nro_envio AND xa.tramo = 1
+               LEFT JOIN viaje ant      ON ant.viaje_id = xa.viaje_id
+              WHERE v.viaje_id = :id
+                AND e.activo = 1
+                AND e.fecha_envio <= DATE(v.fecha_salida)
+                -- solo los recientes: los datos de prueba de 2024 tienen miles de envíos sin terminar
+                AND e.fecha_envio >= DATE(v.fecha_salida) - INTERVAL 30 DAY
+                AND e.sucursal_dest_cod <> v.sucursal_origen_cod
+                AND e.peso_kg <= tv.tipo_veh_capacidad_kg - funcion_carga_viaje(v.viaje_id)
+                AND NOT EXISTS (SELECT 1 FROM viaje_envio x2 WHERE x2.nro_envio = e.nro_envio AND x2.tramo = 2)
+                AND ( (ant.viaje_id IS NULL AND e.sucursal_orig_cod = v.sucursal_origen_cod)
+                   OR (ant.viaje_id IS NOT NULL AND ant.viaje_id <> v.viaje_id
+                       AND ant.sucursal_destino_cod = v.sucursal_origen_cod
+                       AND ant.llegada_estimada <= v.fecha_salida) )
+                AND funcion_envio_terminado(e.nro_envio) = 0
+              ORDER BY va_a_la_provincia DESC, e.fecha_envio, e.nro_envio
+              LIMIT 100");
+        $st->execute([':id' => $id]);
+        return $st->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function crear(array $v): int

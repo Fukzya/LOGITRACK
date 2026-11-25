@@ -27,6 +27,16 @@ class Sucursal extends Modelo
         );
     }
 
+    /** Resumen por sucursal en un período, con procedimiento_resumen_por_sucursal (null = sin límite). */
+    public function resumen(?string $desde, ?string $hasta): array
+    {
+        $st = $this->pdo->prepare('CALL procedimiento_resumen_por_sucursal(:d, :h)');
+        $st->execute([':d' => $desde, ':h' => $hasta]);
+        $filas = $st->fetchAll(PDO::FETCH_ASSOC);
+        $st->closeCursor();
+        return $filas;
+    }
+
     /** Provincia donde está una sucursal activa (null si no existe o está dada de baja). */
     public function provincia(string $cod): ?int
     {

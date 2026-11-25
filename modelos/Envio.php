@@ -21,18 +21,14 @@ class Envio extends Modelo
         if (!empty($f['sucursal_orig'])) { $cond[] = 'e.sucursal_orig_cod = :so';    $par[':so'] = $f['sucursal_orig']; }
         if (!empty($f['tipo']))          { $cond[] = 'e.tipo_cont_cod = :tipo';      $par[':tipo'] = $f['tipo']; }
 
-        return $this->paginar(
+        $res = $this->paginar(
             "e.nro_envio, e.fecha_envio, e.peso_kg, e.tipo_cont_cod, tc.tipo_cont_nombre,
              e.remitente_dni,    CONCAT(rem.nombre, ' ', rem.apellido)   AS remitente_nombre,
              e.destinatario_dni, CONCAT(dest.nombre, ' ', dest.apellido) AS destinatario_nombre,
              e.sucursal_orig_cod, so.sucursal_completa AS sucursal_orig_nombre,
              e.sucursal_dest_cod, sd.sucursal_completa AS sucursal_dest_nombre,
              e.direccion_entrega_id, CONCAT(d.calle_y_numero, ', ', l.localidad_nombre) AS direccion_entrega,
-             (SELECT est.estado_nombre
-                FROM historial_estado h JOIN estado_envio est ON est.estado_cod = h.estado
-               WHERE h.nro_envio = e.nro_envio
-               ORDER BY h.fecha_hora DESC, h.id_historial DESC
-               LIMIT 1) AS ultimo_estado,
+             funcion_ultimo_estado(e.nro_envio) AS ultimo_estado_cod,
              e.activo",
             'envio e
              JOIN tipo_contenido tc ON tc.tipo_cont_cod   = e.tipo_cont_cod
@@ -44,6 +40,9 @@ class Envio extends Modelo
              JOIN localidad l       ON l.localidad_cod    = d.localidad_cod',
             $cond, $par, self::ORDENABLES, $p['orden'], $p['dir'], $p['pagina']
         );
+
+        $res['datos'] = $this->conNombreDeEstado($res['datos']);
+        return $res;
     }
 
     /**

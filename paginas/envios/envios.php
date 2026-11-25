@@ -127,4 +127,41 @@
         </div>
     </div>
 
+    <!-- Cambiar estado (procedimiento_registrar_estado_envio): agrega una fila al historial -->
+    <dialog id="dialogo-estado" class="m-auto rounded-xl p-0 shadow-xl backdrop:bg-black/40 w-full max-w-lg">
+        <form method="dialog" id="form-estado" class="flex flex-col gap-space-md p-space-lg bg-surface-container-lowest">
+            <h2 class="text-headline-md text-on-surface flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">published_with_changes</span>
+                <span id="titulo-estado">Cambiar estado</span>
+            </h2>
+            <p id="texto-estado" class="text-sm text-on-surface-variant"></p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+                <div class="flex flex-col gap-space-xs">
+                    <label class="text-label-sm text-on-surface-variant" for="estado-nuevo">Nuevo estado</label>
+                    <select class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="estado-nuevo" required>
+                        <option value="">Elegí el estado</option>
+                    </select>
+                </div>
+                <div class="flex flex-col gap-space-xs">
+                    <label class="text-label-sm text-on-surface-variant" for="estado-fecha">Fecha y hora</label>
+                    <input class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="estado-fecha" data-hasta-ahora type="datetime-local" required/>
+                </div>
+                <div class="flex flex-col gap-space-xs md:col-span-2">
+                    <label class="text-label-sm text-on-surface-variant" for="estado-sucursal">Sucursal donde está el envío</label>
+                    <select class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="estado-sucursal" required>
+                        <option value="">Elegí la sucursal</option>
+                    </select>
+                </div>
+                <div class="flex flex-col gap-space-xs md:col-span-2">
+                    <label class="text-label-sm text-on-surface-variant" for="estado-observacion">Observación (opcional)</label>
+                    <input class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="estado-observacion" maxlength="1000" type="text"/>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2">
+                <button class="bg-surface-container hover:bg-surface-container-high text-on-surface px-4 py-2 rounded-lg text-label-md transition-colors" type="button" id="btn-cancelar-estado">Cancelar</button>
+                <button class="bg-primary hover:bg-primary-container text-on-primary px-4 py-2 rounded-lg text-label-md transition-colors" type="submit">Registrar estado</button>
+            </div>
+        </form>
+    </dialog>
+
 <?php fin_pagina('envios.js'); ?>

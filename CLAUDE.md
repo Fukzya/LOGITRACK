@@ -13,7 +13,7 @@ triggers, vistas, seguridad en BD y código, CRUD, transacciones, índices) y po
   En PowerShell 5.1 los mensajes con comillas se rompen: escribir el mensaje en un archivo del
   scratchpad y usar `git commit -F archivo`.
 - Cambios a la base: NUNCA editar `database/logitrack.sql` a mano. Cada cambio es un script nuevo
-  numerado en `database/cambios/` (el próximo es 012_...), con un encabezado que explica qué y por
+  numerado en `database/cambios/` (el próximo es 013_...), con un encabezado que explica qué y por
   qué, y se corre con `Get-Content -Raw -Encoding UTF8 script.sql | mysql -uroot
   --default-character-set=utf8mb4 logitrack` (mysql en c:\xampp\mysql\bin).
 - Cada cambio de la base se documenta TAMBIÉN en la planilla (ver "Planilla").
@@ -35,7 +35,7 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
 4. Implementar, probar, commit/push, actualizar planilla y este archivo.
 5. Resumen corto y didáctico para la defensa: qué es, de qué se encarga, dónde y cómo lo aplicamos.
 
-## Estado del checklist (2026-11-24)
+## Estado del checklist (2026-11-25)
 - Normalización: hecha en la planilla (0FN a 3FN), 17 tablas + USUARIO. Actualizada con 007.
 - CRUD: terminado (MVC, 15 entidades).
 - Sesiones: TERMINADO (011). config/session.php es el único control (API verificar_sesion,
@@ -44,11 +44,19 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
   trigger en usuario cierra sesiones por baja/cambio de rol; pantalla paginas/sesiones (admin);
   login.html?motivo=...; logout solo POST. Varias sesiones por usuario permitidas (decisión).
   Guía de defensa: docs/defensa_sesiones.md. Demo de FOR UPDATE / aislamiento queda para transacciones.
-- Procedimientos: se usan procedimiento_crear_envio, procedimiento_asignar_envio_a_viaje y
-  procedimiento_buscar_rutas (asistente). Faltan pantallas para procedimiento_cerrar_viaje
-  (api/cerrar_viaje.php sin uso, estilo viejo) y registrar_estado_envio / resumen_por_sucursal
-  (sin uso). Idea acordada: botón "Cerrar viaje", "Cambiar estado" desde la fila del envío,
-  "Detalle de viaje" con "Agregar envíos pendientes".
+- Procedimientos y funciones: TERMINADO (012). Todos los procedimientos tienen uso.
+  procedimiento_cerrar_viaje = ejemplo modelo (START TRANSACTION + FOR UPDATE + EXIT HANDLER con
+  ROLLBACK/RESIGNAL + OUT); registrar_estado_envio (OUT id) en "Cambiar estado" (Envíos) e
+  Historial; resumen_por_sucursal(desde, hasta) en la pantalla paginas/resumen_sucursales.
+  Funciones funcion_carga_viaje, funcion_ultimo_estado, funcion_envio_terminado (usadas en
+  triggers, vista, procedimientos y modelos). Pantalla paginas/viajes/detalle.php (carga,
+  envíos, "Agregar envíos pendientes" en una transacción, "Cerrar viaje"). api/cerrar_viaje.php
+  borrado: todo va por api/viajes.php (GET ?detalle, POST accion=cerrar|agregar_envios).
+  Lecciones medidas: función en vista cruzada consigo misma -> ALGORITHM=TEMPTABLE (1,6 s ->
+  0,13 s); no hacer JOIN ... ON col = funcion() (se evalúa por fila del catálogo): el nombre del
+  estado se completa en PHP (Modelo::conNombreDeEstado). Guía: docs/defensa_procedimientos.md.
+  Demo: viajes 3231-3233 (salieron 24/11, en curso); para el ROLLBACK, estado Demorado 24/11
+  20:00 al 8118 y cerrar 3233 con llegada 24/11 18:00.
 - Triggers: muchos ya hechos (ver 007 y 009). Falta: historial inmutable también en la base
   (trigger que rechace UPDATE/DELETE en historial_estado; hoy solo lo bloquea la API con 405).
 - Vistas: en uso vista_sucursal_ubicacion y vista_viajes_programados. Las 5 vistas originales
@@ -57,11 +65,13 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
 - Seguridad: pendiente (el usuario avisó que es extenso). Notas: la app usa root sin contraseña,
   CORS `*` en config/db.php, operadores pueden escribir todo (faltan permisos por rol),
   calidad de datos (direcciones de entrega de terceros en los datos históricos).
-- Transacciones: el asistente y viaje_completo usan transacción + FOR UPDATE; falta llevarlo a
-  procedimientos con EXIT HANDLER y explicarlo.
+- Transacciones: el asistente, viaje_completo y "agregar envíos" usan transacción PHP + FOR
+  UPDATE; cerrar_viaje la tiene dentro del procedimiento. Falta decidir si el asistente pasa a
+  procedimiento con EXIT HANDLER y explicar aislamiento / bloqueos.
 
 ## Pendiente inmediato
-- Próximo tema: procedimientos (analizar, explicar, plan completo).
+- Próximo tema: triggers (analizar, explicar, plan completo). Ojo: con el paso de los días los
+  viajes de prueba de 2026 van quedando "salidos sin cerrar" (es normal, se cierran con el botón).
 - Decidido NO hacer: "envío programado" (fecha de envío futura). fecha_envio = día en que se
   recibe el paquete; lo que es futuro es el viaje al que se asigna.
 
@@ -86,11 +96,15 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
 - 011 sesiones: tabla sesion (token_hash SHA-256, motivo_cierre ENUM, CHECK fin/motivo),
   funcion_minutos_sesion, funcion_sesion_activa, procedimiento_iniciar_sesion / cerrar_sesion /
   cerrar_sesiones_vencidas, trigger_after_update_usuario, vista_sesiones_abiertas.
+- 012 procedimientos y funciones: funcion_carga_viaje / funcion_ultimo_estado /
+  funcion_envio_terminado; cerrar_viaje, registrar_estado_envio y resumen_por_sucursal
+  recreados; vista_viajes_programados TEMPTABLE con la función; triggers de viaje y viaje_envio
+  usan las funciones; mensajes del trigger de historial con el n.º de envío; demo 3231-3233.
 - Los datos de prueba originales (2024) se generaron al azar y NO cumplen las reglas nuevas
   (envíos con hasta 9 viajes, estados antes de la fecha del envío, etc.). No se corrigen: los
   triggers controlan lo nuevo. Decirlo así en la defensa.
 - Sugerido al usuario y pendiente: regenerar database/logitrack.sql desde HeidiSQL con
-  `--routines --triggers` para que el volcado incluya 002-011.
+  `--routines --triggers` para que el volcado incluya 002-012.
 
 ## Planilla (Google Sheets, conector de Sheets)
 - logitrack_completo, id 1EoWc3-FiO3lrLnfPtyVn2zzXPr9a5W_p6m-kMcvyQV8 (locale en_US: fórmulas con
@@ -144,6 +158,8 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
   (no tocar).
 
 ## Commits recientes (rama main)
+- Procedimientos y funciones (012) + Detalle de viaje
+- aa3b8c2 Sesiones (011)
 - 5bf34ab Cambio 009: reglas de fechas en la base
 - 0a8c535 Documentación: regla de la planilla y ejemplo del cambio 006
 - 7b53132 Rutas de viaje y trasbordos (007, 008)

@@ -173,6 +173,9 @@ $rol = $_SESSION['rol'] ?? 'operador';
                     <a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#3d241c] hover:text-white transition-colors" data-path="incidentes" href="paginas/incidentes/incidentes.php">
                         <span class="material-symbols-outlined text-[20px]">warning</span>Incidentes
                     </a>
+                    <a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#3d241c] hover:text-white transition-colors" data-path="resumen-por-sucursal" href="paginas/resumen_sucursales/resumen_sucursales.php">
+                        <span class="material-symbols-outlined text-[20px]">monitoring</span>Resumen por sucursal
+                    </a>
                 </div>
 
                 <div class="flex flex-col gap-1">
@@ -351,6 +354,19 @@ $rol = $_SESSION['rol'] ?? 'operador';
                             <div class="mt-4">
                                 <h3 class="text-headline-sm text-on-surface group-hover:text-primary transition-colors">Incidentes</h3>
                                 <p class="text-xs text-on-surface-variant mt-1">Registro de demoras, desvíos o eventualidades que afecten los viajes en curso.</p>
+                            </div>
+                        </a>
+
+                        <a href="paginas/resumen_sucursales/resumen_sucursales.php" class="group bg-surface-container-lowest rounded-xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] border border-transparent hover:border-primary/40 hover:shadow-md transition-all flex flex-col justify-between">
+                            <div class="flex items-start justify-between">
+                                <div class="w-10 h-10 rounded-lg bg-[#fef3c7] flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
+                                    <span class="material-symbols-outlined text-[22px]">monitoring</span>
+                                </div>
+                                <span class="material-symbols-outlined text-outline group-hover:text-primary group-hover:translate-x-1 transition-all text-[20px]">arrow_forward</span>
+                            </div>
+                            <div class="mt-4">
+                                <h3 class="text-headline-sm text-on-surface group-hover:text-primary transition-colors">Resumen por sucursal</h3>
+                                <p class="text-xs text-on-surface-variant mt-1">Envíos despachados, entregas, viajes y envíos pendientes de cada sucursal en un período.</p>
                             </div>
                         </a>
                     </div>

@@ -106,4 +106,23 @@
         </div>
     </div>
 
+    <!-- Cerrar viaje (procedimiento_cerrar_viaje): llegada real + envíos "En sucursal", todo o nada -->
+    <dialog id="dialogo-cerrar" class="m-auto rounded-xl p-0 shadow-xl backdrop:bg-black/40 w-full max-w-md">
+        <form method="dialog" id="form-cerrar" class="flex flex-col gap-space-md p-space-lg bg-surface-container-lowest">
+            <h2 class="text-headline-md text-on-surface flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">flag</span>
+                <span id="titulo-cerrar">Cerrar viaje</span>
+            </h2>
+            <p id="texto-cerrar" class="text-sm text-on-surface-variant"></p>
+            <div class="flex flex-col gap-space-xs">
+                <label class="text-label-sm text-on-surface-variant" for="input-llegada-real">Llegada real</label>
+                <input class="w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface" id="input-llegada-real" data-hasta-ahora type="datetime-local" required/>
+            </div>
+            <div class="flex justify-end gap-2">
+                <button class="bg-surface-container hover:bg-surface-container-high text-on-surface px-4 py-2 rounded-lg text-label-md transition-colors" type="button" id="btn-cancelar-cierre">Cancelar</button>
+                <button class="bg-primary hover:bg-primary-container text-on-primary px-4 py-2 rounded-lg text-label-md transition-colors" type="submit">Cerrar viaje</button>
+            </div>
+        </form>
+    </dialog>
+
 <?php fin_pagina('viajes.js'); ?>

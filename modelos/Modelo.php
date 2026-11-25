@@ -60,6 +60,25 @@ abstract class Modelo
         return $st->rowCount();
     }
 
+    /**
+     * A filas que traen ultimo_estado_cod (de funcion_ultimo_estado) les agrega el nombre del
+     * estado (ultimo_estado) y si es final (terminado), desde el catálogo estado_envio (7 filas).
+     * No se hace con un JOIN a estado_envio: la base calcularía la función una vez por cada
+     * estado del catálogo, no una por envío.
+     */
+    protected function conNombreDeEstado(array $filas): array
+    {
+        $estados = $this->pdo->query('SELECT estado_cod, estado_nombre, es_final FROM estado_envio')
+                             ->fetchAll(PDO::FETCH_UNIQUE | PDO::FETCH_ASSOC);
+        foreach ($filas as &$fila) {
+            $est = $estados[$fila['ultimo_estado_cod']] ?? null;
+            $fila['ultimo_estado'] = $est['estado_nombre'] ?? null;
+            $fila['terminado']     = $est ? (int)$est['es_final'] : 0;
+        }
+        unset($fila);
+        return $filas;
+    }
+
     /** Primera fila de una consulta, o null. */
     protected function fila(string $sql, array $params = []): ?array
     {

@@ -24,6 +24,11 @@ $errores = [1452 => 'La localidad elegida no existe.'];
 switch ($_SERVER['REQUEST_METHOD']) {
 
     case 'GET':
+        // Pantalla "Resumen por sucursal" (procedimiento_resumen_por_sucursal).
+        if (isset($_GET['resumen'])) {
+            responder($sucursales->resumen(campo_fecha($_GET, 'desde', 'La fecha desde', false),
+                                           campo_fecha($_GET, 'hasta', 'La fecha hasta', false)));
+        }
         $filtros = ['nombre' => trim($_GET['nombre'] ?? '')];
         responder($sucursales->listar($filtros, params_listado('sucursal_cod'), ver_inactivos()));
 

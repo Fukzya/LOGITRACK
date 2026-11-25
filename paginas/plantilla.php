@@ -45,6 +45,7 @@ function inicio_pagina(string $titulo, bool $soloAdmin = false, string $seccionA
         'tipo_contenido'   => 'inventory_2',
         'usuarios'         => 'manage_accounts',
         'sesiones'         => 'devices',
+        'resumen_sucursales' => 'monitoring',
     ];
 
     if ($icono === '') {
@@ -349,6 +350,9 @@ function inicio_pagina(string $titulo, bool $soloAdmin = false, string $seccionA
                     </a>
                     <a class="<?= $seccionActiva === 'incidentes' ? $activoClass : $normalClass ?>" data-path="incidentes" href="../incidentes/incidentes.php">
                         <span class="material-symbols-outlined text-[20px]">warning</span>Incidentes
+                    </a>
+                    <a class="<?= $seccionActiva === 'resumen_sucursales' ? $activoClass : $normalClass ?>" data-path="resumen-por-sucursal" href="../resumen_sucursales/resumen_sucursales.php">
+                        <span class="material-symbols-outlined text-[20px]">monitoring</span>Resumen por sucursal
                     </a>
                 </div>
 

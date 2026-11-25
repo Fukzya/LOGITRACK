@@ -31,13 +31,17 @@ class HistorialEstado extends Modelo
         );
     }
 
+    /**
+     * Registra un estado con el procedimiento procedimiento_registrar_estado_envio (valida que el
+     * envío, la sucursal y el estado existan). Sin fecha usa NOW() de la base. Devuelve el id
+     * que el procedimiento deja en su parámetro OUT.
+     */
     public function crear(array $h): int
     {
-        $this->ejecutar('INSERT INTO historial_estado (nro_envio, sucursal_cod, estado, fecha_hora, observacion)
-                         VALUES (:n, :s, :e, COALESCE(:f, NOW()), :o)', // sin fecha: la hora de la base
+        $this->ejecutar('CALL procedimiento_registrar_estado_envio(:n, :s, :e, :f, :o, @id_historial)',
                         [':n' => $h['nro_envio'], ':s' => $h['sucursal_cod'], ':e' => $h['estado'],
                          ':f' => $h['fecha_hora'], ':o' => $h['observacion']]);
-        return (int)$this->pdo->lastInsertId();
+        return (int)$this->pdo->query('SELECT @id_historial')->fetchColumn();
     }
 
     // No hay actualizar() ni eliminar(): el historial es inmutable. Un cambio de estado es
