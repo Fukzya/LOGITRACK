@@ -9,19 +9,24 @@ MYSQL="/c/xampp/mysql/bin/mysql -uroot --default-character-set=utf8mb4 -N $BASE"
 declare -a NOMBRES CONSULTAS
 agregar() { NOMBRES+=("$1"); CONSULTAS+=("$2"); }
 
+# Envíos e Historial: como Modelo::paginarPorClave (cuenta y elige las 50 claves en la tabla,
+# después trae esas filas de la vista).
 agregar "Envíos: primera página" \
- "SELECT COUNT(*) FROM vista_envios_detalle v WHERE v.activo = 1;
-  SELECT v.* FROM vista_envios_detalle v WHERE v.activo = 1 ORDER BY v.nro_envio DESC LIMIT 50;
+ "SELECT COUNT(*) FROM envio v WHERE v.activo = 1;
+  SELECT d.* FROM (SELECT nro_envio FROM envio v WHERE v.activo = 1 ORDER BY v.nro_envio DESC LIMIT 50) p
+    JOIN vista_envios_detalle d USING (nro_envio);
   SELECT nro_envio, funcion_ultimo_estado(nro_envio) FROM envio ORDER BY nro_envio DESC LIMIT 50;"
 agregar "Envíos: filtro por fecha" \
- "SELECT COUNT(*) FROM vista_envios_detalle v WHERE v.activo = 1 AND v.fecha_envio >= '2026-11-01';
-  SELECT v.* FROM vista_envios_detalle v WHERE v.activo = 1 AND v.fecha_envio >= '2026-11-01' ORDER BY v.nro_envio DESC LIMIT 50;"
+ "SELECT COUNT(*) FROM envio v WHERE v.activo = 1 AND v.fecha_envio >= '2026-11-01';
+  SELECT d.* FROM (SELECT nro_envio FROM envio v WHERE v.activo = 1 AND v.fecha_envio >= '2026-11-01' ORDER BY v.nro_envio DESC LIMIT 50) p
+    JOIN vista_envios_detalle d USING (nro_envio);"
 agregar "Envíos: solo pendientes" \
- "SELECT COUNT(*) FROM vista_envios_detalle v WHERE v.activo = 1 AND funcion_envio_terminado(v.nro_envio) = 0;
-  SELECT v.* FROM vista_envios_detalle v WHERE v.activo = 1 AND funcion_envio_terminado(v.nro_envio) = 0 ORDER BY v.nro_envio DESC LIMIT 50;"
+ "SELECT COUNT(*) FROM envio v WHERE v.activo = 1 AND funcion_envio_terminado(v.nro_envio) = 0;
+  SELECT nro_envio FROM envio v WHERE v.activo = 1 AND funcion_envio_terminado(v.nro_envio) = 0 ORDER BY v.nro_envio DESC LIMIT 50;"
 agregar "Historial: primera página" \
- "SELECT COUNT(*) FROM vista_historial_completo h;
-  SELECT h.* FROM vista_historial_completo h ORDER BY h.id_historial DESC LIMIT 50;"
+ "SELECT COUNT(*) FROM historial_estado h;
+  SELECT d.* FROM (SELECT id_historial FROM historial_estado h ORDER BY h.id_historial DESC LIMIT 50) p
+    JOIN vista_historial_completo d USING (id_historial);"
 agregar "Historial de un envío" \
  "SELECT h.* FROM vista_historial_completo h WHERE h.nro_envio = 8113 ORDER BY h.id_historial DESC LIMIT 50;"
 agregar "Último estado (1 envío)" \

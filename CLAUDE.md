@@ -83,11 +83,13 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
   caso que no conocemos (el script de 100.000 registros lo traen los profesores). Hecho: my.ini
   innodb_buffer_pool_size 16M -> 2G (copia en my.ini.antes_rendimiento), 3 índices (015),
   database/pruebas/carga_100k.sql (copia logitrack_carga) y medir_consultas.sh. Con 100k:
-  Envíos 1,9 s, Historial 0,9 s, tablero 1,8 s, Solo pendientes 15,7 s, Resumen 14 s; el resto
-  < 0,3 s. Diagnóstico de lo lento (solo con su OK): COUNT con los JOIN de la vista (0,74 s vs
-  0,07 s sobre envio), página con filesort (1,1 s vs 0,07 s buscando primero las 50 claves) y
-  funciones fila por fila sobre 100k envíos (6,8 s; se resolvería con el estado actual
-  precalculado por trigger). Riesgo: los triggers rechazan datos inválidos del script ajeno.
+  tablero 1,8 s, Resumen 14 s, Solo pendientes 6,6 s; el resto < 0,3 s.
+  Arreglo chico aprobado y hecho: Modelo::paginarPorClave (cuenta y elige las 50 claves en la
+  tabla, después trae esas filas de la vista) en Envio e HistorialEstado: con 100k, Envíos
+  1,85 s -> 95 ms, Historial 0,9 s -> 104 ms (resultados comparados contra la vista: iguales).
+  Arreglo grande NO aprobado (no hacer): estado actual precalculado por trigger para pendientes,
+  tablero y resumen (funciones fila por fila: 6,8 s con 100k). Riesgo: los triggers rechazan
+  datos inválidos del script ajeno. La copia logitrack_carga quedó en la PC para volver a medir.
 
 ## Pendiente inmediato
 - Próximo tema: seguridad (extenso; analizar, explicar, plan completo). Ojo: con el paso de los días los

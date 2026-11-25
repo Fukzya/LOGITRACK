@@ -25,8 +25,9 @@ class Envio extends Modelo
         if (!empty($f['tipo']))          { $cond[] = 'v.tipo_cont_cod = :tipo';      $par[':tipo'] = $f['tipo']; }
         if (!empty($f['solo_pendientes'])) { $cond[] = 'funcion_envio_terminado(v.nro_envio) = 0'; }
 
-        $res = $this->paginar('v.*', 'vista_envios_detalle v',
-                              $cond, $par, self::ORDENABLES, $p['orden'], $p['dir'], $p['pagina']);
+        // Filtros y orden sobre la tabla envio (alias v); las 50 filas de la página, desde la vista.
+        $res = $this->paginarPorClave('envio v', 'nro_envio', 'vista_envios_detalle',
+                                      $cond, $par, self::ORDENABLES, $p['orden'], $p['dir'], $p['pagina']);
 
         // El último estado se calcula solo para las filas de esta página (ver el script 014).
         $res['datos'] = $this->conNombreDeEstado($res['datos']);

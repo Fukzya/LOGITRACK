@@ -21,9 +21,10 @@ class HistorialEstado extends Modelo
         if (!empty($f['fecha_desde'])) { $cond[] = 'h.fecha_hora >= :fd';  $par[':fd'] = $f['fecha_desde'] . ' 00:00:00'; }
         if (!empty($f['fecha_hasta'])) { $cond[] = 'h.fecha_hora <= :fh';  $par[':fh'] = $f['fecha_hasta'] . ' 23:59:59'; }
 
-        // La vista vista_historial_completo arma los JOIN (sucursal con provincia, estado, clientes).
-        return $this->paginar('h.*', 'vista_historial_completo h',
-                              $cond, $par, self::ORDENABLES, $p['orden'], $p['dir'], $p['pagina']);
+        // Filtros y orden sobre la tabla historial_estado (alias h); las 50 filas de la página, desde
+        // vista_historial_completo (sucursal con provincia, nombre del estado).
+        return $this->paginarPorClave('historial_estado h', 'id_historial', 'vista_historial_completo',
+                                      $cond, $par, self::ORDENABLES, $p['orden'], $p['dir'], $p['pagina']);
     }
 
     /**
