@@ -47,6 +47,10 @@ Con 100.000 envíos, la primera página de Envíos pasa de 31 s a 1,9 s (ver
 `database/pruebas/`: `carga_100k.sql` genera los datos en una copia de la base y
 `medir_consultas.sh` mide las consultas de la app).
 
+**Demo de concurrencia:** `bash database/pruebas/demo_concurrencia.sh` hace que dos sesiones
+asignen envíos a la misma moto al mismo tiempo y muestra que no se supera la capacidad
+(ver `docs/defensa_transacciones.md`). Borra lo que crea.
+
 ## Cambios a la base
 
 Cada cambio de estructura va como un archivo nuevo en `database/cambios/`,

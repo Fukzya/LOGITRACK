@@ -121,8 +121,9 @@ class Viaje extends Modelo
               WHERE v.viaje_id = :id
                 FOR UPDATE', [':id' => $id]);
         if ($viaje === null) return null;
-        // La carga se lee después del bloqueo, con la función de la base.
-        $viaje['carga'] = (float)$this->fila('SELECT funcion_carga_viaje(:id) AS carga', [':id' => $id])['carga'];
+        // La carga se lee CON bloqueo (funcion_carga_viaje_bloqueando, cambio 017): ve el último dato
+        // confirmado aunque la transacción ya tenga su "foto" de REPEATABLE READ.
+        $viaje['carga'] = (float)$this->fila('SELECT funcion_carga_viaje_bloqueando(:id) AS carga', [':id' => $id])['carga'];
         return $viaje;
     }
 

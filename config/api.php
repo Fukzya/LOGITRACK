@@ -223,6 +223,11 @@ function manejar_error(Throwable $e): void
             case 4025: error_api('Alguno de los datos no cumple las reglas de la base.', 400);
             case 1644: // SIGNAL SQLSTATE '45000' de un trigger o procedimiento: el mensaje es nuestro
                 error_api($e->errorInfo[2] ?? 'Operación rechazada por la base de datos.', 400);
+            // Concurrencia (tema transacciones): otra transacción tiene bloqueado lo que se quiere tocar.
+            case 1205: // se cansó de esperar el bloqueo (innodb_lock_wait_timeout, 10 s en la app)
+                error_api('Otro usuario está modificando ese dato. Probá de nuevo en unos segundos.', 409);
+            case 1213: // deadlock: MariaDB canceló esta transacción (ROLLBACK) para destrabar a la otra
+                error_api('La operación chocó con otra que se hacía al mismo tiempo y se deshizo. Probá de nuevo.', 409);
             // La cuenta de base del rol no tiene el permiso (GRANT, script 016): segunda barrera.
             case 1142: // command denied (tabla)
             case 1143: // command denied (columna)

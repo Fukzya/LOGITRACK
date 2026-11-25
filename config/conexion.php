@@ -32,6 +32,9 @@ function conexion(?string $cuenta = null): PDO
         $pdo = new PDO("mysql:host=localhost;dbname=logitrack;charset=utf8mb4", $datos['usuario'], $datos['clave'], [
             PDO::ATTR_ERRMODE           => PDO::ERRMODE_EXCEPTION,  // todo error de la base es una excepción
             PDO::MYSQL_ATTR_FOUND_ROWS  => true,                    // rowCount() de un UPDATE = filas encontradas
+            // Si otra transacción tiene bloqueada una fila (FOR UPDATE), esperar como mucho 10 s
+            // (MariaDB espera 50 s de fábrica: demasiado para una pantalla). Después, error 1205.
+            PDO::MYSQL_ATTR_INIT_COMMAND => 'SET SESSION innodb_lock_wait_timeout = 10',
         ]);
     } catch (PDOException $e) {
         // El detalle técnico va al log; al usuario no se le muestran datos del servidor.

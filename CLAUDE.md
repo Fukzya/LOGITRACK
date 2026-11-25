@@ -13,7 +13,7 @@ triggers, vistas, seguridad en BD y código, CRUD, transacciones, índices) y po
   En PowerShell 5.1 los mensajes con comillas se rompen: escribir el mensaje en un archivo del
   scratchpad y usar `git commit -F archivo`.
 - Cambios a la base: NUNCA editar `database/logitrack.sql` a mano. Cada cambio es un script nuevo
-  numerado en `database/cambios/` (el próximo es 017_...), con un encabezado que explica qué y por
+  numerado en `database/cambios/` (el próximo es 018_...), con un encabezado que explica qué y por
   qué, y se corre con `Get-Content -Raw -Encoding UTF8 script.sql | mysql
   --defaults-extra-file=C:/Users/santi/.logitrack/root.cnf --default-character-set=utf8mb4 logitrack`
   (mysql en c:\xampp\mysql\bin). Desde 016 root TIENE contraseña: está en ese archivo, fuera del
@@ -97,9 +97,19 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
   auditor externo con vista + masking (GRANT SELECT solo a la vista), backups con
   mysqldump --routines --triggers, calidad de datos (901 pares nombre+apellido repetidos,
   direcciones de terceros), explicar SSL (no aplica: misma PC).
-- Transacciones: el asistente, viaje_completo y "agregar envíos" usan transacción PHP + FOR
-  UPDATE; cerrar_viaje la tiene dentro del procedimiento. Falta decidir si el asistente pasa a
-  procedimiento con EXIT HANDLER y explicar aislamiento / bloqueos.
+- Transacciones: TERMINADO (017). 6 explícitas: 5 en PHP (asistente, agregar envíos, viaje
+  completo, cliente+dirección, alta de envío) y 1 en la base (cerrar_viaje con EXIT HANDLER).
+  Decidido: el asistente SIGUE en PHP (mostrar las dos capas). Hallazgo probado: moto de 50 kg con
+  60 kg por dos asignaciones simultáneas, incluso por el asistente con FOR UPDATE (REPEATABLE READ:
+  la foto se saca en la 1.ª lectura y el asistente leía antes de bloquear). Arreglo en la base:
+  trigger_before_insert_viaje_envio con FOR UPDATE del viaje + funcion_carga_viaje_bloqueando
+  (LOCK IN SHARE MODE), también en trigger_before_update_viaje; funcion_carga_viaje sin cambios
+  (vistas/listados). PHP: asistente bloquea antes de crear el envío; bloquearParaAsignar usa la
+  función con bloqueo; innodb_lock_wait_timeout = 10 en la conexión; 1205/1213 -> 409.
+  Reglas: bloquear primero y leer después, o leer con bloqueo. Un procedimiento con START
+  TRANSACTION no se llama dentro de otra transacción. Demo: database/pruebas/demo_concurrencia.sh
+  (borra solo lo suyo). Al borrar datos de prueba con trasbordo: primero tramo 2. Guía:
+  docs/defensa_transacciones.md.
 - Índices / volumen (015, versión mínima acordada): el usuario NO quiere reworks grandes para un
   caso que no conocemos (el script de 100.000 registros lo traen los profesores). Hecho: my.ini
   innodb_buffer_pool_size 16M -> 2G (copia en my.ini.antes_rendimiento), 3 índices (015),
@@ -114,7 +124,7 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
   volver a medir, regenerarla con carga_100k.sql (medir_consultas.sh usa root.cnf).
 
 ## Pendiente inmediato
-- Próximo: seguridad parte 2 o transacciones (preguntar). Ojo: con el paso de los días los
+- Próximo: seguridad parte 2 (preguntar). Ojo: con el paso de los días los
   viajes de prueba de 2026 van quedando "salidos sin cerrar" (es normal, se cierran con el botón).
 - Usuarios de prueba: insertarlos como root (la cuenta de la app no puede); al borrar, también sus
   filas de sesion y de auditoria.
@@ -156,6 +166,8 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
 - 015 índices: historial (nro_envio, fecha_hora, id_historial), envio (fecha_envio), viaje (fecha_salida).
 - 016 seguridad: roles rol_login/rol_operador/rol_admin, cuentas logitrack_* (ACCOUNT LOCK hasta
   configurar_cuentas.php), GRANT por tabla/columna/rutina, PROCESS a admin. Re-ejecutable (DROP primero).
+- 017 concurrencia: funcion_carga_viaje_bloqueando; triggers before_insert_viaje_envio (FOR UPDATE
+  del viaje) y before_update_viaje recreados; GRANT EXECUTE a rol_operador.
 - Los datos de prueba originales (2024) se generaron al azar y NO cumplen las reglas nuevas
   (envíos con hasta 9 viajes, estados antes de la fecha del envío, etc.). No se corrigen: los
   triggers controlan lo nuevo. Decirlo así en la defensa.
@@ -214,6 +226,7 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
   (no tocar).
 
 ## Commits recientes (rama main)
+- Transacciones (017): capacidad sin carreras (FOR UPDATE + lectura con bloqueo), demo
 - Seguridad parte 1 (016): cuentas por rol, permisos por rol en la app, .htaccess
 - Índices (015) + prueba de 100k (database/pruebas)
 - Vistas (014): las 5 originales corregidas, listados y tablero del menú

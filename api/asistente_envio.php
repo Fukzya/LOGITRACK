@@ -72,14 +72,12 @@ if ($modo === 'existente') {
 
 $pdo->beginTransaction();
 try {
-    if ($viajeNuevo !== null) {
-        $tramos = [$viajes->crear($viajeNuevo)];
-    }
-
-    $nro = $envios->crear($e); // se suma a esta transacción
-
+    // 1) BLOQUEAR PRIMERO, LEER DESPUÉS (cambio 017). Lo primero de la transacción es bloquear los
+    //    viajes elegidos (SELECT ... FOR UPDATE): si otro operador está asignando al mismo viaje, acá
+    //    se espera a que termine y después se ve su carga. Antes se creaba el envío primero; esa
+    //    lectura fijaba la "foto" de la transacción (REPEATABLE READ) y la carga se veía vieja.
+    //    Este control es para dar un mensaje claro; el control final lo hace el trigger de la base.
     foreach ($tramos as $viajeId) {
-        // FOR UPDATE: bloquea el viaje para que nadie le cargue peso mientras verificamos la capacidad.
         $v = $viajes->bloquearParaAsignar($viajeId);
         if ($v === null)                   throw new ValidacionException("El viaje $viajeId no existe.");
         if ($v['fecha_llegada'] !== null)  throw new ValidacionException("El viaje $viajeId ya terminó.");
@@ -89,8 +87,19 @@ try {
             throw new ValidacionException(sprintf('El viaje %d ya no tiene lugar: quedan %s kg libres y el envío pesa %s kg.',
                 $viajeId, number_format($libre, 2, ',', '.'), number_format($e['peso_kg'], 2, ',', '.')));
         }
-        // El trigger trigger_before_insert_viaje_envio numera el tramo y controla el trasbordo
-        // (que el 2.º viaje salga de donde llega el 1.º y después de su llegada estimada).
+    }
+
+    // 2) Viaje nuevo (si se eligió crear uno): nadie más lo ve hasta el COMMIT.
+    if ($viajeNuevo !== null) {
+        $tramos = [$viajes->crear($viajeNuevo)];
+    }
+
+    // 3) El envío (procedimiento; se suma a esta transacción).
+    $nro = $envios->crear($e);
+
+    // 4) Las asignaciones. El trigger trigger_before_insert_viaje_envio numera el tramo, controla el
+    //    trasbordo (el 2.º viaje sale de donde llega el 1.º, después de su llegada) y la capacidad.
+    foreach ($tramos as $viajeId) {
         $asignar->asignarConProcedimiento($viajeId, $nro);
     }
 
