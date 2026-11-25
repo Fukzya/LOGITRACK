@@ -25,8 +25,10 @@ const pantalla = pantallaCrud({
     ],
     // "Cerrar viaje" solo si ya salió y no tiene llegada (la base lo controla igual).
     accionesExtra: f => `<button data-accion="detalle" data-clave="${esc(f.viaje_id)}">Detalle</button>`
-        + (f.ya_salio == 1 && !f.fecha_llegada ? ` <button data-accion="cerrar" data-clave="${esc(f.viaje_id)}">Cerrar viaje</button>` : ''),
+        + (f.ya_salio == 1 && !f.fecha_llegada ? ` <button data-accion="cerrar" data-clave="${esc(f.viaje_id)}">Cerrar viaje</button>` : '')
+        + (esAdmin ? ` <button data-accion="cambios" data-clave="${esc(f.viaje_id)}">Ver cambios</button>` : ''),
     acciones: {
+        cambios: f => { location.href = `../auditoria/auditoria.php?tabla=viaje&clave=${encodeURIComponent(f.viaje_id)}`; },
         detalle: f => { location.href = `detalle.php?viaje_id=${encodeURIComponent(f.viaje_id)}`; },
         cerrar: f => abrirCierre(f),
     },

@@ -13,7 +13,7 @@ triggers, vistas, seguridad en BD y código, CRUD, transacciones, índices) y po
   En PowerShell 5.1 los mensajes con comillas se rompen: escribir el mensaje en un archivo del
   scratchpad y usar `git commit -F archivo`.
 - Cambios a la base: NUNCA editar `database/logitrack.sql` a mano. Cada cambio es un script nuevo
-  numerado en `database/cambios/` (el próximo es 013_...), con un encabezado que explica qué y por
+  numerado en `database/cambios/` (el próximo es 014_...), con un encabezado que explica qué y por
   qué, y se corre con `Get-Content -Raw -Encoding UTF8 script.sql | mysql -uroot
   --default-character-set=utf8mb4 logitrack` (mysql en c:\xampp\mysql\bin).
 - Cada cambio de la base se documenta TAMBIÉN en la planilla (ver "Planilla").
@@ -57,8 +57,13 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
   estado se completa en PHP (Modelo::conNombreDeEstado). Guía: docs/defensa_procedimientos.md.
   Demo: viajes 3231-3233 (salieron 24/11, en curso); para el ROLLBACK, estado Demorado 24/11
   20:00 al 8118 y cerrar 3233 con llegada 24/11 18:00.
-- Triggers: muchos ya hechos (ver 007 y 009). Falta: historial inmutable también en la base
-  (trigger que rechace UPDATE/DELETE en historial_estado; hoy solo lo bloquea la API con 405).
+- Triggers: TERMINADO (013). 17 triggers. Historial inmutable en la base (UPDATE/DELETE
+  rechazados; para limpiar datos de prueba: `SET @mantenimiento = 1` en esa conexión). Tabla
+  auditoria + procedimiento_auditar, triggers AFTER en envio, viaje (UPDATE y DELETE) y usuario
+  (usuario = @usuario_app o CURRENT_USER()); pantalla paginas/auditoria (admin) y botón "Ver
+  cambios" en Envíos y Viajes. Reglas del asistente en BEFORE (licencia C/E, vehículo y chofer
+  activos y libres ese día, dirección del destinatario), solo en alta o si cambian esas columnas.
+  REDIRIGIDO en la sucursal del último estado. Guía: docs/defensa_triggers.md.
 - Vistas: en uso vista_sucursal_ubicacion y vista_viajes_programados. Las 5 vistas originales
   (vista_clientes_con_envios, vista_envios_detalle, vista_envios_pendientes,
   vista_historial_completo, vista_viajes_activos) no las usa el código. Idea: tarjetas en el menú.
@@ -70,7 +75,7 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
   procedimiento con EXIT HANDLER y explicar aislamiento / bloqueos.
 
 ## Pendiente inmediato
-- Próximo tema: triggers (analizar, explicar, plan completo). Ojo: con el paso de los días los
+- Próximo tema: vistas (analizar, explicar, plan completo). Ojo: con el paso de los días los
   viajes de prueba de 2026 van quedando "salidos sin cerrar" (es normal, se cierran con el botón).
 - Decidido NO hacer: "envío programado" (fecha de envío futura). fecha_envio = día en que se
   recibe el paquete; lo que es futuro es el viaje al que se asigna.
@@ -100,11 +105,15 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
   funcion_envio_terminado; cerrar_viaje, registrar_estado_envio y resumen_por_sucursal
   recreados; vista_viajes_programados TEMPTABLE con la función; triggers de viaje y viaje_envio
   usan las funciones; mensajes del trigger de historial con el n.º de envío; demo 3231-3233.
+- 013 triggers: historial inmutable (+ @mantenimiento), tabla auditoria y triggers AFTER de
+  auditoría (envio, viaje, usuario), reglas de recursos de viaje y dirección del destinatario en
+  BEFORE (procedimiento_validar_recursos_viaje / _direccion_envio), REDIRIGIDO corregido.
+  Planilla: AUDITORIA en "Direcciones y Usuarios" (U:AC) y en 3FN (tablas del sistema).
 - Los datos de prueba originales (2024) se generaron al azar y NO cumplen las reglas nuevas
   (envíos con hasta 9 viajes, estados antes de la fecha del envío, etc.). No se corrigen: los
   triggers controlan lo nuevo. Decirlo así en la defensa.
 - Sugerido al usuario y pendiente: regenerar database/logitrack.sql desde HeidiSQL con
-  `--routines --triggers` para que el volcado incluya 002-012.
+  `--routines --triggers` para que el volcado incluya 002-013.
 
 ## Planilla (Google Sheets, conector de Sheets)
 - logitrack_completo, id 1EoWc3-FiO3lrLnfPtyVn2zzXPr9a5W_p6m-kMcvyQV8 (locale en_US: fórmulas con
@@ -158,6 +167,7 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
   (no tocar).
 
 ## Commits recientes (rama main)
+- Triggers (013): historial inmutable, auditoría, reglas en la base
 - Procedimientos y funciones (012) + Detalle de viaje
 - aa3b8c2 Sesiones (011)
 - 5bf34ab Cambio 009: reglas de fechas en la base

@@ -30,8 +30,10 @@ const pantalla = pantallaCrud({
     // Abre el historial completo de ese envío (historial_estado.php lee el filtro desde la URL).
     // "Cambiar estado" solo si está activo y no terminó (entregado o devuelto).
     accionesExtra: f => (f.activo == 1 && f.terminado != 1 ? `<button data-accion="estado" data-clave="${esc(f.nro_envio)}">Cambiar estado</button> ` : '')
-        + `<button data-accion="historial" data-clave="${esc(f.nro_envio)}">Ver historial</button>`,
+        + `<button data-accion="historial" data-clave="${esc(f.nro_envio)}">Ver historial</button>`
+        + (esAdmin ? ` <button data-accion="cambios" data-clave="${esc(f.nro_envio)}">Ver cambios</button>` : ''),
     acciones: {
+        cambios: f => { location.href = `../auditoria/auditoria.php?tabla=envio&clave=${encodeURIComponent(f.nro_envio)}`; },
         historial: f => { location.href = `../historial_estado/historial_estado.php?nro_envio=${encodeURIComponent(f.nro_envio)}`; },
         estado: f => abrirCambioEstado(f),
     },
