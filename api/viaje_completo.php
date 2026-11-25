@@ -1,5 +1,12 @@
 <?php
 /*
+ * ============================================================================================
+ * QUÉ ES:  crea un viaje con sus envíos en una sola transacción (todo o nada).
+ * PARA CAMBIAR: los datos del viaje se validan en config/validaciones.php (datos_viaje).
+ * Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+ * ============================================================================================
+ */
+/*
  * Crea un viaje y le asigna varios envíos de una vez, en UNA transacción.
  * POST {fecha_salida, sucursal_origen_cod, sucursal_destino_cod, vehiculo_patente, chofer_legajo,
  *       envios: [nro, nro, ...]}

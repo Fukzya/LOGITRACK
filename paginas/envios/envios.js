@@ -1,3 +1,13 @@
+// ==============================================================================================
+// QUÉ ES:  el comportamiento de la pantalla "Envíos" (el diseño está en envios.php).
+//          Es una CONFIGURACIÓN: dice qué columnas mostrar, qué campos tiene el formulario
+//          y qué filtros hay. Listar, guardar, editar y borrar lo hace paginas/crud.js,
+//          igual para todas las pantallas.
+// PARA CAMBIAR: buscá "CAMBIAR:" en este archivo.
+//   - Los textos de los mensajes que vienen del servidor no están acá: los manda la API
+//     (api/) o la base (triggers y procedimientos).
+// Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+// ==============================================================================================
 // Pantalla de envíos (baja lógica).
 cargarCatalogo('input-tipo', 'tipos_contenido');
 cargarCatalogo('filtro-tipo', 'tipos_contenido');
@@ -15,6 +25,8 @@ const pantalla = pantallaCrud({
     nombre: 'el envío',
     tabla: 'tabla-envios',
     paginacion: 'paginacion',
+    // CAMBIAR: columnas de la tabla, en orden. Cada una tiene su título <th> en la .php,
+    //          en la misma posición. esc() muestra el dato tal cual (protege contra código malicioso).
     columnas: [
         f => esc(f.nro_envio),
         f => esc(f.fecha_envio),
@@ -42,6 +54,7 @@ const pantalla = pantallaCrud({
     titulo: 'titulo-form',
     tituloAlta: 'Nuevo envío',
     tituloEdicion: f => `Editando envío ${f.nro_envio}`,
+    // CAMBIAR: campos del formulario: 'id del <input> en la .php': 'nombre del dato en la API'.
     campos: {
         'input-fecha': 'fecha_envio',
         'input-peso': 'peso_kg',
@@ -52,6 +65,7 @@ const pantalla = pantallaCrud({
         'input-suc-dest': 'sucursal_dest_cod',
         'input-direccion': 'direccion_entrega_id',
     },
+    // CAMBIAR: filtros de arriba de la tabla: 'id del <input>': 'parámetro que recibe la API'.
     filtros: {
         'filtro-fecha-desde': 'fecha_desde',
         'filtro-fecha-hasta': 'fecha_hasta',
@@ -60,8 +74,11 @@ const pantalla = pantallaCrud({
         'filtro-solo-pendientes': 'solo_pendientes',
         'filtro-mostrar-inactivos': 'mostrar_inactivos',
     },
+    // CAMBIAR: orden inicial del listado (columna y ASC = ascendente / DESC = descendente).
     orden: { col: 'nro_envio', dir: 'DESC' },
     encabezados: { 'th-nro': 'nro_envio', 'th-fecha': 'fecha_envio', 'th-peso': 'peso_kg' },
+    // CAMBIAR: cómo se borra: 'logica' = se da de baja sin borrar (se puede reactivar),
+    //          'fisica' = se borra de verdad, null = sin botón de borrar.
     baja: 'logica',
 });
 

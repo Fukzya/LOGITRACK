@@ -1,9 +1,18 @@
 <?php
 /*
+ * ============================================================================================
+ * QUÉ ES:  las validaciones de envíos y viajes, que se usan en varias APIs (pantallas Envíos,
+ *          Viajes, el asistente "Nuevo envío" y "Viaje completo").
+ * PARA CAMBIAR: qué datos se piden y sus límites -> "CAMBIAR:" abajo.
+ * Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+ * ============================================================================================
+ */
+/*
  * Validación de los datos de un envío y de un viaje. La usan los controladores que los crean:
  * envios.php, viajes.php y asistente_envio.php (así la regla está en un solo lugar).
  */
 
+// CAMBIAR: datos de un envío: el peso máximo, el formato de los códigos, etc.
 function datos_envio(array $d): array
 {
     $e = [
@@ -23,6 +32,7 @@ function datos_envio(array $d): array
     return $e;
 }
 
+// CAMBIAR: datos de un viaje: formato de la patente, de los códigos de sucursal, etc.
 function datos_viaje(array $d): array
 {
     $v = [

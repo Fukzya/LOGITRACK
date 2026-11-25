@@ -1,3 +1,10 @@
+// ==============================================================================================
+// QUÉ ES:  el "motor" de todas las pantallas de listado + formulario (Clientes, Envíos, Viajes...):
+//          listar, filtrar, ordenar, paginar, guardar, editar, dar de baja. Cada pantalla solo
+//          le pasa su configuración (ver el .js de cada carpeta).
+// PARA CAMBIAR: textos y botones comunes a todas las pantallas -> "CAMBIAR:" abajo.
+// Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+// ==============================================================================================
 /*
  * Componente reutilizable de pantalla CRUD (capa Vista).
  * Cada pantalla llama a pantallaCrud({...}) describiendo su API, columnas, campos y filtros,
@@ -44,6 +51,8 @@ function pantallaCrud(cfg) {
     }
 
     // ------------------------------------------------------------ listado
+    // CAMBIAR: texto cuando no hay filas ("No hay registros con esos filtros.") y el de la
+    //          paginación ("Página X de Y"): están en esta función.
     async function listar(p = 1) {
         const params = new URLSearchParams({ pagina: p });
         if (orden.col) { params.set('order_by', orden.col); params.set('order_dir', orden.dir || 'ASC'); }
@@ -73,6 +82,8 @@ function pantallaCrud(cfg) {
         }
     }
 
+    // CAMBIAR: los botones de cada fila (Editar, Dar de baja, Eliminar, Reactivar) y el
+    //          texto "Solo consulta" cuando el rol no puede hacer nada.
     function botones(f) {
         const k = esc(f[cfg.clave]);
         const activo = baja !== 'logica' || f.activo == 1;
@@ -135,6 +146,7 @@ function pantallaCrud(cfg) {
     }
 
     // ------------------------------------------------------------ acciones de cada fila
+    // CAMBIAR: las preguntas de confirmación ("¿Dar de baja...?") están en el switch de abajo.
     async function accionSimple(metodo, cuerpo, pregunta) {
         if (!confirm(pregunta)) return;
         try {

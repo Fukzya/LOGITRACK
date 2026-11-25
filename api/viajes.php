@@ -1,4 +1,20 @@
 <?php
+/*
+ * ============================================================================================
+ * QUÉ ES:  la API ("controlador") de los viajes: salida, llegada, ruta, vehículo y chofer; también cerrar un viaje y agregarle envíos.
+ *          La pantalla le pide datos y le manda altas, cambios y bajas. Este archivo revisa
+ *          que los datos sean válidos y que el rol tenga permiso, y llama al modelo
+ *          modelos/Viaje.php, que es el único que habla con la base. Responde en JSON.
+ * PARA CAMBIAR:
+ *   - Qué datos se piden, si son obligatorios o su largo máximo -> "CAMBIAR:" acá abajo.
+ *   - Quién puede hacer qué (operador / admin)                 -> config/permisos.php
+ *   - Qué trae la consulta (columnas, filtros, orden)           -> modelos/Viaje.php
+ *   - Lo que se ve (textos, columnas, botones)                  -> paginas/ (pantalla Viajes)
+ *   - Los mensajes de error de la base (reglas de fechas, capacidad...) vienen de los
+ *     triggers y procedimientos: se cambian con un script nuevo en database/cambios/.
+ * Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+ * ============================================================================================
+ */
 /* Controlador de viajes: valida, llama al modelo Viaje y responde JSON. */
 require_once '../config/api.php';
 exigir_permiso_crud('viajes');
@@ -7,6 +23,8 @@ require_once '../config/validaciones.php';
 
 $viajes = new Viaje($pdo);
 
+// CAMBIAR: los datos que se piden para un viaje están en config/validaciones.php
+//          (datos_viaje). Acá: el mensaje si el vehículo o el chofer no existen.
 $errores = [1452 => 'El vehículo o el chofer elegidos no existen.'];
 
 switch ($_SERVER['REQUEST_METHOD']) {

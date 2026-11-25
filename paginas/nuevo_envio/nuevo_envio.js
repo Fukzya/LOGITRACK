@@ -1,3 +1,10 @@
+// ==============================================================================================
+// QUÉ ES:  el comportamiento de la pantalla "Nuevo envío" (el diseño está en nuevo_envio.php).
+// PARA CAMBIAR: buscá "CAMBIAR:" en este archivo.
+//   - Los textos de los mensajes que vienen del servidor no están acá: los manda la API
+//     (api/) o la base (triggers y procedimientos).
+// Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+// ==============================================================================================
 // Asistente "Nuevo envío": personas -> paquete -> viaje -> confirmar.
 // Nada se guarda hasta el último paso (salvo un cliente o dirección nuevos, que se dan de alta en el
 // momento). Al confirmar, api/asistente_envio.php crea envío + viaje + asignación en una transacción.
@@ -32,6 +39,7 @@ $('input-fecha').value = isoLocal(hoy).slice(0, 10);
 $('nv-salida').min = isoLocal(hoy).slice(0, 16);
 
 // ------------------------------------------------------------ formato
+// CAMBIAR: formato de números y fechas ('es-AR' = coma decimal y día/mes/año).
 const kg = n => Number(n).toLocaleString('es-AR', { maximumFractionDigits: 2 }) + ' kg';
 const fechaHora = f => new Date(f.replace(' ', 'T')).toLocaleString('es-AR',
     { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
@@ -323,6 +331,7 @@ function pintarOtros() {
     const lista = estado.rutas.viajes.filter(v => !filtro ||
         `${v.viaje_id} ${v.origen} ${v.destino}`.toLowerCase().includes(filtro));
     $('cuenta-otros').textContent = `(${estado.rutas.viajes.length})`;
+    // CAMBIAR: cuántos viajes muestra la lista "Otros viajes" (60).
     $('lista-otros').innerHTML = lista.slice(0, 60).map(v => {
         const sinLugar = Number(v.libre) < peso();
         return `

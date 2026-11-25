@@ -1,4 +1,19 @@
-<?php require '../plantilla.php'; inicio_pagina('Auditoría', true); ?>
+<?php
+/*
+ * ============================================================================================
+ * QUÉ ES:  el diseño (HTML) de la pantalla "Auditoría": el registro de cambios (quién cambió qué y cuándo; solo admin).
+ *          Lo que hace la pantalla (cargar, guardar, botones) está en auditoria.js.
+ * PARA CAMBIAR:
+ *   - Títulos, textos, etiquetas y ayudas -> directamente acá, en el HTML.
+ *   - Un campo nuevo del formulario       -> el <input> acá + su id en "campos" del .js
+ *                                            (+ la API y el modelo, para que se guarde).
+ *   - Una columna nueva de la tabla       -> el <th> acá + la función en "columnas" del .js,
+ *                                            en la misma posición.
+ *   - Menú, encabezado y pie (iguales en todas las pantallas) -> paginas/plantilla.php
+ * Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+ * ============================================================================================
+ */
+require '../plantilla.php'; inicio_pagina('Auditoría', true); ?>
 
     <!-- Filtros. Las filas las escriben los triggers AFTER de envio, viaje y usuario (script 013). -->
     <div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] flex flex-col gap-space-md">

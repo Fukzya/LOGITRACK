@@ -1,4 +1,19 @@
-<?php require '../plantilla.php'; inicio_pagina('Envíos'); ?>
+<?php
+/*
+ * ============================================================================================
+ * QUÉ ES:  el diseño (HTML) de la pantalla "Envíos": los envíos (paquetes): peso, contenido, remitente, destinatario y sucursales.
+ *          Lo que hace la pantalla (cargar, guardar, botones) está en envios.js.
+ * PARA CAMBIAR:
+ *   - Títulos, textos, etiquetas y ayudas -> directamente acá, en el HTML.
+ *   - Un campo nuevo del formulario       -> el <input> acá + su id en "campos" del .js
+ *                                            (+ la API y el modelo, para que se guarde).
+ *   - Una columna nueva de la tabla       -> el <th> acá + la función en "columnas" del .js,
+ *                                            en la misma posición.
+ *   - Menú, encabezado y pie (iguales en todas las pantallas) -> paginas/plantilla.php
+ * Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+ * ============================================================================================
+ */
+require '../plantilla.php'; inicio_pagina('Envíos'); ?>
 
     <!-- Formulario de Nuevo Envío / Edición -->
     <!-- El alta se hace con el procedimiento almacenado procedimiento_crear_envio, en una transacción. -->

@@ -1,5 +1,14 @@
 <?php
 /*
+ * ============================================================================================
+ * QUÉ ES:  el marco común de todas las pantallas: revisa la sesión, arma el <head>, los colores,
+ *          el menú lateral, el encabezado con el usuario y el pie.
+ * PARA CAMBIAR: el menú, los colores y los íconos -> "CAMBIAR:" abajo.
+ *   OJO: el menú lateral está repetido en index.php (menú principal): cambiar los dos.
+ * Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+ * ============================================================================================
+ */
+/*
  * Encabezado y pie comunes de todas las pantallas (capa Vista).
  * Se ejecuta en el servidor antes de mandar nada al navegador:
  *   - sin sesión válida (o vencida, cerrada, usuario dado de baja...), redirige al login;
@@ -28,6 +37,7 @@ function inicio_pagina(string $titulo, bool $soloAdmin = false, string $seccionA
         $seccionActiva = basename(dirname($_SERVER['PHP_SELF'] ?? ''));
     }
 
+    // CAMBIAR: el ícono del título de cada pantalla (nombres de Material Symbols).
     $iconosDefault = [
         'nuevo_envio'      => 'add_box',
         'envios'           => 'local_shipping',
@@ -220,6 +230,8 @@ function inicio_pagina(string $titulo, bool $soloAdmin = false, string $seccionA
     </style>
     <script src="../../assets/tailwind.js"></script>
     <script id="tailwind-config">
+        // CAMBIAR: los colores de la aplicación (primary = color principal, etc.).
+        //          En index.php y login.html están los mismos: cambiar en los tres.
         tailwind.config = {
             darkMode: "class",
             theme: {
@@ -335,6 +347,7 @@ function inicio_pagina(string $titulo, bool $soloAdmin = false, string $seccionA
 
                 <div class="flex flex-col gap-1">
                     <span class="px-3 text-xs uppercase tracking-wider text-orange-400/70 font-headline-sm mb-1">Operaciones</span>
+                    <!-- CAMBIAR: el menú lateral: una línea <a> por pantalla (texto, ícono y enlace). El mismo menú está en index.php. -->
                     <a class="<?= $seccionActiva === 'nuevo_envio' ? $activoClass : $normalClass ?>" data-path="nuevo-envio" href="../nuevo_envio/nuevo_envio.php">
                         <span class="material-symbols-outlined text-[20px]">add_box</span>Nuevo envío guiado
                     </a>

@@ -1,9 +1,17 @@
+// ==============================================================================================
+// QUÉ ES:  el comportamiento de la pantalla "Detalle de viaje" (el diseño está en detalle.php).
+// PARA CAMBIAR: buscá "CAMBIAR:" en este archivo.
+//   - Los textos de los mensajes que vienen del servidor no están acá: los manda la API
+//     (api/) o la base (triggers y procedimientos).
+// Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+// ==============================================================================================
 // Detalle de un viaje: datos, carga (funcion_carga_viaje), envíos que lleva, agregar envíos
 // pendientes (procedimiento_asignar_envio_a_viaje, en una transacción) y cerrar el viaje
 // (procedimiento_cerrar_viaje). Se abre como detalle.php?viaje_id=123
 const $ = id => document.getElementById(id);
 const API = '../../api/viajes.php';
 const viajeId = new URLSearchParams(location.search).get('viaje_id');
+// CAMBIAR: formato de los números ('es-AR' = coma decimal).
 const kg = n => Number(n).toLocaleString('es-AR', { maximumFractionDigits: 2 });
 let viaje = null;
 

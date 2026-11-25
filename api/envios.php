@@ -1,4 +1,20 @@
 <?php
+/*
+ * ============================================================================================
+ * QUÉ ES:  la API ("controlador") de los envíos (paquetes): peso, contenido, remitente, destinatario y sucursales.
+ *          La pantalla le pide datos y le manda altas, cambios y bajas. Este archivo revisa
+ *          que los datos sean válidos y que el rol tenga permiso, y llama al modelo
+ *          modelos/Envio.php, que es el único que habla con la base. Responde en JSON.
+ * PARA CAMBIAR:
+ *   - Qué datos se piden, si son obligatorios o su largo máximo -> "CAMBIAR:" acá abajo.
+ *   - Quién puede hacer qué (operador / admin)                 -> config/permisos.php
+ *   - Qué trae la consulta (columnas, filtros, orden)           -> modelos/Envio.php
+ *   - Lo que se ve (textos, columnas, botones)                  -> paginas/ (pantalla Envíos)
+ *   - Los mensajes de error de la base (reglas de fechas, capacidad...) vienen de los
+ *     triggers y procedimientos: se cambian con un script nuevo en database/cambios/.
+ * Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+ * ============================================================================================
+ */
 /* Controlador de envíos: valida, llama al modelo Envio y responde JSON. */
 require_once '../config/api.php';
 exigir_permiso_crud('envios');
@@ -7,6 +23,8 @@ require_once '../config/validaciones.php';
 
 $envios = new Envio($pdo);
 
+// CAMBIAR: los datos que se piden para un envío están en config/validaciones.php
+//          (datos_envio). Acá: el mensaje si algún código elegido no existe.
 $errores = [1452 => 'El remitente, el destinatario, una sucursal, el tipo de contenido o la dirección indicados no existen.'];
 
 switch ($_SERVER['REQUEST_METHOD']) {

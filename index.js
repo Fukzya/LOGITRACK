@@ -1,3 +1,7 @@
+// ==============================================================================================
+// QUÉ ES:  el comportamiento del menú principal: controla la sesión y llena las tarjetas "Hoy"
+//          con los números de api/tablero.php. Los textos de las tarjetas están en index.php.
+// ==============================================================================================
 fetch('api/check_session.php')
   .then(res => res.json())
   .then(data => {

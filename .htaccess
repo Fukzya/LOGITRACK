@@ -1,3 +1,8 @@
+# ==============================================================================================
+# QUÉ ES:  qué archivos NO se pueden pedir desde el navegador (Apache).
+# PARA CAMBIAR: agregar una carpeta a la lista de "RedirectMatch 403" o una extensión a
+#               "FilesMatch". Probar después que la app siga andando.
+# ==============================================================================================
 # Seguridad del sitio (Apache). Lo que el navegador NO puede pedir.
 # PHP sigue pudiendo incluir estos archivos (require_once): la restricción es solo para HTTP.
 

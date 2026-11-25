@@ -1,11 +1,19 @@
 <?php
 /*
+ * ============================================================================================
+ * QUÉ ES:  lo que comparten todos los modelos: el listado con páginas, filtros y orden.
+ * PARA CAMBIAR: cuántas filas muestra cada página -> "CAMBIAR:" abajo.
+ * Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+ * ============================================================================================
+ */
+/*
  * Clase base de los modelos (capa Modelo de MVC).
  * Tiene lo que comparten todas las entidades: la conexión y el listado paginado con filtros y orden.
  * Cada modelo concreto (Cliente, Chofer, Envio...) hereda de acá y escribe su propio SQL.
  */
 abstract class Modelo
 {
+    // CAMBIAR: cuántas filas muestra cada página de todos los listados.
     public const POR_PAGINA = 50;
 
     protected PDO $pdo;

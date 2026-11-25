@@ -1,3 +1,8 @@
+// ==============================================================================================
+// QUÉ ES:  el buscador de clientes del asistente (por nombre o DNI) y el alta de cliente nuevo.
+// PARA CAMBIAR: cuántos resultados muestra y desde cuántas letras busca -> "CAMBIAR:" abajo.
+// Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+// ==============================================================================================
 // Buscador de clientes reutilizable (capa Vista).
 //
 // En lugar de pedir un DNI "a ciegas", el usuario escribe parte del DNI, del nombre o del apellido,
@@ -12,6 +17,7 @@
 //   remitente.limpiar()
 
 const CLASE_INPUT = 'w-full bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none text-on-surface';
+// CAMBIAR: cuántos clientes muestra la lista del buscador.
 const RESULTADOS_VISIBLES = 8;
 
 // El catálogo de localidades se pide una sola vez aunque haya varios buscadores en la pantalla.
@@ -84,6 +90,7 @@ function selectorCliente(contenedor, opciones = {}) {
 
     async function buscar() {
         const t = texto.value.trim();
+        // CAMBIAR: cantidad mínima de letras para empezar a buscar.
         if (t.length < 2) { lista.hidden = true; lista.innerHTML = ''; return; }
         const n = ++numeroBusqueda;
         let r;

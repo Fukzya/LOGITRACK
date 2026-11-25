@@ -1,8 +1,15 @@
+// ==============================================================================================
+// QUÉ ES:  el comportamiento de la pantalla de login (login.html).
+// PARA CAMBIAR: los mensajes del login -> "CAMBIAR:" abajo.
+// Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+// ==============================================================================================
 // Rutas relativas: funcionan entre por localhost, 127.0.0.1 o el nombre de la PC.
 const API_CHECK = 'api/check_session.php';
 const API_LOGIN = 'api/login.php';
 
 // Por qué se volvió al login (lo manda la pantalla o la API en ?motivo=...).
+// CAMBIAR: el mensaje según por qué se volvió al login. Son los mismos que MENSAJES_SESION
+//          en config/session.php: cambiar los dos.
 const MOTIVOS = {
     VENCIDA:           'Tu sesión venció por inactividad. Volvé a entrar.',
     CERRADA_POR_ADMIN: 'Un administrador cerró tu sesión.',

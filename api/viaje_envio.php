@@ -1,4 +1,20 @@
 <?php
+/*
+ * ============================================================================================
+ * QUÉ ES:  la API ("controlador") de qué envíos van en qué viaje (asignar y quitar; tramo 2 = trasbordo).
+ *          La pantalla le pide datos y le manda altas, cambios y bajas. Este archivo revisa
+ *          que los datos sean válidos y que el rol tenga permiso, y llama al modelo
+ *          modelos/ViajeEnvio.php, que es el único que habla con la base. Responde en JSON.
+ * PARA CAMBIAR:
+ *   - Qué datos se piden, si son obligatorios o su largo máximo -> "CAMBIAR:" acá abajo.
+ *   - Quién puede hacer qué (operador / admin)                 -> config/permisos.php
+ *   - Qué trae la consulta (columnas, filtros, orden)           -> modelos/ViajeEnvio.php
+ *   - Lo que se ve (textos, columnas, botones)                  -> paginas/ (pantalla Viaje-Envío)
+ *   - Los mensajes de error de la base (reglas de fechas, capacidad...) vienen de los
+ *     triggers y procedimientos: se cambian con un script nuevo en database/cambios/.
+ * Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+ * ============================================================================================
+ */
 /* Controlador de la asignación envío-viaje: valida, llama al modelo ViajeEnvio y responde JSON. */
 require_once '../config/api.php';
 exigir_permiso_crud('viaje_envio');
@@ -6,6 +22,7 @@ require_once '../modelos/ViajeEnvio.php';
 
 $asignaciones = new ViajeEnvio($pdo);
 
+// CAMBIAR: qué datos pide asignar o quitar un envío (número de viaje y de envío).
 function claves(array $d): array
 {
     return [campo_entero($d, 'viaje_id', 'El viaje'), campo_entero($d, 'nro_envio', 'El número de envío')];

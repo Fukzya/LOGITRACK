@@ -1,9 +1,24 @@
 <?php
+/*
+ * ============================================================================================
+ * QUÉ ES:  el "modelo" de qué envíos van en qué viaje (asignar y quitar; tramo 2 = trasbordo): el ÚNICO lugar con las consultas SQL de esa parte.
+ *          La API (api/) lo llama; él arma el SELECT / INSERT / UPDATE y lo manda a la base
+ *          con parámetros (:nombre), nunca pegando texto del usuario en el SQL.
+ * PARA CAMBIAR:
+ *   - Por qué columnas se puede ordenar el listado -> ORDENABLES ("CAMBIAR:" abajo).
+ *   - Qué columnas trae el listado o cómo filtra   -> la función listar().
+ *   - Las reglas (fechas, capacidad, licencias...) NO están acá: están en la base, en
+ *     triggers y procedimientos (database/cambios/).
+ * Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+ * ============================================================================================
+ */
 require_once __DIR__ . '/Modelo.php';
 
 /** Modelo ViajeEnvio: tabla puente que dice qué envíos van en cada viaje (relación muchos a muchos). */
 class ViajeEnvio extends Modelo
 {
+    // CAMBIAR: columnas por las que se puede ordenar el listado:
+    //          'nombre que manda la pantalla' => 'columna de la base'.
     private const ORDENABLES = [
         'viaje_id'  => 've.viaje_id, ve.nro_envio',
         'nro_envio' => 've.nro_envio, ve.tramo',

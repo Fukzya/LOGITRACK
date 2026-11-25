@@ -1,3 +1,7 @@
+// ==============================================================================================
+// QUÉ ES:  llena los desplegables (select) con las listas de api/catalogos.php.
+// PARA CAMBIAR: el contenido de las listas se cambia en api/catalogos.php.
+// ==============================================================================================
 // Llena un <select> con las opciones de una tabla catálogo (api/catalogos.php).
 // Conserva las <option> que ya tenga el select (por ejemplo "Todos").
 function cargarCatalogo(selectId, tipo) {

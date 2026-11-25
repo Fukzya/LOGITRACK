@@ -1,3 +1,13 @@
+// ==============================================================================================
+// QUÉ ES:  el comportamiento de la pantalla "Viajes" (el diseño está en viajes.php).
+//          Es una CONFIGURACIÓN: dice qué columnas mostrar, qué campos tiene el formulario
+//          y qué filtros hay. Listar, guardar, editar y borrar lo hace paginas/crud.js,
+//          igual para todas las pantallas.
+// PARA CAMBIAR: buscá "CAMBIAR:" en este archivo.
+//   - Los textos de los mensajes que vienen del servidor no están acá: los manda la API
+//     (api/) o la base (triggers y procedimientos).
+// Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+// ==============================================================================================
 // Pantalla de viajes (baja física: la base impide borrar un viaje con envíos o incidentes).
 cargarCatalogo('input-vehiculo', 'vehiculos');
 cargarCatalogo('input-chofer', 'choferes');
@@ -14,6 +24,8 @@ const pantalla = pantallaCrud({
     nombre: 'el viaje',
     tabla: 'tabla-viajes',
     paginacion: 'paginacion',
+    // CAMBIAR: columnas de la tabla, en orden. Cada una tiene su título <th> en la .php,
+    //          en la misma posición. esc() muestra el dato tal cual (protege contra código malicioso).
     columnas: [
         f => esc(f.viaje_id),
         f => esc(f.fecha_salida),
@@ -37,6 +49,7 @@ const pantalla = pantallaCrud({
     titulo: 'titulo-form',
     tituloAlta: 'Nuevo viaje',
     tituloEdicion: f => `Editando viaje ${f.viaje_id}`,
+    // CAMBIAR: campos del formulario: 'id del <input> en la .php': 'nombre del dato en la API'.
     campos: {
         'input-salida': 'fecha_salida',
         'input-llegada': 'fecha_llegada',
@@ -45,14 +58,18 @@ const pantalla = pantallaCrud({
         'input-vehiculo': 'vehiculo_patente',
         'input-chofer': 'chofer_legajo',
     },
+    // CAMBIAR: filtros de arriba de la tabla: 'id del <input>': 'parámetro que recibe la API'.
     filtros: {
         'filtro-fecha-desde': 'fecha_desde',
         'filtro-fecha-hasta': 'fecha_hasta',
         'filtro-chofer': 'chofer_legajo',
         'filtro-solo-activos': 'solo_activos',
     },
+    // CAMBIAR: orden inicial del listado (columna y ASC = ascendente / DESC = descendente).
     orden: { col: 'viaje_id', dir: 'DESC' },
     encabezados: { 'th-id': 'viaje_id', 'th-salida': 'fecha_salida', 'th-llegada': 'fecha_llegada' },
+    // CAMBIAR: cómo se borra: 'logica' = se da de baja sin borrar (se puede reactivar),
+    //          'fisica' = se borra de verdad, null = sin botón de borrar.
     baja: 'fisica',
 });
 

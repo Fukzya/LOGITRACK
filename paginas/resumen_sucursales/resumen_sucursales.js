@@ -1,3 +1,10 @@
+// ==============================================================================================
+// QUÉ ES:  el comportamiento de la pantalla "Resumen por sucursal" (el diseño está en resumen_sucursales.php).
+// PARA CAMBIAR: buscá "CAMBIAR:" en este archivo.
+//   - Los textos de los mensajes que vienen del servidor no están acá: los manda la API
+//     (api/) o la base (triggers y procedimientos).
+// Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+// ==============================================================================================
 // Resumen por sucursal: llama a procedimiento_resumen_por_sucursal(desde, hasta) a través de
 // api/sucursales.php?resumen=1. Por defecto muestra el mes actual.
 const $ = id => document.getElementById(id);
@@ -32,6 +39,7 @@ $('form-periodo').addEventListener('submit', e => { e.preventDefault(); cargar()
 $('btn-todo').addEventListener('click', () => { $('filtro-desde').value = ''; $('filtro-hasta').value = ''; cargar(); });
 
 // Por defecto: desde el primer día del mes actual.
+// CAMBIAR: el período que aparece al abrir la pantalla (hoy: desde el 1 del mes).
 const hoy = new Date();
 $('filtro-desde').value = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-01`;
 cargar();

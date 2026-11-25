@@ -1,4 +1,20 @@
 <?php
+/*
+ * ============================================================================================
+ * QUÉ ES:  la API ("controlador") de los usuarios que entran a la aplicación y su rol (solo admin).
+ *          La pantalla le pide datos y le manda altas, cambios y bajas. Este archivo revisa
+ *          que los datos sean válidos y que el rol tenga permiso, y llama al modelo
+ *          modelos/Usuario.php, que es el único que habla con la base. Responde en JSON.
+ * PARA CAMBIAR:
+ *   - Qué datos se piden, si son obligatorios o su largo máximo -> "CAMBIAR:" acá abajo.
+ *   - Quién puede hacer qué (operador / admin)                 -> config/permisos.php
+ *   - Qué trae la consulta (columnas, filtros, orden)           -> modelos/Usuario.php
+ *   - Lo que se ve (textos, columnas, botones)                  -> paginas/ (pantalla Usuarios)
+ *   - Los mensajes de error de la base (reglas de fechas, capacidad...) vienen de los
+ *     triggers y procedimientos: se cambian con un script nuevo en database/cambios/.
+ * Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+ * ============================================================================================
+ */
 /* Controlador de usuarios del sistema (solo admin): valida, llama al modelo Usuario y responde JSON. */
 require_once '../config/api.php';
 require_once '../modelos/Usuario.php';
@@ -6,8 +22,12 @@ require_once '../modelos/Usuario.php';
 exigir_permiso('usuarios', 'gestionar');   // no figura en PERMISOS_OPERADOR: solo admin
 
 $usuarios = new Usuario($pdo);
+// CAMBIAR: roles posibles. Si agregás uno: también en config/permisos.php y en la base
+//          (un rol y una cuenta nuevos, como en el script 016).
 const ROLES = ['admin', 'operador'];
 
+// CAMBIAR: largo mínimo y máximo de las contraseñas (más de 72 no sirve: el hash
+//          bcrypt usa solo los primeros 72 caracteres).
 function password_nueva(array $d): string
 {
     $p = (string)($d['password'] ?? '');

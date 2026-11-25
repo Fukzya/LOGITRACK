@@ -1,3 +1,13 @@
+// ==============================================================================================
+// QUÉ ES:  el comportamiento de la pantalla "Sesiones" (el diseño está en sesiones.php).
+//          Es una CONFIGURACIÓN: dice qué columnas mostrar, qué campos tiene el formulario
+//          y qué filtros hay. Listar, guardar, editar y borrar lo hace paginas/crud.js,
+//          igual para todas las pantallas.
+// PARA CAMBIAR: buscá "CAMBIAR:" en este archivo.
+//   - Los textos de los mensajes que vienen del servidor no están acá: los manda la API
+//     (api/) o la base (triggers y procedimientos).
+// Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+// ==============================================================================================
 // Pantalla de sesiones (solo admin): sesiones de la aplicación abiertas, conexiones a la base
 // (sesiones de MariaDB) e historial de sesiones cerradas.
 const API_SESIONES = '../../api/sesiones.php';
@@ -99,6 +109,8 @@ const pantallaHistorial = pantallaCrud({
     nombre: 'la sesión',
     tabla: 'tabla-historial',
     paginacion: 'paginacion',
+    // CAMBIAR: columnas de la tabla, en orden. Cada una tiene su título <th> en la .php,
+    //          en la misma posición. esc() muestra el dato tal cual (protege contra código malicioso).
     columnas: [
         f => esc(f.username),
         f => esc(fechaCorta(f.inicio)),
@@ -107,10 +119,14 @@ const pantallaHistorial = pantallaCrud({
         f => esc(MOTIVOS[f.motivo_cierre] || f.motivo_cierre),
         f => esc(f.ip),
     ],
+    // CAMBIAR: filtros de arriba de la tabla: 'id del <input>': 'parámetro que recibe la API'.
     filtros: { 'filtro-username': 'username' },
+    // CAMBIAR: orden inicial del listado (columna y ASC = ascendente / DESC = descendente).
     orden: { col: 'fin', dir: 'DESC' },
     encabezados: { 'th-username': 'username', 'th-inicio': 'inicio', 'th-fin': 'fin', 'th-motivo': 'motivo' },
     editable: false,
+    // CAMBIAR: cómo se borra: 'logica' = se da de baja sin borrar (se puede reactivar),
+    //          'fisica' = se borra de verdad, null = sin botón de borrar.
     baja: null,
 });
 

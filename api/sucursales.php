@@ -1,4 +1,20 @@
 <?php
+/*
+ * ============================================================================================
+ * QUÉ ES:  la API ("controlador") de las sucursales (código de 3 dígitos, nombre, localidad y dirección).
+ *          La pantalla le pide datos y le manda altas, cambios y bajas. Este archivo revisa
+ *          que los datos sean válidos y que el rol tenga permiso, y llama al modelo
+ *          modelos/Sucursal.php, que es el único que habla con la base. Responde en JSON.
+ * PARA CAMBIAR:
+ *   - Qué datos se piden, si son obligatorios o su largo máximo -> "CAMBIAR:" acá abajo.
+ *   - Quién puede hacer qué (operador / admin)                 -> config/permisos.php
+ *   - Qué trae la consulta (columnas, filtros, orden)           -> modelos/Sucursal.php
+ *   - Lo que se ve (textos, columnas, botones)                  -> paginas/ (pantalla Sucursales)
+ *   - Los mensajes de error de la base (reglas de fechas, capacidad...) vienen de los
+ *     triggers y procedimientos: se cambian con un script nuevo en database/cambios/.
+ * Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+ * ============================================================================================
+ */
 /* Controlador de sucursales: valida, llama al modelo Sucursal y responde JSON. */
 require_once '../config/api.php';
 exigir_permiso_crud('sucursales');
@@ -11,6 +27,9 @@ function cod_sucursal(array $d): string
     return campo_codigo($d, 'sucursal_cod', 'El código', '/^[0-9]{3}$/', '3 dígitos (ej. 007)', false);
 }
 
+// CAMBIAR: qué datos pide el alta y la edición. En cada campo_...(): el nombre del dato,
+//          el nombre que ve el usuario en los mensajes y los límites (largo máximo, mínimo y máximo).
+//          Si agregás un dato acá, agregalo también al modelo (SQL) y a la pantalla (campos).
 function datos_sucursal(array $d): array
 {
     return [

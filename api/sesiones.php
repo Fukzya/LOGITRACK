@@ -1,5 +1,21 @@
 <?php
 /*
+ * ============================================================================================
+ * QUÉ ES:  la API ("controlador") de las sesiones abiertas y cerradas y las conexiones a la base (solo admin).
+ *          La pantalla le pide datos y le manda altas, cambios y bajas. Este archivo revisa
+ *          que los datos sean válidos y que el rol tenga permiso, y llama al modelo
+ *          modelos/Sesion.php, que es el único que habla con la base. Responde en JSON.
+ * PARA CAMBIAR:
+ *   - Qué datos se piden, si son obligatorios o su largo máximo -> "CAMBIAR:" acá abajo.
+ *   - Quién puede hacer qué (operador / admin)                 -> config/permisos.php
+ *   - Qué trae la consulta (columnas, filtros, orden)           -> modelos/Sesion.php
+ *   - Lo que se ve (textos, columnas, botones)                  -> paginas/ (pantalla Sesiones)
+ *   - Los mensajes de error de la base (reglas de fechas, capacidad...) vienen de los
+ *     triggers y procedimientos: se cambian con un script nuevo en database/cambios/.
+ * Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+ * ============================================================================================
+ */
+/*
  * Controlador de sesiones (solo admin).
  *   GET ?ver=abiertas     sesiones de la aplicación abiertas ahora (vista_sesiones_abiertas)
  *   GET (sin ver)         historial: sesiones cerradas, paginadas, filtro ?username=
@@ -11,6 +27,8 @@ require_once '../config/api.php';
 exigir_permiso('sesiones', 'gestionar');   // no figura en PERMISOS_OPERADOR: solo admin
 
 $sesiones = modelo_sesion();
+// CAMBIAR: el listado sale de la tabla sesion y de vista_sesiones_abiertas; el tiempo
+//          de vencimiento está en config/session.php (MINUTOS_SESION).
 $propia   = (int)$_SESSION['sesion_id'];
 
 switch ($_SERVER['REQUEST_METHOD']) {

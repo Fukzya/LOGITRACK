@@ -1,5 +1,14 @@
 <?php
 /*
+ * ============================================================================================
+ * QUÉ ES:  la conexión a la base de datos (una por pedido), con la cuenta según el rol.
+ * PARA CAMBIAR: el servidor, el nombre de la base o la espera de bloqueos -> "CAMBIAR:" abajo.
+ *               Los usuarios y contraseñas NO están acá: están en config/credenciales.php
+ *               (los genera database/configurar_cuentas.php).
+ * Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+ * ============================================================================================
+ */
+/*
  * Conexión a la base (una por pedido). La usan la API (config/db.php) y las pantallas
  * (para controlar la sesión). Cada conexión es una SESIÓN DE BASE DE DATOS: se abre acá y
  * MariaDB la cierra sola cuando PHP termina de atender el pedido.
@@ -29,11 +38,14 @@ function conexion(?string $cuenta = null): PDO
     $datos = (require $archivo)[$cuenta];
 
     try {
+        // CAMBIAR: servidor (localhost) y nombre de la base (logitrack).
         $pdo = new PDO("mysql:host=localhost;dbname=logitrack;charset=utf8mb4", $datos['usuario'], $datos['clave'], [
             PDO::ATTR_ERRMODE           => PDO::ERRMODE_EXCEPTION,  // todo error de la base es una excepción
             PDO::MYSQL_ATTR_FOUND_ROWS  => true,                    // rowCount() de un UPDATE = filas encontradas
             // Si otra transacción tiene bloqueada una fila (FOR UPDATE), esperar como mucho 10 s
             // (MariaDB espera 50 s de fábrica: demasiado para una pantalla). Después, error 1205.
+            // CAMBIAR: segundos que se espera una fila bloqueada por otro usuario antes de avisar
+            //          "Otro usuario está modificando ese dato".
             PDO::MYSQL_ATTR_INIT_COMMAND => 'SET SESSION innodb_lock_wait_timeout = 10',
         ]);
     } catch (PDOException $e) {

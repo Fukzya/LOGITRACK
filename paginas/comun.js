@@ -1,3 +1,8 @@
+// ==============================================================================================
+// QUÉ ES:  funciones que usan todas las pantallas: llamar a la API, mostrar errores, escapar
+//          datos (esc) y saber qué permite el rol (puede). Normalmente no hace falta tocarlo.
+// Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+// ==============================================================================================
 // Utilidades compartidas por todas las pantallas (capa Vista).
 
 // Sin sesión válida, volver al login mostrando el motivo (vencida, cerrada por un admin...).

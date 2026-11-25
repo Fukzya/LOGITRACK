@@ -1,3 +1,13 @@
+// ==============================================================================================
+// QUÉ ES:  el comportamiento de la pantalla "Usuarios" (el diseño está en usuarios.php).
+//          Es una CONFIGURACIÓN: dice qué columnas mostrar, qué campos tiene el formulario
+//          y qué filtros hay. Listar, guardar, editar y borrar lo hace paginas/crud.js,
+//          igual para todas las pantallas.
+// PARA CAMBIAR: buscá "CAMBIAR:" en este archivo.
+//   - Los textos de los mensajes que vienen del servidor no están acá: los manda la API
+//     (api/) o la base (triggers y procedimientos).
+// Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+// ==============================================================================================
 // Pantalla de usuarios del sistema (solo admin). Alta con el formulario; rol, contraseña y estado
 // se cambian por separado desde cada fila.
 const API_USUARIOS = '../../api/usuarios.php';
@@ -18,14 +28,20 @@ const pantallaUsuarios = pantallaCrud({
     clave: 'usuario_id',
     nombre: 'el usuario',
     tabla: 'tabla-usuarios',
+    // CAMBIAR: columnas de la tabla, en orden. Cada una tiene su título <th> en la .php,
+    //          en la misma posición. esc() muestra el dato tal cual (protege contra código malicioso).
     columnas: [f => esc(f.usuario_id), f => esc(f.username), f => esc(f.rol), celdaEstado],
     form: 'form-usuario',
     titulo: 'titulo-form',
     tituloAlta: 'Nuevo usuario',
+    // CAMBIAR: campos del formulario: 'id del <input> en la .php': 'nombre del dato en la API'.
     campos: { 'input-username': 'username', 'input-password': 'password', 'input-rol': 'rol' },
+    // CAMBIAR: orden inicial del listado (columna y ASC = ascendente / DESC = descendente).
     orden: { col: 'usuario_id', dir: 'ASC' },
     encabezados: { 'th-id': 'usuario_id', 'th-username': 'username', 'th-rol': 'rol' },
     editable: false,
+    // CAMBIAR: cómo se borra: 'logica' = se da de baja sin borrar (se puede reactivar),
+    //          'fisica' = se borra de verdad, null = sin botón de borrar.
     baja: null,
     accionesExtra: f => `
         <button data-accion="rol" data-clave="${esc(f.usuario_id)}">Pasar a ${f.rol === 'admin' ? 'operador' : 'admin'}</button>

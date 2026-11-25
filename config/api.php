@@ -1,5 +1,13 @@
 <?php
 /*
+ * ============================================================================================
+ * QUÉ ES:  la base común de todas las APIs: revisa la sesión, abre la conexión, valida datos
+ *          (funciones campo_...) y traduce los errores de la base a mensajes para el usuario.
+ * PARA CAMBIAR: los mensajes de error y las validaciones comunes -> "CAMBIAR:" abajo.
+ * Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+ * ============================================================================================
+ */
+/*
  * Base común de todas las APIs (capa Controlador).
  *
  * Cada api/*.php empieza con:
@@ -52,6 +60,9 @@ function leer_json(): array
 // Validaciones: devuelven el valor limpio o lanzan ValidacionException
 // ---------------------------------------------------------------------------
 
+// CAMBIAR: las validaciones de todos los formularios. Cada pantalla las llama con el nombre
+//          del dato, cómo se llama para el usuario y sus límites. Los textos entre comillas son los
+//          mensajes que ve el usuario.
 function campo_texto(array $d, string $campo, string $etiqueta, int $max, bool $obligatorio = true): ?string
 {
     $valor = trim((string)($d[$campo] ?? ''));
@@ -87,6 +98,8 @@ function campo_email(array $d, string $campo, string $etiqueta, bool $obligatori
     return $valor;
 }
 
+// CAMBIAR: qué caracteres acepta un teléfono (expresión regular: números, espacios,
+//          guiones, paréntesis y un + adelante, de 6 a 30 caracteres).
 function campo_telefono(array $d, string $campo, string $etiqueta, bool $obligatorio = false): ?string
 {
     $valor = campo_texto($d, $campo, $etiqueta, 30, $obligatorio);
@@ -208,6 +221,8 @@ function intentar(callable $operacion, array $mensajes)
 }
 
 /** Traduce los errores de la base más comunes a mensajes para el usuario. */
+// CAMBIAR: los mensajes que ve el usuario cuando la base rechaza algo (según el número de
+//          error de MariaDB). Los SIGNAL de los triggers (1644) llegan con el texto escrito en la base.
 function manejar_error(Throwable $e): void
 {
     if ($e instanceof ValidacionException) {

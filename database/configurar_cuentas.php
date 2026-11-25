@@ -1,6 +1,6 @@
 <?php
 /*
- * Crea las cuentas de la aplicación con sus roles y permisos, les pone contraseña y escribe
+ * QUÉ ES:  crea las cuentas de la aplicación con sus roles y permisos, les pone contraseña y escribe
  * config/credenciales.php. Es el único paso de instalación después de importar el volcado.
  *
  *     C:\xampp\php\php database\configurar_cuentas.php
@@ -13,7 +13,7 @@
  * `mysql`, no en `logitrack`, así que el volcado database/logitrack.sql no los trae.
  *
  *  1. Ejecuta database/cambios/016_cuentas_y_roles.sql: roles, permisos y cuentas (bloqueadas).
- *  2. Da el permiso sobre la función del 017 (funcion_carga_viaje_bloqueando).
+ *  2. Da los permisos que se agregaron después del 016 (lista $permisosExtra).
  *  3. Pone a cada cuenta una contraseña al azar (random_bytes) y la desbloquea.
  *  4. Guarda las contraseñas en config/credenciales.php (está en .gitignore y el .htaccess lo
  *     bloquea en la web): nunca quedan en el repositorio.
@@ -46,9 +46,14 @@ try {
     }
     echo "  Roles, permisos y cuentas creados (016).\n";
 
-    // 2) El permiso que agregó el 017 (su función nueva la usa PHP con la cuenta del operador).
-    $pdo->exec('GRANT EXECUTE ON FUNCTION logitrack.funcion_carga_viaje_bloqueando TO rol_operador');
-    echo "  Permiso sobre funcion_carga_viaje_bloqueando (017).\n";
+    // 2) Permisos agregados DESPUÉS del 016 (el 016 crea los roles desde cero y los borraría).
+    // CAMBIAR: si un script nuevo da un permiso (GRANT) a un rol, agregalo también a esta lista:
+    //          así no se pierde al instalar o al volver a correr este archivo.
+    $permisosExtra = [
+        'GRANT EXECUTE ON FUNCTION logitrack.funcion_carga_viaje_bloqueando TO rol_operador',   // 017
+    ];
+    foreach ($permisosExtra as $grant) $pdo->exec($grant);
+    echo '  Permisos agregados después del 016: ' . count($permisosExtra) . ".\n";
 
     // 3) Contraseñas al azar.
     $cuentas = [

@@ -1,4 +1,20 @@
 <?php
+/*
+ * ============================================================================================
+ * QUÉ ES:  la API ("controlador") de los vehículos (patente, marca, modelo, año y tipo).
+ *          La pantalla le pide datos y le manda altas, cambios y bajas. Este archivo revisa
+ *          que los datos sean válidos y que el rol tenga permiso, y llama al modelo
+ *          modelos/Vehiculo.php, que es el único que habla con la base. Responde en JSON.
+ * PARA CAMBIAR:
+ *   - Qué datos se piden, si son obligatorios o su largo máximo -> "CAMBIAR:" acá abajo.
+ *   - Quién puede hacer qué (operador / admin)                 -> config/permisos.php
+ *   - Qué trae la consulta (columnas, filtros, orden)           -> modelos/Vehiculo.php
+ *   - Lo que se ve (textos, columnas, botones)                  -> paginas/ (pantalla Vehículos)
+ *   - Los mensajes de error de la base (reglas de fechas, capacidad...) vienen de los
+ *     triggers y procedimientos: se cambian con un script nuevo en database/cambios/.
+ * Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+ * ============================================================================================
+ */
 /* Controlador de vehículos: valida, llama al modelo Vehiculo y responde JSON. */
 require_once '../config/api.php';
 exigir_permiso_crud('vehiculos');
@@ -12,6 +28,9 @@ function patente(array $d): string
     return campo_codigo($d, 'vehiculo_patente', 'La patente', '/^([A-Z]{2}[0-9]{3}[A-Z]{2}|[A-Z]{3}[0-9]{3})$/', 'AB123CD o ABC123');
 }
 
+// CAMBIAR: qué datos pide el alta y la edición. En cada campo_...(): el nombre del dato,
+//          el nombre que ve el usuario en los mensajes y los límites (largo máximo, mínimo y máximo).
+//          Si agregás un dato acá, agregalo también al modelo (SQL) y a la pantalla (campos).
 function datos_vehiculo(array $d): array
 {
     return [

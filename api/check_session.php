@@ -1,4 +1,9 @@
 <?php
+/*
+ * ============================================================================================
+ * QUÉ ES:  le dice a las pantallas si la sesión sigue activa. Nada para cambiar acá.
+ * ============================================================================================
+ */
 // ¿Hay una sesión válida? Lo usan el login (para saltearlo) y las pantallas (para volver al login).
 require_once '../config/session.php';
 header('Content-Type: application/json; charset=utf-8');

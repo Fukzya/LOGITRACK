@@ -1,5 +1,13 @@
 <?php
 /*
+ * ============================================================================================
+ * QUÉ ES:  el control de la sesión: quién está logueado, su rol y cuándo vence.
+ *          Lo usan todas las pantallas y la API antes de hacer cualquier cosa.
+ * PARA CAMBIAR: los minutos de la sesión y los mensajes -> "CAMBIAR:" abajo.
+ * Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+ * ============================================================================================
+ */
+/*
  * Sesión de la APLICACIÓN (quién está logueado). Único lugar donde se controla: lo usan la API
  * (verificar_sesion), las pantallas (verificar_sesion_pagina) y api/check_session.php.
  *
@@ -10,6 +18,8 @@
 require_once __DIR__ . '/conexion.php';
 require_once __DIR__ . '/../modelos/Sesion.php';
 
+// CAMBIAR: minutos sin uso hasta que la sesión vence. Tiene que ser el MISMO número que
+//          funcion_minutos_sesion() en la base (cambiarla con un script nuevo en database/cambios/).
 const MINUTOS_SESION = 30;   // el mismo valor que funcion_minutos_sesion() en la base
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -25,6 +35,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// CAMBIAR: los mensajes que ve el usuario cuando lo mandan al login. En login.js (MOTIVOS)
+//          están los mismos textos: cambiar los dos.
 const MENSAJES_SESION = [
     'VENCIDA'           => 'Tu sesión venció por inactividad. Volvé a entrar.',
     'LOGOUT'            => 'Cerraste la sesión.',

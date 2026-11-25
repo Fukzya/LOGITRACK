@@ -1,5 +1,12 @@
 <?php
 /*
+ * ============================================================================================
+ * QUÉ ES:  la tabla de permisos: qué puede hacer cada rol en la aplicación.
+ * PARA CAMBIAR: lo que puede hacer el operador -> PERMISOS_OPERADOR ("CAMBIAR:" abajo).
+ * Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+ * ============================================================================================
+ */
+/*
  * Permisos por rol de la APLICACIÓN (primera barrera; la segunda son los GRANT de la base, script 016).
  *
  * Única tabla de permisos: la usan las APIs (exigir_permiso / exigir_permiso_crud) y las pantallas
@@ -13,6 +20,12 @@
  */
 require_once __DIR__ . '/session.php';
 
+// CAMBIAR: qué puede hacer el operador (el admin puede todo). Acciones: 'ver', 'alta',
+//          'editar', 'baja', 'reactivar' y las especiales ('cerrar', 'agregar_envios').
+//          OJO: la base tiene sus propios permisos (GRANT, script 016). Si acá le das algo nuevo al
+//          operador, la base lo va a rechazar ("Acceso denegado por la base") hasta que se agregue el
+//          GRANT: en la lista $permisosExtra de database/configurar_cuentas.php (y volver a correrlo).
+//          Receta completa: docs/como_cambiar.md.
 const PERMISOS_OPERADOR = [
     // Operación diaria: puede cargar y corregir, pero no dar de baja.
     'envios'           => ['ver', 'alta', 'editar'],

@@ -1,5 +1,14 @@
 <?php
 /*
+ * ============================================================================================
+ * QUÉ ES:  la API del asistente "Nuevo envío": crea el envío (y si hace falta el viaje) y lo
+ *          asigna, todo en una sola transacción (todo o nada).
+ * PARA CAMBIAR: las licencias que manejan camiones -> "CAMBIAR:" abajo. Los datos del envío
+ *               y del viaje se validan en config/validaciones.php.
+ * Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+ * ============================================================================================
+ */
+/*
  * Controlador del asistente "Nuevo envío" (paginas/nuevo_envio).
  *
  * POST con los datos del envío y qué hacer con el viaje:
@@ -23,6 +32,8 @@ require_once '../modelos/ViajeEnvio.php';
 require_once '../modelos/Direccion.php';
 
 // Licencias que habilitan a manejar vehículos que piden licencia especial (camión, semirremolque).
+// CAMBIAR: licencias que pueden manejar camión y semirremolque. La base controla lo
+//          mismo en procedimiento_validar_recursos_viaje (script 013): hay que cambiar los dos.
 const LICENCIAS_ESPECIALES = ['C', 'E'];
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

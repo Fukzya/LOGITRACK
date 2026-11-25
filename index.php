@@ -1,4 +1,13 @@
 <?php
+/*
+ * ============================================================================================
+ * QUÉ ES:  el menú principal (lo primero que se ve al entrar): menú lateral, botón "Nuevo envío"
+ *          y las tarjetas "Hoy" (sus números los calcula modelos/Tablero.php).
+ * PARA CAMBIAR: textos, tarjetas, menú y colores -> "CAMBIAR:" abajo.
+ *   OJO: el menú lateral está repetido en paginas/plantilla.php: cambiar los dos.
+ * Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
+ * ============================================================================================
+ */
 require_once __DIR__ . '/config/session.php';
 verificar_sesion_pagina('');
 header("Cache-Control: no-store, no-cache, must-revalidate");
@@ -40,6 +49,7 @@ $rol = $_SESSION['rol'] ?? 'operador';
     </style>
     <script src="assets/tailwind.js"></script>
     <script id="tailwind-config">
+        // CAMBIAR: los colores (los mismos que en paginas/plantilla.php y login.html).
         tailwind.config = {
             darkMode: "class",
             theme: {
@@ -155,6 +165,7 @@ $rol = $_SESSION['rol'] ?? 'operador';
 
                 <div class="flex flex-col gap-1">
                     <span class="px-3 text-xs uppercase tracking-wider text-orange-400/70 font-headline-sm mb-1">Operaciones</span>
+                    <!-- CAMBIAR: el menú lateral (el mismo que en paginas/plantilla.php: cambiar los dos). -->
                     <a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#3d241c] hover:text-white transition-colors" data-path="nuevo-envio" href="paginas/nuevo_envio/nuevo_envio.php">
                         <span class="material-symbols-outlined text-[20px]">add_box</span>Nuevo envío guiado
                     </a>
@@ -292,6 +303,7 @@ $rol = $_SESSION['rol'] ?? 'operador';
                 <div class="flex flex-col gap-4">
                     <div class="flex items-center gap-2">
                         <span class="material-symbols-outlined text-primary text-[22px]">monitoring</span>
+                        <!-- CAMBIAR: las tarjetas "Hoy": los textos están acá; los números los calcula modelos/Tablero.php. -->
                         <h2 class="text-headline-md text-on-surface">Hoy</h2>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-md">
