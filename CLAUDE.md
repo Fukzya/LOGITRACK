@@ -13,7 +13,7 @@ triggers, vistas, seguridad en BD y código, CRUD, transacciones, índices) y po
   En PowerShell 5.1 los mensajes con comillas se rompen: escribir el mensaje en un archivo del
   scratchpad y usar `git commit -F archivo`.
 - Cambios a la base: NUNCA editar `database/logitrack.sql` a mano. Cada cambio es un script nuevo
-  numerado en `database/cambios/` (el próximo es 014_...), con un encabezado que explica qué y por
+  numerado en `database/cambios/` (el próximo es 015_...), con un encabezado que explica qué y por
   qué, y se corre con `Get-Content -Raw -Encoding UTF8 script.sql | mysql -uroot
   --default-character-set=utf8mb4 logitrack` (mysql en c:\xampp\mysql\bin).
 - Cada cambio de la base se documenta TAMBIÉN en la planilla (ver "Planilla").
@@ -64,9 +64,15 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
   cambios" en Envíos y Viajes. Reglas del asistente en BEFORE (licencia C/E, vehículo y chofer
   activos y libres ese día, dirección del destinatario), solo en alta o si cambian esas columnas.
   REDIRIGIDO en la sucursal del último estado. Guía: docs/defensa_triggers.md.
-- Vistas: en uso vista_sucursal_ubicacion y vista_viajes_programados. Las 5 vistas originales
-  (vista_clientes_con_envios, vista_envios_detalle, vista_envios_pendientes,
-  vista_historial_completo, vista_viajes_activos) no las usa el código. Idea: tarjetas en el menú.
+- Vistas: TERMINADO (014). Las 8 vistas en uso. Envio y HistorialEstado listan desde
+  vista_envios_detalle / vista_historial_completo. Menú principal: sección "Hoy" con 4 tarjetas
+  (api/tablero.php, modelos/Tablero.php) desde vista_envios_pendientes, vista_viajes_en_curso
+  (reemplazó a vista_viajes_activos), vista_viajes_programados y vista_clientes_con_envios.
+  Filtros "Solo pendientes" (Envíos, ~1,5 s: funcion_envio_terminado sobre 8.000 envíos, revisar
+  en índices) y "Solo en curso" (Viajes, usa la vista). crud.js ya carga checkbox desde la URL.
+  Medido: función dentro de una vista + ORDER BY -> filesort calcula la función para todas las
+  filas (550 ms -> 110 ms sacándola; Modelo::conNombreDeEstado la calcula para la página).
+  Guía: docs/defensa_vistas.md. La vista con columnas ocultas + GRANT queda para seguridad.
 - Seguridad: pendiente (el usuario avisó que es extenso). Notas: la app usa root sin contraseña,
   CORS `*` en config/db.php, operadores pueden escribir todo (faltan permisos por rol),
   calidad de datos (direcciones de entrega de terceros en los datos históricos).
@@ -75,7 +81,7 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
   procedimiento con EXIT HANDLER y explicar aislamiento / bloqueos.
 
 ## Pendiente inmediato
-- Próximo tema: vistas (analizar, explicar, plan completo). Ojo: con el paso de los días los
+- Próximo tema: seguridad (extenso; analizar, explicar, plan completo). Ojo: con el paso de los días los
   viajes de prueba de 2026 van quedando "salidos sin cerrar" (es normal, se cierran con el botón).
 - Decidido NO hacer: "envío programado" (fecha de envío futura). fecha_envio = día en que se
   recibe el paquete; lo que es futuro es el viaje al que se asigna.
@@ -109,11 +115,14 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
   auditoría (envio, viaje, usuario), reglas de recursos de viaje y dirección del destinatario en
   BEFORE (procedimiento_validar_recursos_viaje / _direccion_envio), REDIRIGIDO corregido.
   Planilla: AUDITORIA en "Direcciones y Usuarios" (U:AC) y en 3FN (tablas del sistema).
+- 014 vistas: envios_detalle (sin la función), historial_completo (sin clientes),
+  envios_pendientes (último por fecha, solo activos), viajes_en_curso (borrada viajes_activos),
+  clientes_con_envios con subconsultas (0,5 s -> 0,1 s).
 - Los datos de prueba originales (2024) se generaron al azar y NO cumplen las reglas nuevas
   (envíos con hasta 9 viajes, estados antes de la fecha del envío, etc.). No se corrigen: los
   triggers controlan lo nuevo. Decirlo así en la defensa.
 - Sugerido al usuario y pendiente: regenerar database/logitrack.sql desde HeidiSQL con
-  `--routines --triggers` para que el volcado incluya 002-013.
+  `--routines --triggers` para que el volcado incluya 002-014.
 
 ## Planilla (Google Sheets, conector de Sheets)
 - logitrack_completo, id 1EoWc3-FiO3lrLnfPtyVn2zzXPr9a5W_p6m-kMcvyQV8 (locale en_US: fórmulas con
@@ -167,6 +176,7 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
   (no tocar).
 
 ## Commits recientes (rama main)
+- Vistas (014): las 5 originales corregidas, listados y tablero del menú
 - Triggers (013): historial inmutable, auditoría, reglas en la base
 - Procedimientos y funciones (012) + Detalle de viaje
 - aa3b8c2 Sesiones (011)

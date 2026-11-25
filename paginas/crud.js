@@ -35,7 +35,9 @@ function pantallaCrud(cfg) {
     // Los filtros se pueden precargar desde la URL: pantalla.php?nro_envio=123
     const desdeUrl = new URLSearchParams(location.search);
     for (const [id, param] of Object.entries(cfg.filtros || {})) {
-        if (desdeUrl.has(param) && $(id)) $(id).value = desdeUrl.get(param);
+        if (!desdeUrl.has(param) || !$(id)) continue;
+        if ($(id).type === 'checkbox') $(id).checked = desdeUrl.get(param) === '1';
+        else $(id).value = desdeUrl.get(param);
     }
 
     // ------------------------------------------------------------ listado

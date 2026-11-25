@@ -288,6 +288,35 @@ $rol = $_SESSION['rol'] ?? 'operador';
                     <span class="material-symbols-outlined text-[28px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
                 </a>
 
+                <!-- Tablero: números que salen de las vistas (api/tablero.php) -->
+                <div class="flex flex-col gap-4">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-[22px]">monitoring</span>
+                        <h2 class="text-headline-md text-on-surface">Hoy</h2>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-md">
+                        <a href="paginas/envios/envios.php?solo_pendientes=1" class="bg-surface-container-lowest rounded-xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] border border-transparent hover:border-primary/40 hover:shadow-md transition-all">
+                            <p class="text-xs text-on-surface-variant">Envíos pendientes</p>
+                            <p class="text-headline-xl text-on-surface mt-1" id="tablero-pendientes">…</p>
+                            <p class="text-xs text-on-surface-variant mt-1" id="tablero-pendientes-mes"></p>
+                        </a>
+                        <a href="paginas/viajes/viajes.php?solo_activos=1" class="bg-surface-container-lowest rounded-xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] border border-transparent hover:border-primary/40 hover:shadow-md transition-all">
+                            <p class="text-xs text-on-surface-variant">Viajes en curso</p>
+                            <p class="text-headline-xl text-on-surface mt-1" id="tablero-en-curso">…</p>
+                            <p class="text-xs text-on-surface-variant mt-1" id="tablero-atrasados"></p>
+                        </a>
+                        <a id="tablero-link-proximos" href="paginas/viajes/viajes.php" class="bg-surface-container-lowest rounded-xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] border border-transparent hover:border-primary/40 hover:shadow-md transition-all">
+                            <p class="text-xs text-on-surface-variant">Viajes en los próximos 7 días</p>
+                            <p class="text-headline-xl text-on-surface mt-1" id="tablero-proximos">…</p>
+                            <p class="text-xs text-on-surface-variant mt-1">Programados, todavía no salieron</p>
+                        </a>
+                        <a href="paginas/clientes/clientes.php" class="bg-surface-container-lowest rounded-xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] border border-transparent hover:border-primary/40 hover:shadow-md transition-all">
+                            <p class="text-xs text-on-surface-variant">Clientes con más envíos</p>
+                            <ol class="text-sm text-on-surface mt-2 flex flex-col gap-0.5" id="tablero-clientes"></ol>
+                        </a>
+                    </div>
+                </div>
+
                 <!-- Sección: Operaciones -->
                 <div class="flex flex-col gap-4">
                     <div class="flex items-center gap-2">

@@ -10,7 +10,7 @@ class Viaje extends Modelo
         'fecha_llegada' => 'v.fecha_llegada',
     ];
 
-    /** $f: fecha_desde, fecha_hasta, chofer, solo_activos (en curso: sin fecha de llegada). */
+    /** $f: fecha_desde, fecha_hasta, chofer, solo_activos (en curso: vista_viajes_en_curso). */
     public function listar(array $f, array $p): array
     {
         $cond = [];
@@ -18,7 +18,8 @@ class Viaje extends Modelo
         if (!empty($f['fecha_desde'])) { $cond[] = 'v.fecha_salida >= :fd';     $par[':fd'] = $f['fecha_desde'] . ' 00:00:00'; }
         if (!empty($f['fecha_hasta'])) { $cond[] = 'v.fecha_salida <= :fh';     $par[':fh'] = $f['fecha_hasta'] . ' 23:59:59'; }
         if (!empty($f['chofer']))      { $cond[] = 'v.chofer_legajo = :chofer'; $par[':chofer'] = $f['chofer']; }
-        if (!empty($f['solo_activos'])) { $cond[] = 'v.fecha_llegada IS NULL'; }
+        // "En curso" = ya salió y no llegó. La definición vive en la vista, no repetida acá.
+        if (!empty($f['solo_activos'])) { $cond[] = 'v.viaje_id IN (SELECT viaje_id FROM vista_viajes_en_curso)'; }
 
         return $this->paginar(
             "v.viaje_id, v.fecha_salida, v.llegada_estimada, v.fecha_llegada,

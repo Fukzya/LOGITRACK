@@ -5,42 +5,30 @@ require_once __DIR__ . '/Modelo.php';
 class Envio extends Modelo
 {
     private const ORDENABLES = [
-        'nro_envio'   => 'e.nro_envio',
-        'fecha_envio' => 'e.fecha_envio',
-        'peso_kg'     => 'e.peso_kg',
+        'nro_envio'   => 'v.nro_envio',
+        'fecha_envio' => 'v.fecha_envio',
+        'peso_kg'     => 'v.peso_kg',
     ];
 
-    /** $f: fecha_desde, fecha_hasta, sucursal_orig, tipo (opcionales). */
+    /**
+     * Listado desde vista_envios_detalle: la vista arma los 8 JOIN (tipo, clientes, sucursales con
+     * provincia, dirección). $f: fecha_desde, fecha_hasta, sucursal_orig, tipo, solo_pendientes.
+     */
     public function listar(array $f, array $p, bool $inactivos): array
     {
         $cond = [];
         $par  = [];
-        if (!$inactivos)                { $cond[] = 'e.activo = 1'; }
-        if (!empty($f['fecha_desde']))   { $cond[] = 'e.fecha_envio >= :fd';         $par[':fd'] = $f['fecha_desde']; }
-        if (!empty($f['fecha_hasta']))   { $cond[] = 'e.fecha_envio <= :fh';         $par[':fh'] = $f['fecha_hasta']; }
-        if (!empty($f['sucursal_orig'])) { $cond[] = 'e.sucursal_orig_cod = :so';    $par[':so'] = $f['sucursal_orig']; }
-        if (!empty($f['tipo']))          { $cond[] = 'e.tipo_cont_cod = :tipo';      $par[':tipo'] = $f['tipo']; }
+        if (!$inactivos)                { $cond[] = 'v.activo = 1'; }
+        if (!empty($f['fecha_desde']))   { $cond[] = 'v.fecha_envio >= :fd';         $par[':fd'] = $f['fecha_desde']; }
+        if (!empty($f['fecha_hasta']))   { $cond[] = 'v.fecha_envio <= :fh';         $par[':fh'] = $f['fecha_hasta']; }
+        if (!empty($f['sucursal_orig'])) { $cond[] = 'v.sucursal_orig_cod = :so';    $par[':so'] = $f['sucursal_orig']; }
+        if (!empty($f['tipo']))          { $cond[] = 'v.tipo_cont_cod = :tipo';      $par[':tipo'] = $f['tipo']; }
+        if (!empty($f['solo_pendientes'])) { $cond[] = 'funcion_envio_terminado(v.nro_envio) = 0'; }
 
-        $res = $this->paginar(
-            "e.nro_envio, e.fecha_envio, e.peso_kg, e.tipo_cont_cod, tc.tipo_cont_nombre,
-             e.remitente_dni,    CONCAT(rem.nombre, ' ', rem.apellido)   AS remitente_nombre,
-             e.destinatario_dni, CONCAT(dest.nombre, ' ', dest.apellido) AS destinatario_nombre,
-             e.sucursal_orig_cod, so.sucursal_completa AS sucursal_orig_nombre,
-             e.sucursal_dest_cod, sd.sucursal_completa AS sucursal_dest_nombre,
-             e.direccion_entrega_id, CONCAT(d.calle_y_numero, ', ', l.localidad_nombre) AS direccion_entrega,
-             funcion_ultimo_estado(e.nro_envio) AS ultimo_estado_cod,
-             e.activo",
-            'envio e
-             JOIN tipo_contenido tc ON tc.tipo_cont_cod   = e.tipo_cont_cod
-             JOIN cliente rem       ON rem.cliente_dni    = e.remitente_dni
-             JOIN cliente dest      ON dest.cliente_dni   = e.destinatario_dni
-             JOIN vista_sucursal_ubicacion so ON so.sucursal_cod = e.sucursal_orig_cod
-             JOIN vista_sucursal_ubicacion sd ON sd.sucursal_cod = e.sucursal_dest_cod
-             JOIN direccion d       ON d.direccion_id     = e.direccion_entrega_id
-             JOIN localidad l       ON l.localidad_cod    = d.localidad_cod',
-            $cond, $par, self::ORDENABLES, $p['orden'], $p['dir'], $p['pagina']
-        );
+        $res = $this->paginar('v.*', 'vista_envios_detalle v',
+                              $cond, $par, self::ORDENABLES, $p['orden'], $p['dir'], $p['pagina']);
 
+        // El último estado se calcula solo para las filas de esta página (ver el script 014).
         $res['datos'] = $this->conNombreDeEstado($res['datos']);
         return $res;
     }

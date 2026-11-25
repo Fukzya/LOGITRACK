@@ -89,8 +89,12 @@
                 <button class="bg-primary hover:bg-primary-container text-on-primary px-4 py-2 rounded-lg text-label-md transition-colors" type="button" id="btn-filtrar">Filtrar</button>
                 <button class="bg-surface-container hover:bg-surface-container-high text-on-surface px-4 py-2 rounded-lg text-label-md transition-colors" type="button" id="btn-limpiar">Limpiar</button>
             </div>
-            <?php if ($esAdmin): ?>
             <div class="flex items-center gap-2 ml-auto h-10">
+                <input class="w-4 h-4 text-primary rounded accent-primary cursor-pointer" id="filtro-solo-pendientes" type="checkbox"/>
+                <label class="text-sm text-on-surface select-none cursor-pointer" for="filtro-solo-pendientes" title="Activos que todavía no fueron entregados ni devueltos">Solo pendientes</label>
+            </div>
+            <?php if ($esAdmin): ?>
+            <div class="flex items-center gap-2 h-10">
                 <input class="w-4 h-4 text-primary rounded accent-primary cursor-pointer" id="filtro-mostrar-inactivos" type="checkbox"/>
                 <label class="text-sm text-on-surface select-none cursor-pointer" for="filtro-mostrar-inactivos">Mostrar envíos inactivos</label>
             </div>

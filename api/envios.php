@@ -16,6 +16,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
             'fecha_hasta'   => campo_fecha($_GET, 'fecha_hasta', 'La fecha hasta', false),
             'sucursal_orig' => trim($_GET['sucursal_orig'] ?? ''),
             'tipo'          => trim($_GET['tipo_cont'] ?? ''),
+            'solo_pendientes' => ($_GET['solo_pendientes'] ?? '') === '1',
         ];
         responder($envios->listar($filtros, params_listado('nro_envio', 'DESC'), ver_inactivos()));
 

@@ -56,6 +56,7 @@ const pantalla = pantallaCrud({
         'filtro-fecha-hasta': 'fecha_hasta',
         'filtro-sucursal-orig': 'sucursal_orig',
         'filtro-tipo': 'tipo_cont',
+        'filtro-solo-pendientes': 'solo_pendientes',
         'filtro-mostrar-inactivos': 'mostrar_inactivos',
     },
     orden: { col: 'nro_envio', dir: 'DESC' },

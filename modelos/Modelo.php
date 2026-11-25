@@ -61,13 +61,26 @@ abstract class Modelo
     }
 
     /**
-     * A filas que traen ultimo_estado_cod (de funcion_ultimo_estado) les agrega el nombre del
-     * estado (ultimo_estado) y si es final (terminado), desde el catálogo estado_envio (7 filas).
-     * No se hace con un JOIN a estado_envio: la base calcularía la función una vez por cada
-     * estado del catálogo, no una por envío.
+     * A filas de envíos (con nro_envio) les agrega ultimo_estado_cod (funcion_ultimo_estado, si no
+     * lo traen), el nombre del estado (ultimo_estado) y si es final (terminado).
+     * - La función se calcula en una consulta aparte, solo para estas filas: dentro de un listado
+     *   ordenado, la base la calculaba para todos los envíos antes de cortar la página.
+     * - El nombre sale del catálogo estado_envio (7 filas) y no de un JOIN: con
+     *   JOIN ... ON estado_cod = funcion(...) la base la calcularía una vez por estado del catálogo.
      */
     protected function conNombreDeEstado(array $filas): array
     {
+        $faltan = array_column(array_filter($filas, fn($f) => !array_key_exists('ultimo_estado_cod', $f)), 'nro_envio');
+        if ($faltan) {
+            $marcas = implode(',', array_fill(0, count($faltan), '?'));
+            $st = $this->pdo->prepare("SELECT nro_envio, funcion_ultimo_estado(nro_envio) FROM envio WHERE nro_envio IN ($marcas)");
+            $st->execute(array_map('intval', $faltan));
+            $codigos = $st->fetchAll(PDO::FETCH_KEY_PAIR);
+            foreach ($filas as &$fila) {
+                if (!array_key_exists('ultimo_estado_cod', $fila)) $fila['ultimo_estado_cod'] = $codigos[$fila['nro_envio']] ?? null;
+            }
+            unset($fila);
+        }
         $estados = $this->pdo->query('SELECT estado_cod, estado_nombre, es_final FROM estado_envio')
                              ->fetchAll(PDO::FETCH_UNIQUE | PDO::FETCH_ASSOC);
         foreach ($filas as &$fila) {

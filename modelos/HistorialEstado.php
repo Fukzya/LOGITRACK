@@ -21,14 +21,9 @@ class HistorialEstado extends Modelo
         if (!empty($f['fecha_desde'])) { $cond[] = 'h.fecha_hora >= :fd';  $par[':fd'] = $f['fecha_desde'] . ' 00:00:00'; }
         if (!empty($f['fecha_hasta'])) { $cond[] = 'h.fecha_hora <= :fh';  $par[':fh'] = $f['fecha_hasta'] . ' 23:59:59'; }
 
-        return $this->paginar(
-            'h.id_historial, h.nro_envio, h.sucursal_cod, s.sucursal_completa AS sucursal_nombre,
-             h.estado, est.estado_nombre, h.fecha_hora, h.observacion',
-            'historial_estado h
-             JOIN vista_sucursal_ubicacion s ON s.sucursal_cod = h.sucursal_cod
-             JOIN estado_envio est ON est.estado_cod  = h.estado',
-            $cond, $par, self::ORDENABLES, $p['orden'], $p['dir'], $p['pagina']
-        );
+        // La vista vista_historial_completo arma los JOIN (sucursal con provincia, estado, clientes).
+        return $this->paginar('h.*', 'vista_historial_completo h',
+                              $cond, $par, self::ORDENABLES, $p['orden'], $p['dir'], $p['pagina']);
     }
 
     /**
