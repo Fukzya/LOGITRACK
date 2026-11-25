@@ -13,7 +13,7 @@ triggers, vistas, seguridad en BD y código, CRUD, transacciones, índices) y po
   En PowerShell 5.1 los mensajes con comillas se rompen: escribir el mensaje en un archivo del
   scratchpad y usar `git commit -F archivo`.
 - Cambios a la base: NUNCA editar `database/logitrack.sql` a mano. Cada cambio es un script nuevo
-  numerado en `database/cambios/` (el próximo es 015_...), con un encabezado que explica qué y por
+  numerado en `database/cambios/` (el próximo es 016_...), con un encabezado que explica qué y por
   qué, y se corre con `Get-Content -Raw -Encoding UTF8 script.sql | mysql -uroot
   --default-character-set=utf8mb4 logitrack` (mysql en c:\xampp\mysql\bin).
 - Cada cambio de la base se documenta TAMBIÉN en la planilla (ver "Planilla").
@@ -79,6 +79,15 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
 - Transacciones: el asistente, viaje_completo y "agregar envíos" usan transacción PHP + FOR
   UPDATE; cerrar_viaje la tiene dentro del procedimiento. Falta decidir si el asistente pasa a
   procedimiento con EXIT HANDLER y explicar aislamiento / bloqueos.
+- Índices / volumen (015, versión mínima acordada): el usuario NO quiere reworks grandes para un
+  caso que no conocemos (el script de 100.000 registros lo traen los profesores). Hecho: my.ini
+  innodb_buffer_pool_size 16M -> 2G (copia en my.ini.antes_rendimiento), 3 índices (015),
+  database/pruebas/carga_100k.sql (copia logitrack_carga) y medir_consultas.sh. Con 100k:
+  Envíos 1,9 s, Historial 0,9 s, tablero 1,8 s, Solo pendientes 15,7 s, Resumen 14 s; el resto
+  < 0,3 s. Diagnóstico de lo lento (solo con su OK): COUNT con los JOIN de la vista (0,74 s vs
+  0,07 s sobre envio), página con filesort (1,1 s vs 0,07 s buscando primero las 50 claves) y
+  funciones fila por fila sobre 100k envíos (6,8 s; se resolvería con el estado actual
+  precalculado por trigger). Riesgo: los triggers rechazan datos inválidos del script ajeno.
 
 ## Pendiente inmediato
 - Próximo tema: seguridad (extenso; analizar, explicar, plan completo). Ojo: con el paso de los días los
@@ -118,11 +127,12 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
 - 014 vistas: envios_detalle (sin la función), historial_completo (sin clientes),
   envios_pendientes (último por fecha, solo activos), viajes_en_curso (borrada viajes_activos),
   clientes_con_envios con subconsultas (0,5 s -> 0,1 s).
+- 015 índices: historial (nro_envio, fecha_hora, id_historial), envio (fecha_envio), viaje (fecha_salida).
 - Los datos de prueba originales (2024) se generaron al azar y NO cumplen las reglas nuevas
   (envíos con hasta 9 viajes, estados antes de la fecha del envío, etc.). No se corrigen: los
   triggers controlan lo nuevo. Decirlo así en la defensa.
 - Sugerido al usuario y pendiente: regenerar database/logitrack.sql desde HeidiSQL con
-  `--routines --triggers` para que el volcado incluya 002-014.
+  `--routines --triggers` para que el volcado incluya 002-015.
 
 ## Planilla (Google Sheets, conector de Sheets)
 - logitrack_completo, id 1EoWc3-FiO3lrLnfPtyVn2zzXPr9a5W_p6m-kMcvyQV8 (locale en_US: fórmulas con
@@ -176,6 +186,7 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
   (no tocar).
 
 ## Commits recientes (rama main)
+- Índices (015) + prueba de 100k (database/pruebas)
 - Vistas (014): las 5 originales corregidas, listados y tablero del menú
 - Triggers (013): historial inmutable, auditoría, reglas en la base
 - Procedimientos y funciones (012) + Detalle de viaje

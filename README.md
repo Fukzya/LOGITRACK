@@ -32,7 +32,13 @@ login.html    Pantalla de login
 4. Ejecutar en orden los scripts de `database/cambios/`.
 5. Abrir http://localhost/LOGITRACK/
 
-La conexión usa `root` sin contraseña. Se cambia en `config/db.php`.
+La conexión usa `root` sin contraseña. Se cambia en `config/conexion.php`.
+
+**Memoria de MariaDB (importante con muchos datos):** XAMPP trae `innodb_buffer_pool_size=16M`.
+En `C:\xampp\mysql\bin\my.ini` cambiarlo a `innodb_buffer_pool_size=2G` y reiniciar MySQL.
+Con 100.000 envíos, la primera página de Envíos pasa de 31 s a 1,9 s (ver
+`database/pruebas/`: `carga_100k.sql` genera los datos en una copia de la base y
+`medir_consultas.sh` mide las consultas de la app).
 
 ## Cambios a la base
 
