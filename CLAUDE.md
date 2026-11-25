@@ -122,6 +122,12 @@ Orden acordado: CRUD → sesiones → procedimientos → triggers → vistas →
   tablero y resumen (funciones fila por fila: 6,8 s con 100k). Riesgo: los triggers rechazan
   datos inválidos del script ajeno. La copia logitrack_carga YA NO está en la PC (25/11): para
   volver a medir, regenerarla con carga_100k.sql (medir_consultas.sh usa root.cnf).
+  Guía: docs/defensa_indices.md (EXPLAIN/ANALYZE reales con y sin cada índice vía IGNORE INDEX).
+  Hallazgo (preguntado al usuario, sin decidir): 2 índices redundantes por prefijo izquierdo,
+  idx_historial_envio (cubierto por idx_historial_envio_fecha) y fk_ve_envio (cubierto por el
+  UNIQUE nro_envio+tramo). Borrarlos sería el 018.
+  Lo que falta del checklist (orden acordado): guía de índices (hecha) -> regenerar
+  database/logitrack.sql con --routines --triggers -> instalación desde cero -> guía general.
 
 ## Pendiente inmediato
 - Próximo: seguridad parte 2 (preguntar). Ojo: con el paso de los días los
