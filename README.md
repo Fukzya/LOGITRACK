@@ -18,7 +18,7 @@ config/       conexion.php (cuenta de base según el rol), session.php (login / 
               permisos.php (qué puede cada rol) y api.php (base de las APIs: validaciones,
               respuestas JSON y traducción de errores de la base)
 database/
-  logitrack.sql   Volcado completo (mysqldump --routines --triggers), con los cambios 001-018
+  logitrack.sql   Volcado completo (mysqldump --routines --triggers), con los cambios 001-019 y datos actuales
   cambios/        Historial de cambios a la base (ya aplicados en el volcado: no se ejecutan)
 docs/         defensa_general.md (por dónde empezar), una guía por tema y teoria_campus.md
 index.php     Menú principal (requiere sesión)
@@ -50,6 +50,12 @@ En `C:\xampp\mysql\bin\my.ini` cambiarlo a `innodb_buffer_pool_size=2G` y reinic
 Con 100.000 envíos, la primera página de Envíos pasa de 31 s a 1,9 s (ver
 `database/pruebas/`: `carga_100k.sql` genera los datos en una copia de la base y
 `medir_consultas.sh` mide las consultas de la app).
+
+**Datos actuales para usar la app:** `C:\xampp\php\php database\pruebas\datos_de_hoy.php` borra
+los viajes y envíos de 2025 en adelante y genera unos nuevos, desde 3 días antes de hoy hasta el
+domingo de la semana que viene (viajes cerrados, en curso y programados, envíos en todos los
+estados, trasbordos e incidentes). Conviene correrlo antes de usar o mostrar la app. Los datos de
+2024 quedan como historia.
 
 **Demo de concurrencia:** `bash database/pruebas/demo_concurrencia.sh` hace que dos sesiones
 asignen envíos a la misma moto al mismo tiempo y muestra que no se supera la capacidad

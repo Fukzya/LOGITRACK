@@ -54,6 +54,8 @@ sucursal con provincia.
 
 ## Datos de prueba
 
-"Envíos pendientes: 4.879" y "Viajes en curso: 307 (284 atrasados)" son altos porque los datos
-de 2024 se generaron al azar y nunca se cerraron. Por eso la tarjeta muestra además los
-"recibidos este mes" (83).
+Los datos de 2024 se generaron al azar y muchos quedaron a mitad de camino: las tarjetas
+mostraban 4.879 envíos pendientes y 284 viajes "en curso" desde hacía dos años. El cambio 019
+los cerró (quedan como historia) y los datos actuales los genera
+`database/pruebas/datos_de_hoy.php` (de 3 días antes de hoy al domingo de la semana que viene):
+las tarjetas muestran solo lo que pasa ahora.

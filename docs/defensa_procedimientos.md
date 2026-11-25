@@ -4,7 +4,7 @@
 
 | | Procedimiento ("motor") | Función ("calculadora") |
 |---|---|---|
-| Cómo se usa | `CALL procedimiento_cerrar_viaje(3231, '2026-11-24 20:30', @n)` | `SELECT funcion_carga_viaje(3231)` (dentro de SELECT, WHERE, triggers) |
+| Cómo se usa | `CALL procedimiento_cerrar_viaje(3056, NOW(), @n)` | `SELECT funcion_carga_viaje(3056)` (dentro de SELECT, WHERE, triggers) |
 | Devuelve | Nada, uno o varios resultados, o parámetros `OUT` | **Siempre un solo valor** (`RETURNS`) |
 | Parámetros | `IN`, `OUT`, `INOUT` | Solo de entrada |
 | Puede escribir | Sí: INSERT/UPDATE y `START TRANSACTION ... COMMIT` | No: solo lee (`READS SQL DATA`) |
@@ -55,14 +55,18 @@ Arquitectura de la cátedra en un solo ejemplo: la **transacción** es el escudo
 **procedimiento** el motor, la **función** la calculadora y el **trigger** el notario (el de
 historial controla las fechas de cada estado).
 
-### Demo (viajes 3231, 3232 y 3233: salieron el 24/11 y están en curso)
+### Demo
 
-1. Viajes → filtrar salida 24/11 → **Cerrar viaje** en 3232 → "2 envíos pasaron a En sucursal".
-2. ROLLBACK: en Envíos, **Cambiar estado** del envío 8118 (viaje 3233) a Demorado con fecha
-   24/11 20:00. Después cerrar el 3233 con llegada 24/11 18:00. La base responde "Envío 8118: el
-   estado no puede ser anterior al último..." y **el viaje no queda cerrado**: el 8119, que no
-   tenía problema, tampoco cambió. Eso es el todo o nada.
-3. Cerrar otra vez el mismo viaje → "ya fue cerrado". Cerrar uno futuro → "todavía no salió".
+Antes: `C:\xampp\php\php database\pruebas\datos_de_hoy.php`. Al terminar muestra 3 viajes que
+salieron hoy y están en curso, con sus envíos (abajo: A, B y C). Al 25/11/2026 fueron 3055, 3056
+y 3057.
+
+1. Viajes → "Solo en curso" → **Cerrar viaje** en A → "N envíos pasaron a En sucursal".
+2. ROLLBACK: en Envíos, **Cambiar estado** de un envío del viaje B a Demorado, con la hora actual.
+   Después cerrar B con una llegada **una hora antes**. La base responde "Envío ...: el estado no
+   puede ser anterior al último..." y **el viaje no queda cerrado**: los otros envíos de B, que
+   no tenían problema, tampoco cambiaron. Eso es el todo o nada.
+3. Cerrar otra vez A → "ya fue cerrado". Cerrar uno programado → "todavía no salió".
 
 ## Otras decisiones que se pueden preguntar
 

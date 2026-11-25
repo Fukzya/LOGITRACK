@@ -11,7 +11,7 @@ script), no solo para la app.
 |---|---|---|
 | Cuándo | Antes de escribir | Cuando el cambio ya está hecho |
 | Para qué | Validar y rechazar (`SIGNAL`), o corregir `NEW` | Registrar lo que pasó (historial, auditoría) |
-| Ejemplo nuestro | Camión con chofer de licencia B → *"Ese vehículo pide licencia C o E"* y no se guarda | Cambian el peso del envío 8113 → fila en `auditoria`: 12.50 → 13.00, operador1, fecha |
+| Ejemplo nuestro | Camión con chofer de licencia B → *"Ese vehículo pide licencia C o E"* y no se guarda | Cambian el peso de un envío de 12.50 a 13.00 kg → fila en `auditoria`: 12.50 → 13.00, operador1, fecha |
 
 **Errores típicos de examen:**
 1. Auditar con BEFORE: si el UPDATE falla después, la auditoría registró algo que nunca pasó.
@@ -55,7 +55,8 @@ En negrita, lo que agregó el script 013.
 1. HeidiSQL: `UPDATE historial_estado SET estado = 'ENTREGADO' WHERE id_historial = 1;` → error.
 2. Viajes: crear un viaje con el camión AE882TB y el chofer Miranda, Sergio (legajo 1, licencia B) → mensaje de la base.
 3. Envíos: editar el peso de un envío. Como admin, botón "Ver cambios" → la fila con el usuario.
-4. Cerrar un viaje (3231) → la auditoría muestra la llegada real que puso el procedimiento.
+4. Cerrar uno de los viajes en curso (los muestra `datos_de_hoy.php`) → la auditoría muestra la
+   llegada real que puso el procedimiento.
 
 ## El modelo de la cátedra y el nuestro
 

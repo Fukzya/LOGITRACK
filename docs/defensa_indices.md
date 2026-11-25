@@ -44,7 +44,7 @@ alfabético de un libro: para encontrar "trasbordo" no leés las 300 páginas, v
 | `idx_auditoria_registro` / `_fecha` | auditoria | "Ver cambios" de un envío o viaje; listado por fecha | 013 |
 | `idx_sesion_usuario_fin` | sesion (usuario_id, fin) | Sesiones abiertas de un usuario (trigger de usuario) | 011 |
 
-## Antes y después (EXPLAIN real, base de la PC: 8.130 envíos, 30.475 estados, 3.231 viajes)
+## Antes y después (EXPLAIN real, base de la PC al 25/11/2026: 8.937 envíos, 38.041 estados, 3.270 viajes)
 
 Para comparar se usó `IGNORE INDEX (...)`, que le pide a MariaDB que haga de cuenta que el índice
 no existe.
@@ -58,7 +58,7 @@ SELECT estado FROM historial_estado WHERE nro_envio = 2749
 |---|---|---|---|
 | Con `idx_historial_envio_fecha` | ref | idx_historial_envio_fecha | Using where |
 | Solo con un índice de nro_envio (el que había antes del 015) | ref | idx_historial_envio | Using where; **Using filesort** |
-| Sin ninguno de los dos | index | idx_historial_fecha | lee **16.054 filas** para encontrar 1 |
+| Sin ninguno de los dos | index | idx_historial_fecha | lee **21.706 filas** para encontrar 1 |
 
 (La fila del medio se midió antes del 018, que borró `idx_historial_envio` por redundante.
 Hoy, con `IGNORE INDEX (idx_historial_envio_fecha)` se ve la última fila.)
@@ -70,16 +70,16 @@ pendientes, el tablero y los triggers: con 100.000 envíos, el filesort se repet
 **2. Envíos de noviembre** (filtro por fecha de la pantalla Envíos):
 | | type | key | rows leídas |
 |---|---|---|---|
-| Con `idx_envio_fecha` | **range** | idx_envio_fecha | 83 |
-| Sin | **ALL** | NULL | 8.089 (todas) |
+| Con `idx_envio_fecha` | **range** | idx_envio_fecha | 937 |
+| Sin | **ALL** | NULL | 8.937 (todas) |
 
 **3. Viajes programados** (`fecha_salida > NOW()`):
 | | type | rows leídas |
 |---|---|---|
-| Con `idx_viaje_salida` | range | 187 |
-| Sin | ALL | 3.231 (todas) |
+| Con `idx_viaje_salida` | range | 202 |
+| Sin | ALL | 3.270 (todas) |
 
-**4. Por clave primaria** (`WHERE nro_envio = 8113`): `type = const`, 1 fila. Lo mejor posible.
+**4. Por clave primaria** (`WHERE nro_envio = 2749`): `type = const`, 1 fila. Lo mejor posible.
 
 ## Medido con 100.000 envíos (copia de la base, `database/pruebas/carga_100k.sql`)
 
@@ -96,7 +96,7 @@ y leía el disco todo el tiempo; un índice ayuda poco si no entra en memoria.
 
 | Error | Ejemplo | EXPLAIN | Cómo se escribe bien |
 |---|---|---|---|
-| **Función sobre la columna** en el WHERE | `WHERE YEAR(fecha_envio) = 2026 AND MONTH(fecha_envio) = 11` | `type = index`: recorre las 8.089 entradas del índice | `WHERE fecha_envio BETWEEN '2026-11-01' AND '2026-11-30'` → `range`, 83 |
+| **Función sobre la columna** en el WHERE | `WHERE YEAR(fecha_envio) = 2026 AND MONTH(fecha_envio) = 11` | `type = index`: recorre las 8.937 entradas del índice | `WHERE fecha_envio BETWEEN '2026-11-01' AND '2026-11-30'` → `range`, 937 |
 | `LIKE` con `%` adelante | Buscar cliente `apellido LIKE '%gonz%'` | `ALL` (5.001 filas) | Un índice B-Tree solo sirve para `'gonz%'` (prefijo). Para buscar "en el medio": FULLTEXT |
 | Función en un JOIN | `JOIN ... ON col = funcion()` | Calcula la función por cada fila | Visto en procedimientos: el nombre del estado se completa en PHP |
 
@@ -130,7 +130,7 @@ por `nro_envio`. Comprobado con EXPLAIN después del 018: el último estado usa
 ## Demo en vivo (HeidiSQL)
 
 ```sql
--- 1) Bien: range con 83 filas
+-- 1) Bien: range, lee solo los envíos de noviembre
 EXPLAIN SELECT nro_envio FROM envio WHERE fecha_envio BETWEEN '2026-11-01' AND '2026-11-30';
 -- 2) Lo mismo con función sobre la columna: ya no puede buscar en el índice
 EXPLAIN SELECT nro_envio FROM envio WHERE YEAR(fecha_envio) = 2026 AND MONTH(fecha_envio) = 11;

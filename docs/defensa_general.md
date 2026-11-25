@@ -11,7 +11,8 @@ historial de estados. PHP (PDO) + MariaDB 10.4 sobre XAMPP, pantallas con JavaSc
 
 **Arquitectura en capas (MVC):** `paginas/` (vista) → `api/` (controlador: valida y responde
 JSON) → `modelos/` (único lugar con SQL) → MariaDB (reglas con triggers, procedimientos, vistas y
-permisos). Datos: 8.089 envíos, 31.300 estados, 3.231 viajes, 5.001 clientes.
+permisos). Datos: 8.937 envíos (8.000 históricos de 2024 + los actuales), 38.041 estados, 3.270 viajes,
+5.001 clientes. Los actuales los genera `database/pruebas/datos_de_hoy.php`.
 
 ## Checklist
 
@@ -20,7 +21,7 @@ permisos). Datos: 8.089 envíos, 31.300 estados, 3.231 viajes, 5.001 clientes.
 | **Normalización** | De 0FN a 3FN: 20 tablas (17 del negocio + usuario, sesion y auditoria). Catálogos para no repetir textos (estados, tipos de incidente, licencias). La provincia de una sucursal no se guarda (dependencia transitiva): la arma una vista | Planilla `logitrack_completo` (pestañas 0FN a 3FN y "Cambios en la base") | Mostrar la pestaña 3FN y `vista_sucursal_ubicacion` | Planilla |
 | **CRUD** | 15 entidades con alta, listado (filtros, orden, páginas), edición y baja lógica (`activo`) o física. Asistente "Nuevo envío" de 4 pasos | `api/`, `modelos/`, `paginas/` + `crud.js` | Crear un cliente desde el asistente y enviarle un paquete | — |
 | **Sesiones** | Sesión de la app (cookie HttpOnly + SameSite) registrada en la tabla `sesion`; la base decide el vencimiento (30 min). Un trigger cierra las sesiones de un usuario dado de baja. Pantalla para ver y cerrar sesiones y conexiones | `config/session.php`, script 011, `paginas/sesiones` | Admin cierra la sesión de un operador → el operador vuelve al login con el motivo | `defensa_sesiones.md` |
-| **Procedimientos y funciones** | 13 procedimientos y 6 funciones. Modelo: `procedimiento_cerrar_viaje` (transacción + FOR UPDATE + EXIT HANDLER + parámetro OUT). Funciones usadas en vistas, triggers y PHP | Scripts 007, 011, 012, 017 | Cerrar el viaje 3232 → "2 envíos pasaron a En sucursal". El caso con ROLLBACK está en la guía | `defensa_procedimientos.md` |
+| **Procedimientos y funciones** | 13 procedimientos y 6 funciones. Modelo: `procedimiento_cerrar_viaje` (transacción + FOR UPDATE + EXIT HANDLER + parámetro OUT). Funciones usadas en vistas, triggers y PHP | Scripts 007, 011, 012, 017 | Cerrar uno de los viajes en curso que muestra `datos_de_hoy.php` → "N envíos pasaron a En sucursal". El caso con ROLLBACK está en la guía | `defensa_procedimientos.md` |
 | **Triggers** | 17 triggers. BEFORE valida (fechas, capacidad, licencia C/E, trasbordos) y AFTER registra (estado inicial, auditoría). Historial de estados inmutable | Scripts 007, 009, 013, 017 | `UPDATE historial_estado ...` → rechazado. Crear un viaje con camión y chofer con licencia B → mensaje de la base | `defensa_triggers.md` |
 | **Vistas** | 8 vistas en uso: listados, tablero del menú, viajes programados y en curso, pendientes | Script 014, `modelos/Tablero.php` | Menú → tarjetas "Hoy". `SELECT * FROM vista_envios_pendientes` | `defensa_vistas.md` |
 | **Seguridad en la base** | La app nunca usa root: una cuenta por rol (`rol_operador`, `rol_admin`, `rol_login`), GRANT por tabla, **por columna** y por procedimiento; sin DDL. root con contraseña | Script 016, `config/conexion.php` | Como `logitrack_operador`: `DELETE FROM sucursal` → *command denied* | `defensa_seguridad.md` |
@@ -46,8 +47,8 @@ permisos). Datos: 8.089 envíos, 31.300 estados, 3.231 viajes, 5.001 clientes.
 
 | Cuándo | Qué |
 |---|---|
-| Unos días antes | Cerrar los viajes de prueba que ya salieron (con los días van quedando atrasados y el tablero los muestra). Dejar **3231, 3232 y 3233** abiertos: son los de la demo de cerrar viaje |
-| El día antes | Ensayar las demos. Si al ensayar se cierran los viajes de la demo, se recupera todo importando de nuevo `database/logitrack.sql` y corriendo `php database/configurar_cuentas.php` (se pierde lo cargado después del volcado) |
+| La noche antes (y cada vez que haga falta) | `C:\xampp\php\php database\pruebas\datos_de_hoy.php`: borra los datos actuales y los vuelve a generar al día (de 3 días antes al domingo de la semana que viene), sin viajes atrasados. Al terminar muestra 3 viajes en curso para la demo de "Cerrar viaje": anotarlos |
+| Al ensayar | Si se cierran los viajes de la demo, se vuelve a correr `datos_de_hoy.php` y quedan otros 3 |
 | En la defensa | Tener abiertos: la app (admin y operador en dos navegadores), HeidiSQL con dos pestañas de consulta y la planilla |
 
 ## Orden sugerido (10 minutos)
