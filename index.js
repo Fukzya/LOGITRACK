@@ -31,7 +31,7 @@ fetch('api/tablero.php')
     const linkSinViaje = document.getElementById('tablero-sin-viaje');
     document.getElementById('tablero-sin-viaje-texto').textContent =
       sinViaje === 1 ? '1 sin viaje asignado' : `${numero(sinViaje)} sin viaje asignado`;
-    linkSinViaje.className += sinViaje > 0 ? ' bg-amber-100 text-amber-800' : ' text-on-surface-variant';
+    linkSinViaje.className += sinViaje > 0 ? ' bg-amber-50 text-amber-800 hover:bg-amber-100' : ' text-on-surface-variant hover:bg-surface-container';
     linkSinViaje.hidden = false;
     document.getElementById('tablero-en-curso').textContent = numero(t.en_curso.total);
     document.getElementById('tablero-atrasados').textContent = `${numero(t.en_curso.atrasados)} pasaron su llegada estimada`;

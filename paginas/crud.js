@@ -97,7 +97,7 @@ function pantallaCrud(cfg) {
     }
 
     // ------------------------------------------------------------ formulario
-    function modoAlta() {
+    function modoAlta() { // ENVIA UN POST A LA API
         editando = null;
         if (!cfg.form) return;
         $(cfg.form).reset();
@@ -108,7 +108,7 @@ function pantallaCrud(cfg) {
         if (cancelar) cancelar.hidden = true;
     }
 
-    function modoEdicion(f) {
+    function modoEdicion(f) { //Rellena el formulario con los datos de esa fila, bloquea la clave primaria para que no se modifique y al guardar envía un PUT
         editando = f;
         for (const [id, prop] of Object.entries(cfg.campos)) {
             const el = $(id);
