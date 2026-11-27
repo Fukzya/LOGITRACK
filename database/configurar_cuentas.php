@@ -50,7 +50,7 @@ try {
     // CAMBIAR: si un script nuevo da un permiso (GRANT) a un rol, agregalo también a esta lista:
     //          así no se pierde al instalar o al volver a correr este archivo.
     $permisosExtra = [
-        'GRANT EXECUTE ON FUNCTION logitrack.funcion_carga_viaje_bloqueando TO rol_operador',   // 017
+        'GRANT EXECUTE ON FUNCTION logitrack.funcion_licencia_maneja_especial TO rol_operador', // 020
     ];
     foreach ($permisosExtra as $grant) $pdo->exec($grant);
     echo '  Permisos agregados después del 016: ' . count($permisosExtra) . ".\n";

@@ -18,7 +18,7 @@ config/       conexion.php (cuenta de base según el rol), session.php (login / 
               permisos.php (qué puede cada rol) y api.php (base de las APIs: validaciones,
               respuestas JSON y traducción de errores de la base)
 database/
-  logitrack.sql   Volcado completo (mysqldump --routines --triggers), con los cambios 001-019 y datos actuales
+  logitrack.sql   Volcado completo (mysqldump --routines --triggers), con los cambios 001-020 y datos actuales
   cambios/        Historial de cambios a la base (ya aplicados en el volcado: no se ejecutan)
 docs/         como_cambiar.md (recetas para cambiar cosas), defensa_general.md (la defensa) y una guía por tema
 index.php     Menú principal (requiere sesión)

@@ -3,8 +3,9 @@
  * ============================================================================================
  * QUÉ ES:  la API del asistente "Nuevo envío": crea el envío (y si hace falta el viaje) y lo
  *          asigna, todo en una sola transacción (todo o nada).
- * PARA CAMBIAR: las licencias que manejan camiones -> "CAMBIAR:" abajo. Los datos del envío
- *               y del viaje se validan en config/validaciones.php.
+ * PARA CAMBIAR: los datos del envío y del viaje se validan (solo el formato) en
+ *               config/validaciones.php. Las REGLAS (licencias, capacidad, fechas, dirección del
+ *               destinatario...) están en la base: triggers y procedimientos.
  * Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
  * ============================================================================================
  */
@@ -21,6 +22,15 @@
  * procedimiento_crear_envio) y asignarlo (procedimiento procedimiento_asignar_envio_a_viaje).
  * Si cualquier paso falla -por ejemplo el viaje ya no tiene lugar- se hace ROLLBACK y no queda
  * nada a medias: ni un envío sin viaje ni un viaje vacío.
+ *
+ * Este archivo NO repite reglas del negocio (cambio 020): las controla la base y su mensaje
+ * llega tal cual a la pantalla.
+ *   - dirección de entrega del destinatario -> trigger de envio (procedimiento_validar_direccion_envio)
+ *   - vehículo y chofer activos, libres ese día y licencia -> triggers de viaje
+ *     (procedimiento_validar_recursos_viaje, funcion_licencia_maneja_especial)
+ *   - viaje que no terminó ni salió, capacidad (con FOR UPDATE del viaje), trasbordo
+ *     -> trigger_before_insert_viaje_envio. Un viaje nuevo siempre se asigna en la misma
+ *     transacción, así que si su salida no es futura el trigger lo rechaza ("El viaje ya salió").
  */
 require_once '../config/api.php';
 exigir_permiso('envios', 'alta');
@@ -29,31 +39,17 @@ require_once '../config/validaciones.php';
 require_once '../modelos/Envio.php';
 require_once '../modelos/Viaje.php';
 require_once '../modelos/ViajeEnvio.php';
-require_once '../modelos/Direccion.php';
-
-// Licencias que habilitan a manejar vehículos que piden licencia especial (camión, semirremolque).
-// CAMBIAR: licencias que pueden manejar camión y semirremolque. La base controla lo
-//          mismo en procedimiento_validar_recursos_viaje (script 013): hay que cambiar los dos.
-const LICENCIAS_ESPECIALES = ['C', 'E'];
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     error_api('Método no permitido.', 405);
 }
 
-$envios      = new Envio($pdo);
-$viajes      = new Viaje($pdo);
-$asignar     = new ViajeEnvio($pdo);
-$direcciones = new Direccion($pdo);
-
-// La hora la da la base (PHP de XAMPP viene con la zona horaria de Berlín).
-$ahora = (string)$pdo->query('SELECT NOW()')->fetchColumn();
+$envios  = new Envio($pdo);
+$viajes  = new Viaje($pdo);
+$asignar = new ViajeEnvio($pdo);
 
 $d = leer_json();
 $e = datos_envio($d);
-
-if ($direcciones->dueno($e['direccion_entrega_id']) !== $e['destinatario_dni']) {
-    error_api('La dirección de entrega tiene que ser una dirección activa del destinatario.');
-}
 
 $modo = campo_opcion($d, 'viaje_modo', 'El viaje', ['existente', 'nuevo', 'ninguno']);
 
@@ -66,50 +62,22 @@ if ($modo === 'existente') {
 } elseif ($modo === 'nuevo') {
     $viajeNuevo = datos_viaje(is_array($d['viaje_nuevo'] ?? null) ? $d['viaje_nuevo'] : []);
     $viajeNuevo['fecha_llegada'] = null; // un viaje nuevo todavía no llegó
-    if ($viajeNuevo['fecha_salida'] <= $ahora) {
-        error_api('La salida del viaje nuevo tiene que ser una fecha y hora futura.');
-    }
-    $dia = substr($viajeNuevo['fecha_salida'], 0, 10);
-    $r   = $viajes->datosRecursos($viajeNuevo['vehiculo_patente'], $viajeNuevo['chofer_legajo'], $dia);
-    if ($r === null)                 error_api('El vehículo o el chofer elegidos no existen.');
-    if (!$r['vehiculo_activo'])      error_api('El vehículo elegido está dado de baja.');
-    if (!$r['chofer_activo'])        error_api('El chofer elegido está dado de baja.');
-    if ($r['vehiculo_ocupado'])      error_api('El vehículo ya tiene otro viaje ese día.');
-    if ($r['chofer_ocupado'])        error_api('El chofer ya tiene otro viaje ese día.');
-    if ($r['requiere_especial'] && !in_array($r['licencia'], LICENCIAS_ESPECIALES, true)) {
-        error_api("Ese vehículo pide licencia C o E y el chofer tiene licencia {$r['licencia']}.");
-    }
 }
 
 $pdo->beginTransaction();
 try {
-    // 1) BLOQUEAR PRIMERO, LEER DESPUÉS (cambio 017). Lo primero de la transacción es bloquear los
-    //    viajes elegidos (SELECT ... FOR UPDATE): si otro operador está asignando al mismo viaje, acá
-    //    se espera a que termine y después se ve su carga. Antes se creaba el envío primero; esa
-    //    lectura fijaba la "foto" de la transacción (REPEATABLE READ) y la carga se veía vieja.
-    //    Este control es para dar un mensaje claro; el control final lo hace el trigger de la base.
-    foreach ($tramos as $viajeId) {
-        $v = $viajes->bloquearParaAsignar($viajeId);
-        if ($v === null)                   throw new ValidacionException("El viaje $viajeId no existe.");
-        if ($v['fecha_llegada'] !== null)  throw new ValidacionException("El viaje $viajeId ya terminó.");
-        if ($v['fecha_salida'] <= $ahora)  throw new ValidacionException("El viaje $viajeId ya salió.");
-        $libre = (float)$v['capacidad'] - $v['carga'];
-        if ($e['peso_kg'] > $libre) {
-            throw new ValidacionException(sprintf('El viaje %d ya no tiene lugar: quedan %s kg libres y el envío pesa %s kg.',
-                $viajeId, number_format($libre, 2, ',', '.'), number_format($e['peso_kg'], 2, ',', '.')));
-        }
-    }
-
-    // 2) Viaje nuevo (si se eligió crear uno): nadie más lo ve hasta el COMMIT.
+    // 1) Viaje nuevo (si se eligió crear uno): nadie más lo ve hasta el COMMIT. Sus triggers
+    //    controlan los recursos (activos, libres ese día, licencia).
     if ($viajeNuevo !== null) {
         $tramos = [$viajes->crear($viajeNuevo)];
     }
 
-    // 3) El envío (procedimiento; se suma a esta transacción).
+    // 2) El envío (procedimiento; se suma a esta transacción). Su trigger controla la dirección.
     $nro = $envios->crear($e);
 
-    // 4) Las asignaciones. El trigger trigger_before_insert_viaje_envio numera el tramo, controla el
-    //    trasbordo (el 2.º viaje sale de donde llega el 1.º, después de su llegada) y la capacidad.
+    // 3) Las asignaciones. trigger_before_insert_viaje_envio BLOQUEA el viaje (FOR UPDATE: si otro
+    //    operador asigna al mismo viaje, acá se espera), controla que no haya salido, numera el
+    //    tramo, controla el trasbordo y la capacidad (leída con bloqueo, cambio 017).
     foreach ($tramos as $viajeId) {
         $asignar->asignarConProcedimiento($viajeId, $nro);
     }
@@ -118,7 +86,7 @@ try {
 } catch (Throwable $t) {
     if ($pdo->inTransaction()) $pdo->rollBack();
     if ($t instanceof PDOException && codigo_mysql($t) === 1452) {
-        error_api('El remitente, el destinatario, una sucursal o el tipo de contenido no existen.');
+        error_api('El remitente, el destinatario, una sucursal, el tipo de contenido o el viaje no existen.');
     }
     throw $t; // manejar_error() responde el mensaje adecuado (los SIGNAL de los triggers, tal cual)
 }

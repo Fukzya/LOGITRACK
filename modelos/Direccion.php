@@ -45,13 +45,6 @@ class Direccion extends Modelo
         );
     }
 
-    /** DNI del cliente dueño de una dirección activa, o null si no existe o está dada de baja. */
-    public function dueno(int $id): ?int
-    {
-        $f = $this->fila('SELECT cliente_dni FROM direccion WHERE direccion_id = :id AND activo = 1', [':id' => $id]);
-        return $f ? (int)$f['cliente_dni'] : null;
-    }
-
     public function crear(array $d): int
     {
         $this->ejecutar('INSERT INTO direccion (calle_y_numero, localidad_cod, cliente_dni) VALUES (:c, :l, :dni)',

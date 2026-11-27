@@ -80,7 +80,7 @@ bloqueo, seguía mirando la foto vieja: carga = 0.
 | `trigger_before_insert_viaje_envio` | Lee el viaje con `FOR UPDATE`: si otro está asignando al mismo viaje, **espera** a que termine |
 | `funcion_carga_viaje_bloqueando` | La suma de kg con `LOCK IN SHARE MODE`: ve lo confirmado aunque la transacción tenga una foto vieja |
 | `trigger_before_update_viaje` | Al cambiar el vehículo, también controla con la carga leída con bloqueo |
-| Asistente (PHP) | Ahora bloquea los viajes **antes** de crear el envío |
+| Asistente (PHP) | Solo abre y cierra la transacción. El bloqueo lo hace el trigger y la carga se lee con bloqueo, así que da igual que el envío se cree antes (cambio 020: antes el PHP bloqueaba y controlaba la capacidad, repitiendo la regla) |
 | `funcion_carga_viaje` | Sin cambios: la usan vistas y listados, que solo muestran |
 
 Va **en la base**: protege las pantallas, el asistente y cualquier programa (HeidiSQL incluido).
@@ -111,6 +111,8 @@ que dos asignaciones simultáneas del mismo envío queden las dos como tramo 1: 
 | Dos asistentes a la vez por la API | — | 201 y *"quedan 20,00 kg libres"*; el envío rechazado no existe (ROLLBACK) |
 | Dos "Asignar envío" a la vez por la API | — | 201 y *"no tiene capacidad"* |
 | Viaje bloqueado desde otra sesión | — | 409 a los 10 s |
+
+Desde el 020 el mensaje de capacidad lo arma el trigger: *"El viaje 3095 no tiene lugar: quedan 1.743,58 kg libres y el envío pesa 2.000,00 kg."*
 
 ## Demo en vivo
 

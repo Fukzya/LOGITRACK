@@ -392,18 +392,20 @@ $('nv-salida').addEventListener('change', async () => {
     cSel.options[0].text = 'Primero elegí el vehículo';
 });
 
-// Si el vehículo pide licencia especial, solo se ofrecen choferes con licencia C o E.
+// Si el vehículo pide licencia especial, solo se ofrecen los choferes habilitados. Es una ayuda:
+// el dato habilitado_especial lo calcula la base (funcion_licencia_maneja_especial) y la regla de
+// verdad la controla el trigger del viaje al confirmar.
 $('nv-vehiculo').addEventListener('change', () => {
     const cSel = $('nv-chofer');
     cSel.length = 1;
     const vehiculo = estado.recursos.vehiculos.find(v => v.cod === $('nv-vehiculo').value);
     if (!vehiculo) { cSel.disabled = true; return; }
     const especial = vehiculo.requiere_especial == 1;
-    const choferes = estado.recursos.choferes.filter(c => !especial || ['C', 'E'].includes(c.licencia));
+    const choferes = estado.recursos.choferes.filter(c => !especial || c.habilitado_especial == 1);
     cSel.options[0].text = choferes.length ? 'Elegí el chofer' : 'No hay choferes libres habilitados';
     choferes.forEach(c => cSel.add(new Option(c.nombre, c.cod)));
     cSel.disabled = !choferes.length;
-    $('nv-pista-chofer').textContent = especial ? 'Este vehículo pide licencia C o E: se muestran solo esos choferes.' : '';
+    $('nv-pista-chofer').textContent = especial ? 'Este vehículo pide licencia especial: se muestran solo los choferes habilitados.' : '';
 });
 
 // ------------------------------------------------------------ paso 4: confirmar

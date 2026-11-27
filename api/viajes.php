@@ -72,9 +72,10 @@ switch ($_SERVER['REQUEST_METHOD']) {
                        'envios_actualizados' => $n]);
         }
 
-        // Agregar envíos a un viaje que todavía no salió: una transacción, la fila del viaje
-        // bloqueada (FOR UPDATE) y cada asignación por procedimiento_asignar_envio_a_viaje. Si una
-        // falla (capacidad, trasbordo...), ROLLBACK: no se agrega ninguna.
+        // Agregar envíos a un viaje que todavía no salió: una transacción y cada asignación por
+        // procedimiento_asignar_envio_a_viaje. Las reglas (que no haya salido, capacidad,
+        // trasbordo) y el bloqueo del viaje (FOR UPDATE) los hace trigger_before_insert_viaje_envio.
+        // Si una falla, ROLLBACK: no se agrega ninguna.
         if (($d['accion'] ?? '') === 'agregar_envios') {
             require_once '../modelos/ViajeEnvio.php';
             $id = campo_entero($d, 'viaje_id', 'El viaje');
@@ -85,16 +86,15 @@ switch ($_SERVER['REQUEST_METHOD']) {
 
             $pdo->beginTransaction();
             try {
-                if ($viajes->bloquearParaAsignar($id) === null) {
-                    $pdo->rollBack();
-                    error_api('No existe ese viaje.', 404);
-                }
                 foreach ($envios as $nro) {
                     $asignar->asignarConProcedimiento($id, $nro);
                 }
                 $pdo->commit();
             } catch (Throwable $t) {
                 if ($pdo->inTransaction()) $pdo->rollBack();
+                if ($t instanceof PDOException && codigo_mysql($t) === 1452) {
+                    error_api('El viaje o alguno de los envíos no existen.', 404);
+                }
                 throw $t;
             }
             responder(['mensaje' => count($envios) === 1 ? 'Se agregó 1 envío al viaje.'

@@ -43,7 +43,7 @@ CREATE TABLE `auditoria` (
   PRIMARY KEY (`auditoria_id`),
   KEY `idx_auditoria_registro` (`tabla`,`clave`),
   KEY `idx_auditoria_fecha` (`fecha_hora`)
-) ENGINE=InnoDB AUTO_INCREMENT=324 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=326 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -180,7 +180,7 @@ CREATE TABLE `envio` (
   CONSTRAINT `fk_envio_tipo_cont` FOREIGN KEY (`tipo_cont_cod`) REFERENCES `tipo_contenido` (`tipo_cont_cod`),
   CONSTRAINT `ck_sucursales_distintas` CHECK (`sucursal_orig_cod` <> `sucursal_dest_cod`),
   CONSTRAINT `ck_peso_positivo` CHECK (`peso_kg` > 0)
-) ENGINE=InnoDB AUTO_INCREMENT=8898 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8908 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -376,7 +376,7 @@ CREATE TABLE `historial_estado` (
   CONSTRAINT `fk_hist_envio` FOREIGN KEY (`nro_envio`) REFERENCES `envio` (`nro_envio`),
   CONSTRAINT `fk_hist_estado` FOREIGN KEY (`estado`) REFERENCES `estado_envio` (`estado_cod`) ON UPDATE CASCADE,
   CONSTRAINT `fk_hist_sucursal` FOREIGN KEY (`sucursal_cod`) REFERENCES `sucursal` (`sucursal_cod`)
-) ENGINE=InnoDB AUTO_INCREMENT=38362 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=38372 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -637,7 +637,7 @@ CREATE TABLE `sesion` (
   KEY `idx_sesion_usuario_fin` (`usuario_id`,`fin`),
   CONSTRAINT `fk_sesion_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`usuario_id`),
   CONSTRAINT `chk_sesion_cierre` CHECK (`fin` is null and `motivo_cierre` is null or `fin` is not null and `motivo_cierre` is not null)
-) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=43 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -646,7 +646,7 @@ CREATE TABLE `sesion` (
 
 LOCK TABLES `sesion` WRITE;
 /*!40000 ALTER TABLE `sesion` DISABLE KEYS */;
-INSERT INTO `sesion` VALUES (10,1,'d6d5bcf21443dcdb9ed82ecccb3ab804e5459e767722af02dce189f192b06438','2026-11-24 01:11:40','2026-11-24 01:12:58','2026-11-24 01:42:58','VENCIDA','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36 OPR/139.0.0.0'),(11,1,'54569df4a1e9f6563bf133ffe1928e5ace96ac3580177f4cc31f35d9288aba83','2026-11-24 03:43:58','2026-11-24 03:44:06','2026-11-24 04:14:06','VENCIDA','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36 OPR/139.0.0.0'),(17,1,'e044a4d4c9b65d655d168bbffef671f27b5686d3108ba1fba9896c86656a28c5','2026-11-25 01:57:03','2026-11-25 02:24:54','2026-11-25 02:54:54','VENCIDA','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36 OPR/139.0.0.0'),(33,1,'32a98e5ea2ce8cbab623c85558d45167f1f11943c0ff9b83dfc9343a7813a52d','2026-11-25 15:15:44','2026-11-25 15:15:44','2026-11-25 15:45:44','VENCIDA','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36');
+INSERT INTO `sesion` VALUES (10,1,'d6d5bcf21443dcdb9ed82ecccb3ab804e5459e767722af02dce189f192b06438','2026-11-24 01:11:40','2026-11-24 01:12:58','2026-11-24 01:42:58','VENCIDA','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36 OPR/139.0.0.0'),(11,1,'54569df4a1e9f6563bf133ffe1928e5ace96ac3580177f4cc31f35d9288aba83','2026-11-24 03:43:58','2026-11-24 03:44:06','2026-11-24 04:14:06','VENCIDA','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36 OPR/139.0.0.0'),(17,1,'e044a4d4c9b65d655d168bbffef671f27b5686d3108ba1fba9896c86656a28c5','2026-11-25 01:57:03','2026-11-25 02:24:54','2026-11-25 02:54:54','VENCIDA','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36 OPR/139.0.0.0'),(33,1,'32a98e5ea2ce8cbab623c85558d45167f1f11943c0ff9b83dfc9343a7813a52d','2026-11-25 15:15:44','2026-11-25 15:15:44','2026-11-25 15:45:44','VENCIDA','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36'),(38,1,'a022165b96dcc70e88fabb2bc4176390d53c73d7d247eed3e33abd2183641c59','2026-11-25 18:55:49','2026-11-25 18:55:49','2026-11-25 18:55:53','LOGOUT','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36'),(39,1,'7221b060f52923199981999c1a8f45e2fdddc33e167291cb5fb935e4a94cf075','2026-11-25 19:51:11','2026-11-25 20:33:05','2026-11-25 20:33:10','LOGOUT','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36 OPR/139.0.0.0'),(40,1,'252c48cbb99b494be7a6af1849a06daa3688e0c4f8cba361f1edbdd483e7eec9','2026-11-25 20:33:11','2026-11-25 20:36:30','2026-11-25 21:06:30','VENCIDA','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36 OPR/139.0.0.0');
 /*!40000 ALTER TABLE `sesion` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -797,7 +797,7 @@ CREATE TABLE `usuario` (
   `activo` tinyint(1) DEFAULT 1,
   PRIMARY KEY (`usuario_id`),
   UNIQUE KEY `username` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -900,7 +900,7 @@ CREATE TABLE `viaje` (
   CONSTRAINT `fk_viaje_sucursal_origen` FOREIGN KEY (`sucursal_origen_cod`) REFERENCES `sucursal` (`sucursal_cod`),
   CONSTRAINT `fk_viaje_vehiculo` FOREIGN KEY (`vehiculo_patente`) REFERENCES `vehiculo` (`vehiculo_patente`),
   CONSTRAINT `ck_viaje_origen_destino` CHECK (`sucursal_origen_cod` <> `sucursal_destino_cod`)
-) ENGINE=InnoDB AUTO_INCREMENT=3271 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3275 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1141,6 +1141,7 @@ BEGIN
     DECLARE v_fecha_envio DATE;
     DECLARE v_activo, v_final TINYINT DEFAULT 0;
     DECLARE v_estado VARCHAR(100);
+    DECLARE v_carga DECIMAL(10,2);
     DECLARE v_mensaje VARCHAR(255);
 
     
@@ -1205,8 +1206,13 @@ BEGIN
     END IF;
 
     
-    IF funcion_carga_viaje_bloqueando(NEW.viaje_id) + v_peso > v_capacidad THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El vehículo del viaje no tiene capacidad para este envío.';
+    
+    SET v_carga = funcion_carga_viaje_bloqueando(NEW.viaje_id);
+    IF v_carga + v_peso > v_capacidad THEN
+        SET v_mensaje = CONCAT('El viaje ', NEW.viaje_id, ' no tiene lugar: quedan ',
+                               FORMAT(GREATEST(v_capacidad - v_carga, 0), 2, 'es_AR'),
+                               ' kg libres y el envío pesa ', FORMAT(v_peso, 2, 'es_AR'), ' kg.');
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = v_mensaje;
     END IF;
 END */;;
 DELIMITER ;
@@ -1499,6 +1505,28 @@ BEGIN
     SET v_estado = funcion_ultimo_estado(p_nro_envio);   
     SELECT es_final INTO v_final FROM estado_envio WHERE estado_cod = v_estado;
     RETURN v_final;
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'NO_ZERO_IN_DATE,NO_ZERO_DATE,NO_ENGINE_SUBSTITUTION' */ ;
+/*!50003 DROP FUNCTION IF EXISTS `funcion_licencia_maneja_especial` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_general_ci */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` FUNCTION `funcion_licencia_maneja_especial`(p_licencia VARCHAR(5)) RETURNS tinyint(4)
+    DETERMINISTIC
+    COMMENT '1 si la licencia habilita a manejar vehículos con licencia especial (camión, semirremolque).'
+BEGIN
+    
+    RETURN p_licencia IN ('C', 'E');
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -2080,8 +2108,9 @@ BEGIN
     IF v_chofer_activo = 0 AND p_legajo IN (SELECT chofer_legajo FROM chofer) THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El chofer está dado de baja.';
     END IF;
-    IF v_especial = 1 AND v_licencia NOT IN ('C', 'E') THEN
-        SET v_mensaje = CONCAT('Ese vehículo pide licencia C o E y el chofer tiene licencia ', v_licencia, '.');
+    
+    IF v_especial = 1 AND funcion_licencia_maneja_especial(v_licencia) = 0 THEN
+        SET v_mensaje = CONCAT('Ese vehículo pide licencia especial y el chofer tiene licencia ', v_licencia, '.');
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = v_mensaje;
     END IF;
     IF EXISTS (SELECT 1 FROM viaje WHERE vehiculo_patente = p_patente AND viaje_id <> p_viaje_id
@@ -2260,4 +2289,4 @@ USE `logitrack`;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-11-25 16:02:52
+-- Dump completed on 2026-11-26 21:18:50

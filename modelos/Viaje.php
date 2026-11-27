@@ -91,7 +91,9 @@ class Viaje extends Modelo
         $choferes = $this->pdo->prepare(
             "SELECT c.chofer_legajo AS cod,
                     CONCAT(c.apellido, ', ', c.nombre, ' (licencia ', c.chofer_tipo_licencia, ')') AS nombre,
-                    c.chofer_tipo_licencia AS licencia
+                    c.chofer_tipo_licencia AS licencia,
+                    -- La lista de licencias para camión vive en la base (020); la pantalla solo usa este dato.
+                    funcion_licencia_maneja_especial(c.chofer_tipo_licencia) AS habilitado_especial
                FROM chofer c
               WHERE c.activo = 1
                 AND NOT EXISTS (SELECT 1 FROM viaje v WHERE v.chofer_legajo = c.chofer_legajo
@@ -101,45 +103,6 @@ class Viaje extends Modelo
 
         return ['vehiculos' => $vehiculos->fetchAll(PDO::FETCH_ASSOC),
                 'choferes'  => $choferes->fetchAll(PDO::FETCH_ASSOC)];
-    }
-
-    /**
-     * Datos para validar un viaje nuevo: si el vehículo y el chofer existen y están activos, qué
-     * licencia hace falta y si alguno ya tiene otro viaje ese día. null si alguno no existe.
-     */
-    public function datosRecursos(string $patente, int $legajo, string $fecha): ?array
-    {
-        return $this->fila(
-            "SELECT ve.activo AS vehiculo_activo, tv.tipo_veh_requiere_lic_especial AS requiere_especial,
-                    c.activo AS chofer_activo, c.chofer_tipo_licencia AS licencia,
-                    EXISTS (SELECT 1 FROM viaje v WHERE v.vehiculo_patente = ve.vehiculo_patente AND DATE(v.fecha_salida) = :f1) AS vehiculo_ocupado,
-                    EXISTS (SELECT 1 FROM viaje v WHERE v.chofer_legajo    = c.chofer_legajo    AND DATE(v.fecha_salida) = :f2) AS chofer_ocupado
-               FROM vehiculo ve
-               JOIN tipo_vehiculo tv ON tv.tipo_veh_cod = ve.tipo_veh_cod
-               JOIN chofer c ON c.chofer_legajo = :legajo
-              WHERE ve.vehiculo_patente = :patente",
-            [':f1' => $fecha, ':f2' => $fecha, ':legajo' => $legajo, ':patente' => $patente]);
-    }
-
-    /**
-     * Bloquea la fila del viaje hasta el fin de la transacción (SELECT ... FOR UPDATE) y devuelve su
-     * capacidad y su carga actual. Si dos operadores asignan envíos al mismo viaje a la vez, el segundo
-     * espera a que termine el primero y ve la carga ya actualizada: no se puede pasar de la capacidad.
-     */
-    public function bloquearParaAsignar(int $id): ?array
-    {
-        $viaje = $this->fila(
-            'SELECT v.viaje_id, v.fecha_salida, v.fecha_llegada, tv.tipo_veh_capacidad_kg AS capacidad
-               FROM viaje v
-               JOIN vehiculo ve      ON ve.vehiculo_patente = v.vehiculo_patente
-               JOIN tipo_vehiculo tv ON tv.tipo_veh_cod     = ve.tipo_veh_cod
-              WHERE v.viaje_id = :id
-                FOR UPDATE', [':id' => $id]);
-        if ($viaje === null) return null;
-        // La carga se lee CON bloqueo (funcion_carga_viaje_bloqueando, cambio 017): ve el último dato
-        // confirmado aunque la transacción ya tenga su "foto" de REPEATABLE READ.
-        $viaje['carga'] = (float)$this->fila('SELECT funcion_carga_viaje_bloqueando(:id) AS carga', [':id' => $id])['carga'];
-        return $viaje;
     }
 
     /**

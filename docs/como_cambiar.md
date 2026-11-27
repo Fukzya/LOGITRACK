@@ -84,7 +84,8 @@ Toca las 4 capas, en este orden:
 |---|---|---|
 | Que el operador pueda hacer algo más (por ejemplo, dar de baja clientes) | 1) `config/permisos.php`: agregar `'baja'` a `'clientes'`. 2) La base: `GRANT UPDATE (activo) ON logitrack.cliente TO rol_operador;` en un script nuevo **y** en `$permisosExtra` de `database/configurar_cuentas.php` | Si solo se hace el paso 1, la base lo rechaza: "Acceso denegado por la base" (es la segunda barrera, a propósito) |
 | Cambiar cuánto dura la sesión sin uso | `config/session.php` → `MINUTOS_SESION` **y** la función `funcion_minutos_sesion` de la base (script nuevo con `CREATE OR REPLACE FUNCTION`) | Tienen que coincidir |
-| Cambiar qué licencias manejan camiones | `api/asistente_envio.php` → `LICENCIAS_ESPECIALES` **y** `procedimiento_validar_recursos_viaje` en la base | Los dos |
+| Cambiar qué licencias manejan camiones | La función `funcion_licencia_maneja_especial` de la base (script nuevo con `CREATE OR REPLACE FUNCTION` + volver a dar su `GRANT EXECUTE` a `rol_operador`) | Un solo lugar: la usan el trigger del viaje y la pantalla "Nuevo envío" |
+| Cambiar el mensaje de un CHECK de la base (ej. origen = destino) | `config/api.php` → `mensaje_check` | La regla está en la base; acá solo el texto |
 | Cambiar el largo mínimo de las contraseñas | `api/usuarios.php` → `password_nueva` | |
 | Cambiar cuánto espera la app si otro usuario tiene un viaje bloqueado | `config/conexion.php` → `innodb_lock_wait_timeout` | En segundos (hoy 10) |
 

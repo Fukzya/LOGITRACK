@@ -220,6 +220,25 @@ function intentar(callable $operacion, array $mensajes)
     }
 }
 
+/**
+ * Mensaje para un CHECK de la base que rechazó el dato. La regla vive solo en la base (CHECK);
+ * acá solo se traduce su nombre a un texto para el usuario.
+ */
+// CAMBIAR: si agregás un CHECK nuevo en la base, poné acá su nombre y el mensaje.
+function mensaje_check(string $error): string
+{
+    $mensajes = [
+        'ck_sucursales_distintas' => 'La sucursal de origen y la de destino del envío tienen que ser distintas.',
+        'ck_viaje_origen_destino' => 'El viaje tiene que ir de una sucursal a otra distinta.',
+        'ck_peso_positivo'        => 'El peso del envío tiene que ser mayor a cero.',
+        'ck_capacidad'            => 'La capacidad del tipo de vehículo tiene que ser mayor a cero.',
+    ];
+    foreach ($mensajes as $nombre => $mensaje) {
+        if (strpos($error, "`$nombre`") !== false) return $mensaje;
+    }
+    return 'Alguno de los datos no cumple las reglas de la base.';
+}
+
 /** Traduce los errores de la base más comunes a mensajes para el usuario. */
 // CAMBIAR: los mensajes que ve el usuario cuando la base rechaza algo (según el número de
 //          error de MariaDB). Los SIGNAL de los triggers (1644) llegan con el texto escrito en la base.
@@ -235,7 +254,8 @@ function manejar_error(Throwable $e): void
             case 1452: error_api('Alguno de los datos relacionados no existe (revisá los códigos elegidos).', 400);
             case 1048: error_api('Falta un dato obligatorio.', 400);
             case 1406: error_api('Alguno de los datos es demasiado largo.', 400);
-            case 4025: error_api('Alguno de los datos no cumple las reglas de la base.', 400);
+            case 4025: // un CHECK de la tabla: el mensaje trae su nombre (CONSTRAINT `ck_...` failed)
+                error_api(mensaje_check($e->errorInfo[2] ?? ''), 400);
             case 1644: // SIGNAL SQLSTATE '45000' de un trigger o procedimiento: el mensaje es nuestro
                 error_api($e->errorInfo[2] ?? 'Operación rechazada por la base de datos.', 400);
             // Concurrencia (tema transacciones): otra transacción tiene bloqueado lo que se quiere tocar.

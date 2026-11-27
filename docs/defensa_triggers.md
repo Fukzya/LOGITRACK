@@ -11,7 +11,7 @@ script), no solo para la app.
 |---|---|---|
 | Cuándo | Antes de escribir | Cuando el cambio ya está hecho |
 | Para qué | Validar y rechazar (`SIGNAL`), o corregir `NEW` | Registrar lo que pasó (historial, auditoría) |
-| Ejemplo nuestro | Camión con chofer de licencia B → *"Ese vehículo pide licencia C o E"* y no se guarda | Cambian el peso de un envío de 12.50 a 13.00 kg → fila en `auditoria`: 12.50 → 13.00, operador1, fecha |
+| Ejemplo nuestro | Camión con chofer de licencia B → *"Ese vehículo pide licencia especial y el chofer tiene licencia B"* y no se guarda | Cambian el peso de un envío de 12.50 a 13.00 kg → fila en `auditoria`: 12.50 → 13.00, operador1, fecha |
 
 **Errores típicos de examen:**
 1. Auditar con BEFORE: si el UPDATE falla después, la auditoría registró algo que nunca pasó.
@@ -47,6 +47,14 @@ En negrita, lo que agregó el script 013.
 - **Un trigger llama a un procedimiento** (`procedimiento_validar_recursos_viaje`,
   `procedimiento_validar_direccion_envio`, `procedimiento_auditar`) para no repetir la regla en
   el INSERT y en el UPDATE.
+- **Cada regla vive una sola vez, en la base** (cambio 020). El PHP valida solo el formato
+  (obligatorio, número, largo) y maneja la transacción; las reglas del negocio (dirección del
+  destinatario, licencia, vehículo/chofer libres, viaje que ya salió, capacidad, fechas, origen
+  distinto del destino) están en triggers, procedimientos y CHECK, y su mensaje llega tal cual a
+  la pantalla. Si una regla estuviera en los dos lados y se cambiara solo una copia, quedarían en
+  desacuerdo. La lista de licencias para camión está en `funcion_licencia_maneja_especial`; la
+  pantalla le pide a la base el dato "habilitado" de cada chofer para ofrecer solo esos (ayuda,
+  no regla).
 - **REDIRIGIDO** se registra donde está el paquete (sucursal de su último estado), no en el
   destino nuevo.
 
