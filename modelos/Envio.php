@@ -27,13 +27,14 @@ class Envio extends Modelo
 
     /**
      * Listado desde vista_envios_detalle: la vista arma los 8 JOIN (tipo, clientes, sucursales con
-     * provincia, dirección). $f: fecha_desde, fecha_hasta, sucursal_orig, tipo, solo_pendientes.
+     * provincia, dirección). $f: nro_envio, fecha_desde, fecha_hasta, sucursal_orig, tipo, solo_pendientes.
      */
     public function listar(array $f, array $p, bool $inactivos): array
     {
         $cond = [];
         $par  = [];
         if (!$inactivos)                { $cond[] = 'v.activo = 1'; }
+        if (!empty($f['nro_envio']))     { $cond[] = 'v.nro_envio = :nro';           $par[':nro'] = $f['nro_envio']; }
         if (!empty($f['fecha_desde']))   { $cond[] = 'v.fecha_envio >= :fd';         $par[':fd'] = $f['fecha_desde']; }
         if (!empty($f['fecha_hasta']))   { $cond[] = 'v.fecha_envio <= :fh';         $par[':fh'] = $f['fecha_hasta']; }
         if (!empty($f['sucursal_orig'])) { $cond[] = 'v.sucursal_orig_cod = :so';    $par[':so'] = $f['sucursal_orig']; }

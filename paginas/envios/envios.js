@@ -67,6 +67,7 @@ const pantalla = pantallaCrud({
     },
     // CAMBIAR: filtros de arriba de la tabla: 'id del <input>': 'parámetro que recibe la API'.
     filtros: {
+        'filtro-nro': 'nro_envio',
         'filtro-fecha-desde': 'fecha_desde',
         'filtro-fecha-hasta': 'fecha_hasta',
         'filtro-sucursal-orig': 'sucursal_orig',
@@ -127,4 +128,9 @@ document.getElementById('form-estado').addEventListener('submit', async e => {
     } catch (err) {
         mostrarError(err);
     }
+});
+
+// Buscar por número: Enter en el campo hace lo mismo que el botón Filtrar.
+document.getElementById('filtro-nro').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('btn-filtrar').click();
 });

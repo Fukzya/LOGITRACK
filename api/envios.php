@@ -31,6 +31,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
 
     case 'GET':
         $filtros = [
+            'nro_envio'     => campo_entero($_GET, 'nro_envio', 'El número de envío', 1, 99999999, false),
             'fecha_desde'   => campo_fecha($_GET, 'fecha_desde', 'La fecha desde', false),
             'fecha_hasta'   => campo_fecha($_GET, 'fecha_hasta', 'La fecha hasta', false),
             'sucursal_orig' => trim($_GET['sucursal_orig'] ?? ''),

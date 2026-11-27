@@ -81,6 +81,10 @@ require '../plantilla.php'; inicio_pagina('Envíos'); ?>
         </div>
         <div class="flex flex-wrap items-end gap-space-md">
             <div class="flex flex-col gap-space-xs">
+                <label class="text-label-sm text-on-surface-variant" for="filtro-nro">N.º de envío</label>
+                <input class="bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none w-32 text-on-surface" id="filtro-nro" type="number" min="1" placeholder="Ej: 8054"/>
+            </div>
+            <div class="flex flex-col gap-space-xs">
                 <label class="text-label-sm text-on-surface-variant" for="filtro-fecha-desde">Fecha desde</label>
                 <input class="bg-[#fef3c7] px-3 py-2 rounded-lg text-sm border-0 focus:ring-1 focus:ring-primary outline-none w-40 text-on-surface" id="filtro-fecha-desde" type="date"/>
             </div>
