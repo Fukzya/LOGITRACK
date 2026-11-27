@@ -222,10 +222,30 @@ function inicio_pagina(string $titulo, bool $soloAdmin = false, string $seccionA
         table tbody button[data-accion="reactivar"]:hover {
             background-color: #bbf7d0;
         }
+        table tbody button[data-accion="estado"] {
+            background-color: #dbeafe;
+            color: #1e3a8a;
+        }
+        table tbody button[data-accion="estado"]:hover {
+            background-color: #bfdbfe;
+        }
+        table tbody button[data-accion="cambios"] {
+            background-color: #ede9fe;
+            color: #4c1d95;
+        }
+        table tbody button[data-accion="cambios"]:hover {
+            background-color: #ddd6fe;
+        }
+        /* Celda de acciones: alineada a la izquierda (si una fila tiene un botón menos, las demás
+           no se corren) y con salto de línea, para que la tabla no se pase de ancho. */
         table tbody td:has(> button[data-accion]) {
-            text-align: center;
-            white-space: nowrap;
-            min-width: 170px;
+            text-align: left;
+            white-space: normal;
+            min-width: 230px;
+            width: 230px;
+        }
+        table tbody td > button[data-accion] {
+            margin: 0.125rem 0.25rem 0.125rem 0;
         }
     </style>
     <script src="../../assets/tailwind.js"></script>
