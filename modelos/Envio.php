@@ -27,7 +27,8 @@ class Envio extends Modelo
 
     /**
      * Listado desde vista_envios_detalle: la vista arma los 8 JOIN (tipo, clientes, sucursales con
-     * provincia, dirección). $f: nro_envio, fecha_desde, fecha_hasta, sucursal_orig, tipo, solo_pendientes.
+     * provincia, dirección). $f: nro_envio, fecha_desde, fecha_hasta, sucursal_orig, tipo, solo_pendientes,
+     * sin_viaje.
      */
     public function listar(array $f, array $p, bool $inactivos): array
     {
@@ -40,6 +41,8 @@ class Envio extends Modelo
         if (!empty($f['sucursal_orig'])) { $cond[] = 'v.sucursal_orig_cod = :so';    $par[':so'] = $f['sucursal_orig']; }
         if (!empty($f['tipo']))          { $cond[] = 'v.tipo_cont_cod = :tipo';      $par[':tipo'] = $f['tipo']; }
         if (!empty($f['solo_pendientes'])) { $cond[] = 'funcion_envio_terminado(v.nro_envio) = 0'; }
+        // "Sin viaje" lo define la base (vista_envios_sin_viaje, script 021): acá no se repite.
+        if (!empty($f['sin_viaje']))       { $cond[] = 'v.nro_envio IN (SELECT nro_envio FROM vista_envios_sin_viaje)'; }
 
         // Filtros y orden sobre la tabla envio (alias v); las 50 filas de la página, desde la vista.
         $res = $this->paginarPorClave('envio v', 'nro_envio', 'vista_envios_detalle',
@@ -47,7 +50,38 @@ class Envio extends Modelo
 
         // El último estado se calcula solo para las filas de esta página (ver el script 014).
         $res['datos'] = $this->conNombreDeEstado($res['datos']);
+        $res['datos'] = $this->conMarcaSinViaje($res['datos']);
         return $res;
+    }
+
+    /** Marca sin_viaje = 1 en las filas de la página que están en vista_envios_sin_viaje (botón "Asignar viaje"). */
+    private function conMarcaSinViaje(array $filas): array
+    {
+        $nros = array_map('intval', array_column($filas, 'nro_envio'));
+        $sin = [];
+        if ($nros) {
+            $st = $this->pdo->prepare('SELECT nro_envio FROM vista_envios_sin_viaje WHERE nro_envio IN ('
+                                      . implode(',', array_fill(0, count($nros), '?')) . ')');
+            $st->execute($nros);
+            $sin = array_flip($st->fetchAll(PDO::FETCH_COLUMN));
+        }
+        foreach ($filas as &$fila) $fila['sin_viaje'] = isset($sin[$fila['nro_envio']]) ? 1 : 0;
+        unset($fila);
+        return $filas;
+    }
+
+    /**
+     * Asistente en modo "asignar": bloquea el envío (FOR UPDATE) y DESPUÉS lee si sigue sin viaje.
+     * Bloquear primero y leer después (lección del 017): si dos operadores asignan el mismo envío
+     * a la vez, el segundo espera y ve que ya tiene viaje. Va dentro de la transacción de quien llama.
+     * Devuelve los datos del envío, o null si no existe, está inactivo, terminó o ya tiene viaje.
+     */
+    public function bloquearSinViaje(int $nro): ?array
+    {
+        if ($this->fila('SELECT nro_envio FROM envio WHERE nro_envio = :n FOR UPDATE', [':n' => $nro]) === null) {
+            return null;
+        }
+        return $this->fila('SELECT * FROM vista_envios_sin_viaje WHERE nro_envio = :n', [':n' => $nro]);
     }
 
     /**

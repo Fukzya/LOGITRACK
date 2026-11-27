@@ -37,6 +37,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
             'sucursal_orig' => trim($_GET['sucursal_orig'] ?? ''),
             'tipo'          => trim($_GET['tipo_cont'] ?? ''),
             'solo_pendientes' => ($_GET['solo_pendientes'] ?? '') === '1',
+            'sin_viaje'       => ($_GET['sin_viaje'] ?? '') === '1',
         ];
         responder($envios->listar($filtros, params_listado('nro_envio', 'DESC'), ver_inactivos()));
 

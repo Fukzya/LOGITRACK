@@ -18,6 +18,11 @@
  *                vehiculo_patente, chofer_legajo})
  *              | 'ninguno' (se asigna más tarde)
  *
+ * Modo "asignar" (botón "Asignar viaje" de Envíos, nuevo_envio.php?asignar=N): llega nro_envio
+ * en lugar de los datos del envío y viaje_modo solo puede ser 'existente' o 'nuevo'. En la misma
+ * transacción se bloquea el envío, se controla que siga sin viaje (vista_envios_sin_viaje) y se
+ * crea el viaje (si es nuevo) y las asignaciones.
+ *
  * Todo pasa en UNA transacción: crear el viaje (si es nuevo), crear el envío (procedimiento
  * procedimiento_crear_envio) y asignarlo (procedimiento procedimiento_asignar_envio_a_viaje).
  * Si cualquier paso falla -por ejemplo el viaje ya no tiene lugar- se hace ROLLBACK y no queda
@@ -33,8 +38,6 @@
  *     transacción, así que si su salida no es futura el trigger lo rechaza ("El viaje ya salió").
  */
 require_once '../config/api.php';
-exigir_permiso('envios', 'alta');
-exigir_permiso('viajes', 'alta');   // el asistente también puede crear el viaje
 require_once '../config/validaciones.php';
 require_once '../modelos/Envio.php';
 require_once '../modelos/Viaje.php';
@@ -49,9 +52,19 @@ $viajes  = new Viaje($pdo);
 $asignar = new ViajeEnvio($pdo);
 
 $d = leer_json();
-$e = datos_envio($d);
 
-$modo = campo_opcion($d, 'viaje_modo', 'El viaje', ['existente', 'nuevo', 'ninguno']);
+// CAMBIAR: quién puede usar el asistente: config/permisos.php.
+$asignarExistente = isset($d['nro_envio']);
+if ($asignarExistente) {
+    exigir_permiso('viaje_envio', 'alta');
+    $nroExistente = campo_entero($d, 'nro_envio', 'El número de envío');
+    $modo = campo_opcion($d, 'viaje_modo', 'El viaje', ['existente', 'nuevo']);
+} else {
+    exigir_permiso('envios', 'alta');
+    $e    = datos_envio($d);
+    $modo = campo_opcion($d, 'viaje_modo', 'El viaje', ['existente', 'nuevo', 'ninguno']);
+}
+if ($modo === 'nuevo') exigir_permiso('viajes', 'alta');   // el asistente también puede crear el viaje
 
 $viajeNuevo = null;
 $tramos     = [];   // ids de los viajes, en el orden en que los recorre el envío
@@ -72,8 +85,16 @@ try {
         $tramos = [$viajes->crear($viajeNuevo)];
     }
 
-    // 2) El envío (procedimiento; se suma a esta transacción). Su trigger controla la dirección.
-    $nro = $envios->crear($e);
+    // 2) El envío: nuevo (procedimiento; se suma a esta transacción; su trigger controla la
+    //    dirección) o uno existente que tiene que seguir sin viaje (bloqueado hasta el COMMIT).
+    if ($asignarExistente) {
+        if ($envios->bloquearSinViaje($nroExistente) === null) {
+            throw new RuntimeException('SIN_VIAJE');
+        }
+        $nro = $nroExistente;
+    } else {
+        $nro = $envios->crear($e);
+    }
 
     // 3) Las asignaciones. trigger_before_insert_viaje_envio BLOQUEA el viaje (FOR UPDATE: si otro
     //    operador asigna al mismo viaje, acá se espera), controla que no haya salido, numera el
@@ -85,18 +106,21 @@ try {
     $pdo->commit();
 } catch (Throwable $t) {
     if ($pdo->inTransaction()) $pdo->rollBack();
+    if ($t instanceof RuntimeException && $t->getMessage() === 'SIN_VIAJE') {
+        error_api("El envío $nroExistente no existe, está dado de baja, ya fue entregado o devuelto, o ya tiene viaje.", 409);
+    }
     if ($t instanceof PDOException && codigo_mysql($t) === 1452) {
         error_api('El remitente, el destinatario, una sucursal, el tipo de contenido o el viaje no existen.');
     }
     throw $t; // manejar_error() responde el mensaje adecuado (los SIGNAL de los triggers, tal cual)
 }
 
-$mensaje = "Envío $nro creado";
+$mensaje = $asignarExistente ? "Envío $nro" : "Envío $nro creado";
 if (count($tramos) === 2) {
-    $mensaje .= " y asignado a los viajes {$tramos[0]} y {$tramos[1]} (con trasbordo).";
+    $mensaje .= ($asignarExistente ? '' : ' y') . " asignado a los viajes {$tramos[0]} y {$tramos[1]} (con trasbordo).";
 } elseif ($tramos) {
-    $mensaje .= $viajeNuevo !== null ? " y asignado al viaje nuevo {$tramos[0]}." : " y asignado al viaje {$tramos[0]}.";
+    $mensaje .= ($asignarExistente ? '' : ' y') . ($viajeNuevo !== null ? " asignado al viaje nuevo {$tramos[0]}." : " asignado al viaje {$tramos[0]}.");
 } else {
     $mensaje .= ' sin viaje (queda pendiente de asignar).';
 }
-responder(['mensaje' => $mensaje, 'nro_envio' => $nro, 'viajes' => $tramos], 201);
+responder(['mensaje' => $mensaje, 'nro_envio' => $nro, 'viajes' => $tramos], $asignarExistente ? 200 : 201);

@@ -307,11 +307,18 @@ $rol = $_SESSION['rol'] ?? 'operador';
                         <h2 class="text-headline-md text-on-surface">Hoy</h2>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-md">
-                        <a href="paginas/envios/envios.php?solo_pendientes=1" class="bg-surface-container-lowest rounded-xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] border border-transparent hover:border-primary/40 hover:shadow-md transition-all">
-                            <p class="text-xs text-on-surface-variant">Envíos pendientes</p>
-                            <p class="text-headline-xl text-on-surface mt-1" id="tablero-pendientes">…</p>
-                            <p class="text-xs text-on-surface-variant mt-1" id="tablero-pendientes-mes"></p>
-                        </a>
+                        <!-- Dos links en la misma tarjeta: pendientes (arriba) y sin viaje (abajo, filtro "Sin viaje"). -->
+                        <div class="bg-surface-container-lowest rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] border border-transparent hover:border-primary/40 hover:shadow-md transition-all flex flex-col">
+                            <a href="paginas/envios/envios.php?solo_pendientes=1" class="block px-5 pt-5 pb-2">
+                                <p class="text-xs text-on-surface-variant">Envíos pendientes</p>
+                                <p class="text-headline-xl text-on-surface mt-1" id="tablero-pendientes">…</p>
+                                <p class="text-xs text-on-surface-variant mt-1" id="tablero-pendientes-mes"></p>
+                            </a>
+                            <a href="paginas/envios/envios.php?sin_viaje=1" id="tablero-sin-viaje" title="Ver los envíos que todavía no tienen viaje y asignarles uno"
+                               class="mx-3 mb-3 px-2 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 hover:underline" hidden>
+                                <span class="material-symbols-outlined text-[16px]">schedule</span><span id="tablero-sin-viaje-texto"></span>
+                            </a>
+                        </div>
                         <a href="paginas/viajes/viajes.php?solo_activos=1" class="bg-surface-container-lowest rounded-xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] border border-transparent hover:border-primary/40 hover:shadow-md transition-all">
                             <p class="text-xs text-on-surface-variant">Viajes en curso</p>
                             <p class="text-headline-xl text-on-surface mt-1" id="tablero-en-curso">…</p>

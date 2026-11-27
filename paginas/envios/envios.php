@@ -112,6 +112,10 @@ require '../plantilla.php'; inicio_pagina('Envíos'); ?>
                 <input class="w-4 h-4 text-primary rounded accent-primary cursor-pointer" id="filtro-solo-pendientes" type="checkbox"/>
                 <label class="text-sm text-on-surface select-none cursor-pointer" for="filtro-solo-pendientes" title="Activos que todavía no fueron entregados ni devueltos">Solo pendientes</label>
             </div>
+            <div class="flex items-center gap-2 h-10">
+                <input class="w-4 h-4 text-primary rounded accent-primary cursor-pointer" id="filtro-sin-viaje" type="checkbox"/>
+                <label class="text-sm text-on-surface select-none cursor-pointer" for="filtro-sin-viaje" title="Pendientes que todavía no tienen ningún viaje asignado">Sin viaje</label>
+            </div>
             <?php if ($esAdmin): ?>
             <div class="flex items-center gap-2 h-10">
                 <input class="w-4 h-4 text-primary rounded accent-primary cursor-pointer" id="filtro-mostrar-inactivos" type="checkbox"/>

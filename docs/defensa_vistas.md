@@ -12,7 +12,7 @@ vez que se consulta, la base ejecuta la consulta de adentro. Sirve para:
 | Reportes | `vista_clientes_con_envios`, `vista_envios_pendientes`: las tarjetas del menú principal |
 | Seguridad | Mostrar solo algunas columnas y dar `GRANT SELECT` sobre la vista y no sobre la tabla (lo hacemos en el tema seguridad) |
 
-## Las 8 vistas
+## Las 9 vistas
 
 | Vista | La usa | Actualizable |
 |---|---|---|
@@ -20,6 +20,7 @@ vez que se consulta, la base ejecuta la consulta de adentro. Sirve para:
 | vista_envios_detalle | Listado de Envíos | Sí |
 | vista_historial_completo | Listado del Historial | Sí |
 | vista_envios_pendientes | Menú: "Envíos pendientes" | Sí (solo las columnas de envío) |
+| vista_envios_sin_viaje (021) | Menú: "N sin viaje asignado", filtro "Sin viaje" y botón "Asignar viaje" de Envíos | Sí (solo las columnas de envío) |
 | vista_viajes_en_curso | Menú y filtro "Solo en curso" | Sí (solo las columnas de viaje) |
 | vista_viajes_programados | Asistente (rutas) | **No**: `ALGORITHM = TEMPTABLE` |
 | vista_clientes_con_envios | Menú: clientes con más envíos | Sí (las cuentas no) |
@@ -59,3 +60,25 @@ mostraban 4.879 envíos pendientes y 284 viajes "en curso" desde hacía dos año
 los cerró (quedan como historia) y los datos actuales los genera
 `database/pruebas/datos_de_hoy.php` (de 3 días antes de hoy al domingo de la semana que viene):
 las tarjetas muestran solo lo que pasa ahora.
+
+## Envíos sin viaje (script 021)
+
+**El problema:** el asistente deja crear un envío con "Asignar más tarde", pero después no había
+dónde verlo. "Solo pendientes" muestra los **no entregados** (623), que no es lo mismo que **sin
+viaje** (11).
+
+**Qué es:** `vista_envios_sin_viaje` = `vista_envios_pendientes` + `NOT EXISTS` en `viaje_envio`.
+Es una **vista sobre otra vista**: "pendiente" se define una vez y "sin viaje" se agrega arriba.
+
+**Dónde se usa (la definición está en un solo lugar):**
+
+| Lugar | Cómo la usa |
+|---|---|
+| Menú, tarjeta "Envíos pendientes" | `COUNT(*)` → "11 sin viaje asignado" (link a Envíos con el filtro) |
+| Envíos, filtro "Sin viaje" | `nro_envio IN (SELECT nro_envio FROM vista_envios_sin_viaje)` |
+| Envíos, botón "Asignar viaje" | Se muestra si la fila está en la vista (se calcula para las 50 de la página) |
+| Asistente, modo asignar (`nuevo_envio.php?asignar=N`) | Empieza en el paso 3 (rutas). Al confirmar, en **una transacción**: `SELECT ... FOR UPDATE` del envío, lee la vista (¿sigue sin viaje?), crea el viaje si es nuevo y asigna con el procedimiento |
+
+**Para la defensa:** bloquear primero y leer después (lo mismo que en transacciones): si dos
+operadores asignan el mismo envío a la vez, el segundo espera el bloqueo, ve que ya tiene viaje y
+recibe un 409. Probado con dos sesiones: queda una sola asignación.

@@ -24,6 +24,8 @@ class Tablero extends Modelo
                 "SELECT COUNT(*) AS total,
                         COALESCE(SUM(fecha_envio >= DATE_FORMAT(CURDATE(), '%Y-%m-01')), 0) AS este_mes
                    FROM vista_envios_pendientes"),
+            // Pendientes que todavía no tienen viaje (se cargaron con "Asignar más tarde").
+            'sin_viaje' => $this->fila('SELECT COUNT(*) AS total FROM vista_envios_sin_viaje'),
             'en_curso' => $this->fila(
                 'SELECT COUNT(*) AS total, COALESCE(SUM(horas_atraso > 0), 0) AS atrasados
                    FROM vista_viajes_en_curso'),

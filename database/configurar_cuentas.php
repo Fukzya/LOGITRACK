@@ -51,6 +51,7 @@ try {
     //          así no se pierde al instalar o al volver a correr este archivo.
     $permisosExtra = [
         'GRANT EXECUTE ON FUNCTION logitrack.funcion_licencia_maneja_especial TO rol_operador', // 020
+        'GRANT SELECT ON logitrack.vista_envios_sin_viaje TO rol_operador',                     // 021
     ];
     foreach ($permisosExtra as $grant) $pdo->exec($grant);
     echo '  Permisos agregados después del 016: ' . count($permisosExtra) . ".\n";

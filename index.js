@@ -26,6 +26,13 @@ fetch('api/tablero.php')
   .then(t => {
     document.getElementById('tablero-pendientes').textContent = numero(t.pendientes.total);
     document.getElementById('tablero-pendientes-mes').textContent = `${numero(t.pendientes.este_mes)} recibidos este mes`;
+    // Envíos sin viaje: en color de aviso si hay alguno; el link abre Envíos con el filtro "Sin viaje".
+    const sinViaje = Number(t.sin_viaje.total);
+    const linkSinViaje = document.getElementById('tablero-sin-viaje');
+    document.getElementById('tablero-sin-viaje-texto').textContent =
+      sinViaje === 1 ? '1 sin viaje asignado' : `${numero(sinViaje)} sin viaje asignado`;
+    linkSinViaje.className += sinViaje > 0 ? ' bg-amber-100 text-amber-800' : ' text-on-surface-variant';
+    linkSinViaje.hidden = false;
     document.getElementById('tablero-en-curso').textContent = numero(t.en_curso.total);
     document.getElementById('tablero-atrasados').textContent = `${numero(t.en_curso.atrasados)} pasaron su llegada estimada`;
     document.getElementById('tablero-proximos').textContent = numero(t.proximos.total);

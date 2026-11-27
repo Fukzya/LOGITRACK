@@ -42,13 +42,17 @@ const pantalla = pantallaCrud({
     ],
     // Abre el historial completo de ese envío (historial_estado.php lee el filtro desde la URL).
     // "Cambiar estado" solo si está activo y no terminó (entregado o devuelto).
-    accionesExtra: f => (f.activo == 1 && f.terminado != 1 ? `<button data-accion="estado" data-clave="${esc(f.nro_envio)}">Cambiar estado</button> ` : '')
+    // "Asignar viaje" solo si no tiene viaje (sin_viaje lo calcula la base: vista_envios_sin_viaje).
+    accionesExtra: f => (f.sin_viaje == 1 && puede('viaje_envio', 'alta') ? `<button data-accion="asignar" data-clave="${esc(f.nro_envio)}">Asignar viaje</button> ` : '')
+        + (f.activo == 1 && f.terminado != 1 ? `<button data-accion="estado" data-clave="${esc(f.nro_envio)}">Cambiar estado</button> ` : '')
         + `<button data-accion="historial" data-clave="${esc(f.nro_envio)}">Ver historial</button>`
         + (esAdmin ? ` <button data-accion="cambios" data-clave="${esc(f.nro_envio)}">Ver cambios</button>` : ''),
     acciones: {
         cambios: f => { location.href = `../auditoria/auditoria.php?tabla=envio&clave=${encodeURIComponent(f.nro_envio)}`; },
         historial: f => { location.href = `../historial_estado/historial_estado.php?nro_envio=${encodeURIComponent(f.nro_envio)}`; },
         estado: f => abrirCambioEstado(f),
+        // Abre el asistente "Nuevo envío" directo en el paso del viaje, para este envío.
+        asignar: f => { location.href = `../nuevo_envio/nuevo_envio.php?asignar=${encodeURIComponent(f.nro_envio)}`; },
     },
     form: 'form-envio',
     titulo: 'titulo-form',
@@ -73,6 +77,7 @@ const pantalla = pantallaCrud({
         'filtro-sucursal-orig': 'sucursal_orig',
         'filtro-tipo': 'tipo_cont',
         'filtro-solo-pendientes': 'solo_pendientes',
+        'filtro-sin-viaje': 'sin_viaje',
         'filtro-mostrar-inactivos': 'mostrar_inactivos',
     },
     // CAMBIAR: orden inicial del listado (columna y ASC = ascendente / DESC = descendente).

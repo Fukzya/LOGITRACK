@@ -13,7 +13,11 @@
  * Guía con ejemplos: docs/como_cambiar.md (buscá "CAMBIAR:" con Ctrl+Shift+F).
  * ============================================================================================
  */
-require '../plantilla.php'; inicio_pagina('Nuevo envío'); ?>
+// Con ?asignar=N la misma pantalla sirve para darle viaje a un envío que quedó sin viaje
+// (botón "Asignar viaje" de Envíos): empieza en el paso 3 (nuevo_envio.js, "modo asignar").
+$asignar = isset($_GET['asignar']);
+require '../plantilla.php';
+inicio_pagina($asignar ? 'Asignar viaje a un envío' : 'Nuevo envío', false, $asignar ? 'envios' : '', $asignar ? 'add_road' : ''); ?>
 <?php
 // Asistente paso a paso: personas -> paquete -> viaje -> confirmar.
 // Se guarda todo junto al final (api/asistente_envio.php, una sola transacción).
@@ -112,6 +116,9 @@ $btnSec  = 'bg-surface-container hover:bg-surface-container-high text-on-surface
             </p>
         </div>
 
+        <!-- Modo asignar: el envío que se está asignando -->
+        <div id="info-asignar" class="rounded-xl border border-primary/30 bg-[#fffbf5] px-4 py-3 text-sm text-on-surface" hidden></div>
+
         <!-- Directos -->
         <div class="flex flex-col gap-2">
             <h3 class="text-sm font-semibold text-on-surface flex items-center gap-2">
@@ -135,7 +142,7 @@ $btnSec  = 'bg-surface-container hover:bg-surface-container-high text-on-surface
                 <span><span class="block text-sm font-semibold text-on-surface">Crear un viaje nuevo</span>
                       <span class="block text-xs text-on-surface-variant">Directo, con vehículo y chofer libres ese día</span></span>
             </button>
-            <button type="button" data-opcion-viaje="ninguno" class="opcion-viaje flex items-center gap-3 rounded-xl border-2 border-dashed border-outline-variant px-4 py-3 text-left hover:bg-surface-container">
+            <button type="button" id="opcion-mas-tarde" data-opcion-viaje="ninguno" class="opcion-viaje flex items-center gap-3 rounded-xl border-2 border-dashed border-outline-variant px-4 py-3 text-left hover:bg-surface-container">
                 <span class="material-symbols-outlined text-outline">schedule</span>
                 <span><span class="block text-sm font-semibold text-on-surface">Asignar más tarde</span>
                       <span class="block text-xs text-on-surface-variant">El envío queda creado, pendiente de viaje</span></span>
@@ -171,7 +178,8 @@ $btnSec  = 'bg-surface-container hover:bg-surface-container-high text-on-surface
         </details>
 
         <div class="flex justify-between">
-            <button type="button" class="<?= $btnSec ?>" data-anterior="2">Atrás</button>
+            <button type="button" class="<?= $btnSec ?>" data-anterior="2" id="btn-atras-3">Atrás</button>
+            <a class="<?= $btnSec ?>" href="../envios/envios.php?sin_viaje=1" id="link-volver-3" hidden>Volver a envíos sin viaje</a>
             <button type="button" class="<?= $btnPrim ?>" data-siguiente="4">Siguiente: confirmar</button>
         </div>
     </section>
@@ -197,7 +205,7 @@ $btnSec  = 'bg-surface-container hover:bg-surface-container-high text-on-surface
         <div class="flex flex-wrap justify-center gap-3">
             <a id="link-historial" class="<?= $btnSec ?>" href="#">Ver historial del envío</a>
             <a id="link-viaje" class="<?= $btnSec ?>" href="#">Ver sus viajes</a>
-            <a class="<?= $btnPrim ?>" href="nuevo_envio.php">Cargar otro envío</a>
+            <a class="<?= $btnPrim ?>" href="nuevo_envio.php" id="link-otro">Cargar otro envío</a>
         </div>
     </section>
 

@@ -8,8 +8,12 @@
 // Asistente "Nuevo envío": personas -> paquete -> viaje -> confirmar.
 // Nada se guarda hasta el último paso (salvo un cliente o dirección nuevos, que se dan de alta en el
 // momento). Al confirmar, api/asistente_envio.php crea envío + viaje + asignación en una transacción.
+// Modo asignar (nuevo_envio.php?asignar=N, botón "Asignar viaje" de Envíos): el envío ya existe y
+// no tiene viaje; se empieza en el paso 3 y al confirmar solo se crea el viaje (si es nuevo) y se asigna.
 
 const $ = id => document.getElementById(id);
+const nroAsignar = new URLSearchParams(location.search).get('asignar'); // null = alta normal
+let envioAsignar = null;   // en modo asignar: la fila del envío (api/envios.php)
 
 const estado = {
     paso: 1,
@@ -28,7 +32,7 @@ const sugerida = { orig: true, dest: true }; // false cuando el usuario elige a 
 // ------------------------------------------------------------ catálogos
 cargarCatalogo('input-tipo', 'tipos_contenido');
 api('../../api/catalogos.php?tipo=provincias').then(ps => ps.forEach(p => provincias.set(String(p.cod), p.nombre)));
-api('../../api/catalogos.php?tipo=sucursales').then(ss => {
+const sucursalesListas = api('../../api/catalogos.php?tipo=sucursales').then(ss => {
     sucursales = ss;
     for (const id of ['input-suc-orig', 'input-suc-dest', 'nv-origen', 'nv-destino']) llenarSelect($(id), ss); // por provincia
 }).catch(mostrarError);
@@ -79,7 +83,7 @@ const validar = {
     },
     3() {
         const v = estado.viaje;
-        if (!v.modo) return 'Elegí un viaje, creá uno nuevo o elegí "Asignar más tarde".';
+        if (!v.modo) return nroAsignar ? 'Elegí un viaje o creá uno nuevo.' : 'Elegí un viaje, creá uno nuevo o elegí "Asignar más tarde".';
         if (v.modo === 'nuevo' && !$('form-viaje-nuevo').reportValidity()) return '';
         return null;
     },
@@ -434,6 +438,21 @@ function armarResumen() {
     } else {
         filasViaje.push(['Viaje', 'Sin viaje por ahora (queda pendiente de asignar)']);
     }
+    if (envioAsignar) {
+        const e = envioAsignar;
+        $('resumen').innerHTML = [
+            ['Envío', `N.º ${e.nro_envio} · ${kg(e.peso_kg)} · ${e.tipo_cont_nombre}`],
+            ['Remitente → destinatario', `${e.remitente_nombre} → ${e.destinatario_nombre}`],
+            ['Sucursales', `${e.sucursal_orig_nombre} → ${e.sucursal_dest_nombre}`],
+            ...filasViaje,
+        ].map(([k, val]) => `
+            <div class="flex flex-col border-b border-surface-container pb-2">
+                <dt class="text-xs text-on-surface-variant">${esc(k)}</dt>
+                <dd class="text-on-surface">${esc(val)}</dd>
+            </div>`).join('');
+        $('error-confirmar').hidden = true;
+        return;
+    }
     const d = estado.direccion;
     const filas = [
         ['Remitente', nombreCliente(estado.remitente)],
@@ -455,7 +474,7 @@ function armarResumen() {
 $('btn-confirmar').addEventListener('click', async () => {
     const boton = $('btn-confirmar');
     const v = estado.viaje;
-    const cuerpo = {
+    const cuerpo = envioAsignar ? { nro_envio: envioAsignar.nro_envio, viaje_modo: v.modo } : {
         fecha_envio: $('input-fecha').value,
         peso_kg: $('input-peso').value,
         tipo_cont_cod: $('input-tipo').value,
@@ -492,8 +511,45 @@ $('btn-confirmar').addEventListener('click', async () => {
         $('error-confirmar').hidden = false;
     } finally {
         boton.disabled = false;
-        boton.textContent = 'Crear envío';
+        boton.textContent = envioAsignar ? 'Asignar' : 'Crear envío';
     }
 });
 
-mostrarPaso(1);
+// ------------------------------------------------------------ modo asignar
+// Carga el envío (solo si sigue sin viaje), completa los datos del paquete que usa la búsqueda de
+// rutas y va directo al paso 3. La API vuelve a controlar todo al confirmar.
+async function iniciarAsignar() {
+    try {
+        const r = await api(`../../api/envios.php?nro_envio=${encodeURIComponent(nroAsignar)}&sin_viaje=1`);
+        envioAsignar = r.datos[0] || null;
+        await sucursalesListas;
+    } catch (err) { mostrarError(err); return; }
+    $('btn-atras-3').hidden = true;
+    $('link-volver-3').hidden = false;
+    $('opcion-mas-tarde').hidden = true;
+    $('btn-confirmar').textContent = 'Asignar';
+    $('link-otro').href = '../envios/envios.php?sin_viaje=1';
+    $('link-otro').textContent = 'Ver envíos sin viaje';
+    const info = $('info-asignar');
+    info.hidden = false;
+    mostrarPaso(3);
+    if (!envioAsignar) {
+        info.className = 'rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700';
+        info.textContent = `El envío ${nroAsignar} no existe, está dado de baja, ya fue entregado o devuelto, o ya tiene viaje.`;
+        document.querySelectorAll('[data-paso="3"] > :not(:first-child):not(#info-asignar):not(:last-child)').forEach(el => { el.hidden = true; });
+        document.querySelector('[data-paso="3"] [data-siguiente]').hidden = true;
+        return;
+    }
+    const e = envioAsignar;
+    $('input-peso').value = e.peso_kg;
+    $('input-fecha').value = e.fecha_envio;
+    $('input-suc-orig').value = e.sucursal_orig_cod;
+    $('input-suc-dest').value = e.sucursal_dest_cod;
+    info.innerHTML = `<span class="font-semibold">Envío ${esc(e.nro_envio)}</span> · ${esc(kg(e.peso_kg))} · ${esc(e.tipo_cont_nombre)}
+        · ${esc(e.remitente_nombre)} → ${esc(e.destinatario_nombre)}<br>
+        <span class="text-on-surface-variant">${esc(e.sucursal_orig_nombre)} → ${esc(e.sucursal_dest_nombre)} · recibido el
+        ${esc(new Date(e.fecha_envio + 'T00:00').toLocaleDateString('es-AR'))}</span>`;
+    cargarViajes();
+}
+
+if (nroAsignar) iniciarAsignar(); else mostrarPaso(1);
